@@ -40,10 +40,22 @@ extensions = [
     'sphinxnote.any',
 ]
 
-
-# Config of sphinxnotes.any'
-from sphinxnote import anything
-any_templates = [anything.Template('person', 'nick', 'homepage', 'brief', 'avatar', [], role_template = '@%s')]
+# Config of sphinxnotes.any
+any_templates = [{
+    'name': 'friend',
+    'fields': {
+        'id': 'id',
+        'alias': 'alias',
+        'link': 'blog',
+        'brief': 'brife',
+        'picture': 'avatar',
+        'subjects': 'subjects',
+        'others': [],
+    },
+    'templates': {
+        'reference': '@%s',
+    },
+    }]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
