@@ -5,6 +5,7 @@ PY   = python3
 
 .PHONY: doc
 doc:
+	rm doc/_build -rf
 	$(MAKE) -C doc/
 
 .PHONY: dist

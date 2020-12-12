@@ -14,6 +14,22 @@ Sphinx Domain for Anything
 :copyright: Copyright ©2020 by Shengyu Zhang.
 :license: BSD, see LICENSE for details.
 
+.. any:friend:: SilverRainZ
+   :nick: LA
+   :homepage: https://silverrainz.me
+
+    Myself.
+
+This is :any:friend:`SilverRainZ`.
+
+.. any:person:: SilverRainZ
+   :nick: LA
+   :homepage: https://silverrainz.me
+
+    Myself.
+
+This is :any:person:`SilverRainZ`.
+
 .. contents::
    :local:
    :backlinks: none

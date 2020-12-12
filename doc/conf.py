@@ -37,8 +37,13 @@ version = release = proj.version
 # ones.
 extensions = [
     'sphinx.ext.githubpages',
-    # 'sphinxnotes.any',
+    'sphinxnote.any',
 ]
+
+
+# Config of sphinxnotes.any'
+from sphinxnote import anything
+any_templates = [anything.Template('person', 'nick', 'homepage', 'brief', 'avatar', [], role_template = '@%s')]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
