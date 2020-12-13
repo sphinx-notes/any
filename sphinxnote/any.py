@@ -8,28 +8,22 @@
     :license: BSD, see LICENSE for details.
 """
 
+from typing import Tuple, Dict, Optional, Any, Iterator, Type, List
 from typing import cast
 
 from docutils.parsers.rst import directives
+from docutils.nodes import Element
 
-from sphinx.addnodes import desc_name
+from sphinx.application import Sphinx
+from sphinx.config import Config
+from sphinx.addnodes import pending_xref, desc_name, desc_signature 
+from sphinx.builders import Builder
 from sphinx.directives import ObjectDescription
-from sphinx.domains import Domain, ObjType
+from sphinx.domains import Domain, ObjType, Index
+from sphinx.environment import BuildEnvironment
 from sphinx.roles import XRefRole
 from sphinx.util import logging
 from sphinx.util.nodes import make_refnode, make_id
-
-if False: # For type annotation
-    from typing import Tuple, Dict, Optional, Any, Iterator, Type, List
-
-    from docutils.nodes import Element
-
-    from sphinx.application import Sphinx
-    from sphinx.config import Config
-    from sphinx.addnodes import pending_xref, desc_signature 
-    from sphinx.builders import Builder
-    from sphinx.domains import Index
-    from sphinx.environment import BuildEnvironment
 
     
 logger = logging.getLogger(__name__)
@@ -64,12 +58,15 @@ class AnyRole(XRefRole):
 
     def process_link(self, env:BuildEnvironment, refnode:Element,
                      has_explicit_title:bool, title:str, target:str) -> Tuple[str,str]:
+        '''
+        Called after parsing title and target text, and creating the reference
+        node (given in refnode). This method can alter the reference node and
+        must return a new (or the same) (title, target) tuple.
+        '''
+
         return self._template % title, target
 
 # TODO: AnyIndex
-
-class FeaturedFields(object):
-
 
 class Template(object):
     '''Template for descripting anything.
@@ -78,40 +75,45 @@ class Template(object):
     '''
 
     @classmethod
-    def from_config(config:Dict[str,Any]) -> Template:
-        t = Template(config['name'],
-                config.get('aka_field'),
-                config.get('link_field'),
-                config.get('bri'),
+    def from_config(cls, config:Dict[str,Any]) -> 'Template':
+        return Template(config['name'],
+                config['fields'].get('id'),
+                config['fields'].get('alias'),
+                config['fields'].get('url'),
+                config['fields'].get('brief'),
+                config['fields'].get('picture'),
+                config['fields'].get('others'),
+                role_title = config['templates'].get('role_title'),
                 )
 
     def __init__(self, name:str,
-            aka_field:Optional[str],
-            link_field:Optional[str],
+            id_field:Optional[str],
+            alias_field:Optional[str],
+            url_field:Optional[str],
             brief_field:Optional[str],
-            cover_field:Optional[str],
+            picture_field:Optional[str],
             other_fields:List[str],
-            role_template:str='%s',
+            role_title:str='%s',
             directive_template:Any=None):
         self.name = name
-        self._aka_field = aka_field
-        self._link_field  = link_field
+        self._alias_field = alias_field
+        self._url_field  = url_field
         self._brief_field = brief_field
-        self._cover_field = cover_field
+        self._picture_field = picture_field
         self._other_fields = other_fields
-        self._role_template = role_template
+        self._role_title = role_title
         self._directive_template = directive_template
         
     def _generate_directive(self) -> Type[AnyDirective]:
         '''Dynamically create Directive class awaiting for being added to Domain'''
         option_spec = {}
-        if self._aka_field:
-            option_spec[self._aka_field] = directives.unchanged
-        if self._link_field:
-            option_spec[self._link_field] = directives.uri
+        if self._alias_field:
+            option_spec[self._alias_field] = directives.unchanged
+        if self._url_field:
+            option_spec[self._url_field] = directives.uri
         if self._brief_field:
             option_spec[self._brief_field] = directives.path
-        if self._cover_field:
+        if self._picture_field:
             option_spec[self._brief_field] = directives.uri
         for field in self._other_fields:
             option_spec[field] = directives.unchanged
@@ -129,7 +131,7 @@ class Template(object):
         return type(
                 'Any%sRole' % self.name.title(), # TODO: Class name validition
                 (AnyRole,), 
-                { '_template': self._role_template,})
+                { '_template': self._role_title,})
 
 
     def _generate_index(self) -> Optional[Type[Index]]:
@@ -140,9 +142,6 @@ class Template(object):
         '''Dynamically create classes that awaiting for being added to Domain'''
 
         return (self._generate_directive(), self._generate_role(), self._generate_index())
-
-t = Template('friend', 'nick', 'homepage', 'brief', 'avatar', [], role_template = '@%s')
-d, r, _ = t.generate_domain_objects()
 
 class AnyDomain(Domain):
     '''
@@ -184,6 +183,9 @@ class AnyDomain(Domain):
     def objects(self) -> Dict[Tuple[str, str], Tuple[str, str]]:
         return self.data.setdefault('objects', {}) # (objtype, fullname) -> (docname, node_id)
 
+    def __init__(self, env):
+        print('init')
+        super(AnyDomain, self).__init__(env)
 
     def note_object(self, objtype:str, name:str, node_id:str, location:Any=None) -> None:
         if (objtype, name) in self.objects:
@@ -246,19 +248,28 @@ class AnyDomain(Domain):
             yield name, name, typ, docname, node_id, 1
 
 
+    @classmethod
+    def add_template(cls, template:Template) -> None:
+        if cls._object_types.get(template.name):
+            logger.warning('object %s already exists in %s, override it' %
+                    (template.name), cls)
+        directive, role, _ = template.generate_domain_objects()
+        cls._directives[template.name] = directive
+        cls._roles[template.name] = role()
+        cls._object_types[template.name] = ObjType(template.name, template.name)
+
+
+def _config_inited(app:Sphinx, config:Config) -> None:
+    print('config inited')
+    for c in config.any_templates:
+        AnyDomain.add_template(Template.from_config(c))
+
 
 def setup(app:Sphinx):
     '''Sphinx extension entrypoint.'''
 
-    def _config_inited(app:Sphinx, config:Config) -> None:
-        for t in config.any_templates:
-            directive, role, _ = t.generate_domain_objects()
-            rolefn = role()
-            AnyDomain._directives[t.name] = directive
-            AnyDomain._roles[t.name] = rolefn
-            AnyDomain._object_types[t.name] = ObjType(t.name, t.name)
-
     app.add_domain(AnyDomain)
+    print('reg domain')
 
     app.add_config_value('any_templates', [], '')
     app.connect('config-inited', _config_inited)

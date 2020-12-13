@@ -46,14 +46,14 @@ any_templates = [{
     'fields': {
         'id': 'id',
         'alias': 'alias',
-        'link': 'blog',
+        'url': 'blog',
         'brief': 'brife',
         'picture': 'avatar',
         'subjects': 'subjects',
         'others': [],
     },
     'templates': {
-        'reference': '@%s',
+        'role_title': '@%s',
     },
     }]
 
