@@ -8,6 +8,11 @@ doc:
 	rm doc/_build -rf
 	$(MAKE) -C doc/
 
+.PHONY: v
+v:
+	rm doc/_build -rf
+	$(MAKE) -C doc/ verbose
+
 .PHONY: dist
 dist: setup.py
 	$(PY) setup.py sdist

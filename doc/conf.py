@@ -44,18 +44,26 @@ extensions = [
 any_templates = [{
     'name': 'friend',
     'fields': {
-        'id': 'id',
-        'alias': 'alias',
+        'alias': 'nick',
         'url': 'blog',
         'brief': 'brife',
         'picture': 'avatar',
-        'subjects': 'subjects',
         'others': [],
-    },
+        },
     'templates': {
         'role_title': '@%s',
-    },
-    }]
+        }
+    },{
+        'name': 'book',
+        'fields': {
+            'id': 'isbn',
+            'picture': 'cover',
+            'others': [],
+            },
+        'templates': {
+            'role_title': '《%s》',
+            },
+        }]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

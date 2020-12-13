@@ -7,35 +7,17 @@
 Sphinx Domain for Anything
 ==========================
 
-.. image:: https://img.shields.io/github/stars/sphinx-notes/any.svg?style=social&label=Star&maxAge=2592000
-   :target: https://github.com/sphinx-notes/any
-
 :version: |version|
 :copyright: Copyright ©2020 by Shengyu Zhang.
 :license: BSD, see LICENSE for details.
 
-.. any:friend:: SilverRainZ
-   :nick: LA
-   :homepage: https://silverrainz.me
-
-    Myself.
-
-This is :any:friend:`SilverRainZ`.
-
-.. any:person:: SilverRainZ
-   :nick: LA
-   :homepage: https://silverrainz.me
-
-    Myself.
-
-This is :any:person:`SilverRainZ`.
-
-.. contents::
-   :local:
-   :backlinks: none
-
 Installation
 ============
+
+.. any:friend:: SilverRainZ
+   :nick: LA
+   :blog: https://silverrainz.me
+   :avatar: /home/la/Pictures/Avatars/谷月轩.jpg
 
 Download it from official Python Package Index:
 

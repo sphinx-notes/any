@@ -12,43 +12,104 @@ from typing import Tuple, Dict, Optional, Any, Iterator, Type, List
 from typing import cast
 
 from docutils.parsers.rst import directives
-from docutils.nodes import Element
+from docutils.nodes import Element, Node, section, title
+from docutils.statemachine import StringList
 
 from sphinx.application import Sphinx
 from sphinx.config import Config
-from sphinx.addnodes import pending_xref, desc_name, desc_signature 
+from sphinx.addnodes import pending_xref, desc, desc_name, desc_signature, desc_content, index
 from sphinx.builders import Builder
-from sphinx.directives import ObjectDescription
 from sphinx.domains import Domain, ObjType, Index
 from sphinx.environment import BuildEnvironment
 from sphinx.roles import XRefRole
 from sphinx.util import logging
+from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_refnode, make_id
+from sphinx.util.docfields import DocFieldTransformer, Field, TypedField
 
     
 logger = logging.getLogger(__name__)
 
+input = ['''You can adapt this file completely to your liking, but it should at least contain the root `toctree` directive.''']
 
-class AnyDirective(ObjectDescription):
+class AnyDirective(SphinxDirective):
     '''
     Directive to describe anything. Not used directly, but dynamically
     subclassed to add custom behavior.
+
+    The class is modified from sphinx.directives.ObjectDescription
     '''
 
-    def add_target_and_index(self, name:str, sig:str, signode:desc_signature) -> None:
-        node_id = make_id(self.env, self.state.document, self.objtype, name)
-        signode['ids'].append(node_id)
+    has_content:bool = True
+    required_arguments:int = 1
+    optional_arguments:int = 0
+    final_argument_whitespace:bool = True
+    option_spec:Dict[str,callable] = {
+        'noindex': directives.flag,
+    }  
 
-        self.state.document.note_explicit_target(signode)
+    # Types of doc fields that this directive handles, see sphinx.util.docfields
+    doc_field_types:List[Field] = []
+    domain:str = None
+    objtype:str = None
+    indexnode:index = None
 
-        domain = cast(AnyDomain, self.env.get_domain('any'))
-        domain.note_object(self.objtype, name, node_id, location=signode)
+    def add_target_and_index(self, name: Any, sig: str, signode: desc_signature) -> None:
+        """
+        Add cross-reference IDs and entries to self.indexnode, if applicable.
 
+        *name* is whatever :meth:`handle_signature()` returned.
+        """
+        return  # do nothing by default
 
-    def handle_signature(self, sig:str, signode:desc_signature) -> str:
-        # Generate node for object name
-        signode += desc_name(text=sig)
-        return sig
+    def run(self) -> List[Node]:
+        """
+        Main directive entry function, called by docutils upon encountering the
+        directive.
+
+        This directive is meant to be quite easily subclassable, so it delegates
+        to several additional methods.  What it does:
+
+        * find out if called as a domain-specific directive, set self.domain
+        * create a `desc` node to fit all description inside
+        * parse standard options, currently `noindex`
+        * create an index node if needed as self.indexnode
+        * parse all given signatures (as returned by self.get_signatures())
+          using self.handle_signature(), which should either return a name
+          or raise ValueError
+        * add index entries using self.add_target_and_index()
+        * parse the content and handle doc fields in it
+        """
+        if ':' in self.name:
+            self.domain, self.objtype = self.name.split(':', 1)
+        else:
+            self.domain, self.objtype = '', self.name
+        self.indexnode = index(entries=[])
+
+        node = desc()
+        node.document = self.state.document
+        node['domain'] = self.domain
+        node['objtype'] = self.objtype
+        node['noindex'] = noindex = ('noindex' in self.options)
+        if self.domain:
+            node['classes'].append(self.domain)
+
+        self.names = []
+        sig = self.arguments[0]
+        node.append(desc_name(text=sig))
+        # if not noindex:
+        #     self.add_target_and_index(sig, sig, signode)
+
+        contentnode = desc_content()
+        node.append(contentnode)
+        if self.names:
+            # needed for association of version{added,changed} directives
+            self.env.temp_data['object'] = self.names[0]
+        print('tttt', type(self.content))
+        print('>>>>', self.content)
+        self.state.nested_parse(StringList(initlist=input), self.content_offset, contentnode)
+        return [self.indexnode, node]
+
 
 
 class AnyRole(XRefRole):
@@ -114,7 +175,7 @@ class Template(object):
         if self._brief_field:
             option_spec[self._brief_field] = directives.path
         if self._picture_field:
-            option_spec[self._brief_field] = directives.uri
+            option_spec[self._picture_field] = directives.uri
         for field in self._other_fields:
             option_spec[field] = directives.unchanged
 
@@ -184,10 +245,11 @@ class AnyDomain(Domain):
         return self.data.setdefault('objects', {}) # (objtype, fullname) -> (docname, node_id)
 
     def __init__(self, env):
-        print('init')
+        print('domain init')
         super(AnyDomain, self).__init__(env)
 
     def note_object(self, objtype:str, name:str, node_id:str, location:Any=None) -> None:
+        print('note obj', objtype, name, node_id)
         if (objtype, name) in self.objects:
             docname, node_id = self.objects[objtype, name]
             logger.warning('duplicate description of %s %s, other instance in %s' %
@@ -220,6 +282,7 @@ class AnyDomain(Domain):
         The method can also raise sphinx.environment.NoUri to suppress the
         ‘missing-reference’ event being emitted.'''
 
+        print('resolve xref', fromdocname, typ, target)
         objtypes = self.objtypes_for_role(typ)
         for objtype in objtypes:
             todocname, node_id = self.objects.get((objtype, target), (None, None))
@@ -257,12 +320,15 @@ class AnyDomain(Domain):
         cls._directives[template.name] = directive
         cls._roles[template.name] = role()
         cls._object_types[template.name] = ObjType(template.name, template.name)
+        print(cls._directives)
 
 
 def _config_inited(app:Sphinx, config:Config) -> None:
     print('config inited')
     for c in config.any_templates:
-        AnyDomain.add_template(Template.from_config(c))
+        t = Template.from_config(c)
+        print('reg', t.name)
+        AnyDomain.add_template(t)
 
 
 def setup(app:Sphinx):
