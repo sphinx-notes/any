@@ -48,21 +48,16 @@ class AnyDirective(SphinxDirective):
     }
 
     schema = None
-    domain:str = None
-    objtype:str = None
 
     def _build_field_mapping(self) -> Dict[str,Any]:
         ''' Build field mapping for template rendering. '''
 
         schema = self.schema
         m:Dict[str,Any] = {}
-        m['name']= self.arguments[0]
-        m['content'] = self.content.data # docutils.statemachine.ViewList.data
+        m['names'] = self.arguments[0].split('\n')
+        m['content'] = self.content.data # docutils.statemachine.ViewList.data:List[str]
         if schema.id_field and self.options.get(schema.id_field):
             m[schema.id_field] = self.options.get(schema.id_field)
-        if schema.alias_field and self.options.get(schema.alias_field):
-            m[schema.alias_field] = self.options.get(
-                schema.alias_field).split('\n')
         if schema.url_field and self.options.get(schema.url_field):
             m[schema.url_field] = self.options.get(schema.url_field)
         for field in schema.other_fields:
@@ -71,42 +66,43 @@ class AnyDirective(SphinxDirective):
         return m
 
 
-    def _add_target_and_index(self, name: str, sig: str, signode: addnodes.desc_signature) -> None:
-        node_id = make_id(self.env, self.state.document, self.schema.name, name)
-        signode['ids'].append(node_id)
-
-        self.state.document.note_explicit_target(signode)
-
-        domain = self.env.get_domain('any')
-        domain.note_object(self.objtype, name, node_id, location=signode)
-
-
     def run(self) -> List[nodes.Node]:
-        self.domain, self.objtype = self.name.split(':', 1)
-
-        name = self.arguments[0]
-
-        indexnode = addnodes.index(entries=[])
+        domain = self.env.get_domain('any')
+        objtype = self.schema.objtype
+        mapping = self._build_field_mapping()
+        name = mapping['names'][0]
 
         descnode = addnodes.desc()
-        descnode['domain'] = self.domain
+        descnode['domain'] = domain.name
         # 'desctype' is a backwards compatible attribute
-        descnode['objtype'] = descnode['desctype'] = self.objtype
-        if self.domain:
-            descnode['classes'].append(self.domain)
+        descnode['objtype'] = descnode['desctype'] = objtype
+        descnode['classes'].append(domain.name)
 
-        # Create signature
+        # Create signature node
         signode = addnodes.desc_signature(name, '')
         descnode.append(signode)
         signode += addnodes.desc_name(name, name)
-        self._add_target_and_index(name, name, signode)
 
-        # Create content
+        # Node target and object
+        node_id = make_id(self.env, self.state.document, objtype, name)
+        signode['ids'].append(node_id)
+        self.state.document.note_explicit_target(signode)
+        if self.schema.id_field and mapping[self.schema.id_field]:
+            domain.note_object(objtype, mapping[self.schema.id_field],
+                               node_id, location=signode)
+        for n in mapping['names']:
+            domain.note_object(objtype, n, node_id, location=signode)
+
+        # Create content node
         contentnode = addnodes.desc_content()
         descnode.append(contentnode)
-        mapping = self._build_field_mapping()
         content = self.schema.directive_template.render(mapping)
-        nested_parse_with_titles(self.state, StringList(content.split('\n')), contentnode)
+        nested_parse_with_titles(self.state,
+                                 StringList(content.split('\n')),
+                                 contentnode)
+
+        # Create index node
+        indexnode = addnodes.index(entries=[])
 
         return [indexnode, descnode]
 
@@ -120,6 +116,8 @@ class AnyRole(XRefRole):
                      has_explicit_title:bool, title:str, target:str) -> Tuple[str,str]:
         ''' See XRefRole.process_link. '''
 
+        domain = env.get_doctree(refnode['refdomain'])
+        objtype = refnode['reftype']
         # return self.schema.role_template.render() % title, target
         return title, target
 
@@ -128,11 +126,10 @@ class AnyRole(XRefRole):
 class Schema(object):
     '''Schema for description of anything. TODO: link to page. '''
 
-    name:str = None
+    objtype:str = None
 
     # Optional fields
     id_field:Optional[str] = None
-    alias_field:Optional[str] = None
     url_field:Optional[str] = None
     other_fields:List[str] = []
 
@@ -142,23 +139,20 @@ class Schema(object):
 
     @classmethod
     def from_config(cls, config:Dict[str,Any]) -> 'Schema':
-        return Schema(config['name'],
+        return Schema(config['type'],
                       config['fields'].get('id'),
-                      config['fields'].get('alias'),
                       config['fields'].get('url'),
                       config['fields'].get('others'),
                       role_template = config['templates'].get('role'),
                       directive_template = config['templates'].get('directive'))
 
-    def __init__(self, name:str,
+    def __init__(self, objtype:str,
                  id_field:Optional[str],
-                 alias_field:Optional[str],
                  url_field:Optional[str],
                  other_fields:List[str],
-                 role_template:str='{{name}}',
-                 directive_template:str='{{content}}'):
-        self.name = name
-        self.alias_field = alias_field
+                 role_template:str='{{ title }}',
+                 directive_template:str='{{ content }}'):
+        self.objtype = objtype
         self.url_field  = url_field
         self.other_fields = other_fields
         self.role_template = Template(role_template)
@@ -172,15 +166,13 @@ class Schema(object):
         option_spec = {}
         if self.id_field:
             option_spec[self.id_field] = directives.unchanged
-        if self.alias_field:
-            option_spec[self.alias_field] = directives.unchanged
         if self.url_field:
             option_spec[self.url_field] = directives.unchanged
         for field in self.other_fields:
             option_spec[field] = directives.unchanged
 
         # Create directive class
-        return type('Any%sDirective' % self.name.title(),
+        return type('Any%sDirective' % self.objtype.title(),
                     (AnyDirective,),
                     {
                         'schema': self,
@@ -191,7 +183,7 @@ class Schema(object):
     def _build_role(self) -> Type[AnyRole]:
         ''' Dynamically create directive class for descripting object
         as requirements of schema. '''
-        return type('Any%sRole' % self.name.title(),
+        return type('Any%sRole' % self.objtype.title(),
                     (AnyRole,),
                     { 'schema': self })
 
@@ -253,10 +245,9 @@ class AnyDomain(Domain):
 
 
     def note_object(self, objtype:str, name:str, node_id:str, location:Any=None) -> None:
-        print('note obj', objtype, name, node_id)
         if (objtype, name) in self.objects:
             docname, node_id = self.objects[objtype, name]
-            logger.warning('duplicate description of %s %s, other instance in %s' %
+            logger.warning('duplicate name/id of %s %s, other instance in %s' %
                            (objtype, name, docname), location=location)
 
         self.objects[objtype, name] = (self.env.docname, node_id)
@@ -287,13 +278,13 @@ class AnyDomain(Domain):
 
     @classmethod
     def add_schema(cls, schema) -> None:
-        if cls._object_types.get(schema.name):
+        if cls._object_types.get(schema.objtype):
             logger.warning('object %s already exists in %s, override it' %
-                           (schema.name), cls)
+                           (schema.objtype), cls)
         directive, role, _ = schema.build_domain_objects()
-        cls._directives[schema.name] = directive
-        cls._roles[schema.name] = role()
-        cls._object_types[schema.name] = ObjType(schema.name, schema.name)
+        cls._directives[schema.objtype] = directive
+        cls._roles[schema.objtype] = role()
+        cls._object_types[schema.objtype] = ObjType(schema.objtype, schema.objtype)
 
 
 def _config_inited(app:Sphinx, config:Config) -> None:

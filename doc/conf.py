@@ -42,7 +42,7 @@ extensions = [
 
 # Config of sphinxnotes.any
 any_schemas = [{
-    'name': 'friend',
+    'type': 'friend',
     'fields': {
         'id': 'id',
         'alias': 'nick',
@@ -50,32 +50,36 @@ any_schemas = [{
         'others': ['avatar'],
     },
     'templates': {
-        'role': '@{{name}}',
+        'role': '@{{ title }}',
         'directive': """
-         .. image:: {{avatar}}
+         .. image:: {{ avatar }}
             :width: 120px
-            :target: {{blog}}
-            :alt: {{name}}
+            :target: {{ blog }}
+            :alt: {{ names[0] }}
             :align: left
         
-         {{content}}
+         {% for line in contents %}
+            {{ line }}
+         {% endfor %}
         """
     }
 },{
-    'name': 'book',
+    'type': 'book',
     'fields': {
         'id': 'isbn',
         'others': ['cover'],
     },
     'templates': {
-        'role': '《{{name}}》',
+        'role': '《{{ title }}》',
         'directive': '''
-         .. image:: {{cover}}
+         .. image:: {{ cover }}
             :width: 120px
-            :alt: {{name}}
+            :alt: {{ names[0] }}
             :align: left
          
-         {{content}}
+         {% for line in contents %}
+            {{ line }}
+         {% endfor %}
         '''
     }
 }]
