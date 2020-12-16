@@ -41,44 +41,44 @@ extensions = [
 ]
 
 # Config of sphinxnotes.any
-any_templates = [{
+any_schemas = [{
     'name': 'friend',
     'fields': {
         'id': 'id',
         'alias': 'nick',
         'url': 'blog',
         'others': ['avatar'],
-        },
+    },
     'templates': {
-        'role': '@%s',
+        'role': '@{{name}}',
+        'directive': """
+         .. image:: {{avatar}}
+            :width: 120px
+            :target: {{blog}}
+            :alt: {{name}}
+            :align: left
+        
+         {{content}}
+        """
+    }
+},{
+    'name': 'book',
+    'fields': {
+        'id': 'isbn',
+        'others': ['cover'],
+    },
+    'templates': {
+        'role': '《{{name}}》',
         'directive': '''
-.. image:: {avatar}
-   :width: 120px
-   :target: {blog}
-   :alt: {name}
-   :align: left
-
-{content}
-'''
-}
-    },{
-        'name': 'book',
-        'fields': {
-            'id': 'isbn',
-            'others': ['cover'],
-            },
-        'templates': {
-            'role': '《%s》',
-            'directive': '''
-.. image:: {cover}
-   :width: 120px
-   :alt: {name}
-   :align: left
-
-{content}
-'''
-}
-        }]
+         .. image:: {{cover}}
+            :width: 120px
+            :alt: {{name}}
+            :align: left
+         
+         {{content}}
+        '''
+    }
+}]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

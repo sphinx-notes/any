@@ -6,7 +6,6 @@
 
     :copyright: Copyright 2020 Shengyu Zhang
     :license: BSD, see LICENSE for details.
-
 """
 
 from typing import Tuple, Dict, Optional, Any, Iterator, Type, List
@@ -49,62 +48,80 @@ class AnyDirective(SphinxDirective):
     }
 
     schema = None
+    domain:str = None
+    objtype:str = None
 
-    def _build_field_mapping(self) -> Dict[str,str]:
+    def _build_field_mapping(self) -> Dict[str,Any]:
         ''' Build field mapping for template rendering. '''
 
         schema = self.schema
-        m:Dict[str,str] = {}
-        names = ['']
-        _id = names[0] = m['name'] = self.arguments[0]
+        m:Dict[str,Any] = {}
+        m['name']= self.arguments[0]
         m['content'] = self.content.data # docutils.statemachine.ViewList.data
-        content = str(self.content)
         if schema.id_field and self.options.get(schema.id_field):
-            _id = m[schema.id_field] = self.options.get(schema.id_field)
+            m[schema.id_field] = self.options.get(schema.id_field)
         if schema.alias_field and self.options.get(schema.alias_field):
-            m[schema.alias_field] = self.options.get(schema.alias_field).split('\n')
+            m[schema.alias_field] = self.options.get(
+                schema.alias_field).split('\n')
         if schema.url_field and self.options.get(schema.url_field):
             m[schema.url_field] = self.options.get(schema.url_field)
         for field in schema.other_fields:
-            if schema.options.get(field):
-                m[field] = schema.options.get(field)
+            if self.options.get(field):
+                m[field] = self.options.get(field)
         return m
 
 
+    def _add_target_and_index(self, name: str, sig: str, signode: addnodes.desc_signature) -> None:
+        node_id = make_id(self.env, self.state.document, self.schema.name, name)
+        signode['ids'].append(node_id)
+
+        self.state.document.note_explicit_target(signode)
+
+        domain = self.env.get_domain('any')
+        domain.note_object(self.objtype, name, node_id, location=signode)
+
+
     def run(self) -> List[nodes.Node]:
+        self.domain, self.objtype = self.name.split(':', 1)
+
         name = self.arguments[0]
-        content = self.content.data # docutils.statemachine.ViewList.data
 
         indexnode = addnodes.index(entries=[])
 
         descnode = addnodes.desc()
+        descnode['domain'] = self.domain
+        # 'desctype' is a backwards compatible attribute
+        descnode['objtype'] = descnode['desctype'] = self.objtype
+        if self.domain:
+            descnode['classes'].append(self.domain)
 
         # Create signature
         signode = addnodes.desc_signature(name, '')
-        descnode.append(descnode)
+        descnode.append(signode)
         signode += addnodes.desc_name(name, name)
+        self._add_target_and_index(name, name, signode)
 
         # Create content
         contentnode = addnodes.desc_content()
         descnode.append(contentnode)
-        nested_parse_with_titles(self.state, content, contentnode)
+        mapping = self._build_field_mapping()
+        content = self.schema.directive_template.render(mapping)
+        nested_parse_with_titles(self.state, StringList(content.split('\n')), contentnode)
 
-
-
-
-        return []
+        return [indexnode, descnode]
 
 
 class AnyRole(XRefRole):
     ''' XRefRole subclass for refering to anything. '''
 
-    schema:Schema = None
+    schema = None
 
     def process_link(self, env:BuildEnvironment, refnode:nodes.Element,
                      has_explicit_title:bool, title:str, target:str) -> Tuple[str,str]:
         ''' See XRefRole.process_link. '''
 
-        return self._schema % title, target
+        # return self.schema.role_template.render() % title, target
+        return title, target
 
 # TODO: AnyIndex
 
@@ -130,8 +147,8 @@ class Schema(object):
                       config['fields'].get('alias'),
                       config['fields'].get('url'),
                       config['fields'].get('others'),
-                      role_template = config['templates'].get('role_template'),
-                      directive_template = config['templates'].get('directive_template'))
+                      role_template = config['templates'].get('role'),
+                      directive_template = config['templates'].get('directive'))
 
     def __init__(self, name:str,
                  id_field:Optional[str],
@@ -155,7 +172,7 @@ class Schema(object):
         option_spec = {}
         if self.id_field:
             option_spec[self.id_field] = directives.unchanged
-        if self.aliad_field:
+        if self.alias_field:
             option_spec[self.alias_field] = directives.unchanged
         if self.url_field:
             option_spec[self.url_field] = directives.unchanged
@@ -193,45 +210,47 @@ class Schema(object):
                 self._build_index())
 
 
-    class AnyDomain(Domain):
-        '''
-        The Any domain for descripting anything.'''
+class AnyDomain(Domain):
+    '''
+    The Any domain for descripting anything.'''
 
-        name = 'any'
-        label = 'Anything'
+    name = 'any'
+    label = 'Anything'
 
-        # Static class member for shareing information among all AnyDomain instance
-        #
-        # ref: https://stackoverflow.com/a/27568860
-        _object_types:Dict[str,ObjType] = {}
-        @property
-        def object_types(self):
-            return type(self)._object_types
-        @object_types.setter
-        def object_types(self, val):
-            type(self)._object_types = val
-            _directives:Dict[str,Type[AnyDirective]] = {} # directive name -> directive class
-            @property
-            def directives(self):
-                return type(self)._directives
-            @directives.setter
-            def directives(self, val):
-                type(self)._directives = val
-            _roles:Dict[str,AnyRole] = {} # role name -> role callable
-            @property
-            def roles(self):
-                return type(self)._roles
-            @roles.setter
-            def roles(self, val):
-                type(self)._roles = val
+    # Static class member for shareing information among all AnyDomain instance
+    #
+    # ref: https://stackoverflow.com/a/27568860
+    _object_types:Dict[str,ObjType] = {}
+    @property
+    def object_types(self):
+        return type(self)._object_types
+    @object_types.setter
+    def object_types(self, val):
+        type(self)._object_types = val
+    _directives:Dict[str,Type[AnyDirective]] = {} # directive name -> directive class
+    @property
+    def directives(self):
+        return type(self)._directives
+    @directives.setter
+    def directives(self, val):
+        type(self)._directives = val
+    _roles:Dict[str,AnyRole] = {} # role name -> role callable
+    @property
+    def roles(self):
+        return type(self)._roles
+    @roles.setter
+    def roles(self, val):
+        type(self)._roles = val
 
-            initial_data:Dict[str,Tuple[str,ObjType]] = { # fullname -> docname, objtype
-                'objects': {}, 
-            }
+    initial_data:Dict[str,Tuple[str,ObjType]] = { # fullname -> docname, objtype
+        'objects': {},
+    }
+
 
     @property
     def objects(self) -> Dict[Tuple[str, str], Tuple[str, str]]:
         return self.data.setdefault('objects', {}) # (objtype, fullname) -> (docname, node_id)
+
 
     def note_object(self, objtype:str, name:str, node_id:str, location:Any=None) -> None:
         print('note obj', objtype, name, node_id)
@@ -249,8 +268,9 @@ class Schema(object):
                 del self.objects[typ, name]
 
 
-    def resolve_xref(self, env:BuildEnvironment, fromdocname:str, builder:Builder,
-                     typ:str, target:str, node:pending_xref, contnode:Element) -> Element:
+    def resolve_xref(self, env:BuildEnvironment, fromdocname:str,
+                     builder:Builder, typ:str, target:str,
+                     node:addnodes.pending_xref, contnode:nodes.Element) -> nodes.Element:
         objtypes = self.objtypes_for_role(typ)
         for objtype in objtypes:
             todocname, node_id = self.objects.get((objtype, target), (None, None))
@@ -266,7 +286,7 @@ class Schema(object):
 
 
     @classmethod
-    def add_schema(cls, schema:Schema) -> None:
+    def add_schema(cls, schema) -> None:
         if cls._object_types.get(schema.name):
             logger.warning('object %s already exists in %s, override it' %
                            (schema.name), cls)

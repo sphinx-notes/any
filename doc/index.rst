@@ -15,17 +15,14 @@ Sphinx Domain for Anything
 :license: BSD, see LICENSE for details.
 
 .. any:friend:: SilverRainZ
-   :nick: LA
    :blog: https://silverrainz.me
-   :avatar: /home/la/Pictures/Avatars/谷月轩.jpg
+   :avatar: _images/sphinx-notes.png
+    
+   sphinx-quickstart on Sat Nov 28 00:42:50 2020.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
 
-.. any:friend:: Silver
-
-.. any:book:: 德米安
-
-.. object:: wwww
-
-:any:book:`德米安`
+My friend :any:friend:`SilverRainZ`
 
 Installation
 ============
