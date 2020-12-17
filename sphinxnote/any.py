@@ -32,12 +32,12 @@ logger = logging.getLogger(__name__)
 
 
 class AnyDirective(SphinxDirective):
-    '''
-    Directive to describe anything. Not used directly, but dynamically
-    subclassed to add custom behavior.
+    """
+    Directive to describe anything.  Not used directly,
+    but dynamically subclassed to describe specific object.
 
     The class is modified from sphinx.directives.ObjectDescription
-    '''
+    """
 
     has_content:bool = True
     required_arguments:int = 1
@@ -49,8 +49,8 @@ class AnyDirective(SphinxDirective):
 
     schema = None
 
-    def _build_field_mapping(self) -> Dict[str,Any]:
-        ''' Build field mapping for template rendering. '''
+    def _build_objinfo(self) -> Dict[str,Any]:
+        """Build object information for template rendering."""
 
         schema = self.schema
         m:Dict[str,Any] = {}
@@ -67,10 +67,11 @@ class AnyDirective(SphinxDirective):
 
 
     def run(self) -> List[nodes.Node]:
-        domain = self.env.get_domain('any')
-        objtype = self.schema.objtype
-        mapping = self._build_field_mapping()
-        name = mapping['names'][0]
+        print(self.__dict__)
+        domainname, objtype = self.name.split(':', 1)
+        domain = self.env.get_domain(domainname)
+        objinfo = self._build_objinfo()
+        name = objinfo['names'][0]
 
         descnode = addnodes.desc()
         descnode['domain'] = domain.name
@@ -78,28 +79,28 @@ class AnyDirective(SphinxDirective):
         descnode['objtype'] = descnode['desctype'] = objtype
         descnode['classes'].append(domain.name)
 
-        # Create signature node
+        # Generate signature node
         signode = addnodes.desc_signature(name, '')
         descnode.append(signode)
         signode += addnodes.desc_name(name, name)
 
-        # Node target and object
+        # Note target and object
         node_id = make_id(self.env, self.state.document, objtype, name)
         signode['ids'].append(node_id)
         self.state.document.note_explicit_target(signode)
-        if self.schema.id_field and mapping[self.schema.id_field]:
-            domain.note_object(objtype, mapping[self.schema.id_field],
-                               node_id, location=signode)
-        for n in mapping['names']:
-            domain.note_object(objtype, n, node_id, location=signode)
+        if self.schema.id_field and objinfo[self.schema.id_field]:
+            domain.note_object(objtype, objinfo[self.schema.id_field],
+                               node_id, objinfo, location=signode)
+        for n in objinfo['names']:
+            domain.note_object(objtype, n, node_id, objinfo, location=signode)
 
-        # Create content node
-        contentnode = addnodes.desc_content()
-        descnode.append(contentnode)
-        content = self.schema.directive_template.render(mapping)
+        # Generate content node
+        contnode = addnodes.desc_content()
+        descnode.append(contnode)
+        content = self.schema.directive_template.render(objinfo)
         nested_parse_with_titles(self.state,
                                  StringList(content.split('\n')),
-                                 contentnode)
+                                 contnode)
 
         # Create index node
         indexnode = addnodes.index(entries=[])
@@ -108,37 +109,51 @@ class AnyDirective(SphinxDirective):
 
 
 class AnyRole(XRefRole):
-    ''' XRefRole subclass for refering to anything. '''
+    """
+    XRefRole child class for referencing to anything. Not used directly,
+    but dynamically subclassed to reference to specific object.
+    """
 
     schema = None
 
     def process_link(self, env:BuildEnvironment, refnode:nodes.Element,
                      has_explicit_title:bool, title:str, target:str) -> Tuple[str,str]:
-        ''' See XRefRole.process_link. '''
+        """See XRefRole.process_link."""
 
-        domain = env.get_doctree(refnode['refdomain'])
+        domain = env.get_domain(refnode['refdomain'])
         objtype = refnode['reftype']
-        # return self.schema.role_template.render() % title, target
-        return title, target
+        _, _, objinfo = domain.objects.get((objtype, target), (None, None, {}))
+        objinfo2 = objinfo.copy()
+        objinfo2['title'] = title
+        return self.schema.role_template.render(objinfo2), target
 
 # TODO: AnyIndex
 
 class Schema(object):
-    '''Schema for description of anything. TODO: link to page. '''
+    """
+    Schema holds description meta information of specific object,
+    and able to dynamically generate corresponding directive, role and index
+    for describing, referencing, and indexing specific object.
+    """
 
-    objtype:str = None
+    # Object type that the schema descripts
+    type:str = None
 
-    # Optional fields
+    # Special optional fields, unique ID of object
     id_field:Optional[str] = None
+    # Special optional fields, URL of object
     url_field:Optional[str] = None
+    # Other regular fields
     other_fields:List[str] = []
 
     # Templates
     role_template:Template = None
+    # Templates
     directive_template:Template = None
 
     @classmethod
     def from_config(cls, config:Dict[str,Any]) -> 'Schema':
+        """ Constructor by giving a config. """
         return Schema(config['type'],
                       config['fields'].get('id'),
                       config['fields'].get('url'),
@@ -146,22 +161,21 @@ class Schema(object):
                       role_template = config['templates'].get('role'),
                       directive_template = config['templates'].get('directive'))
 
-    def __init__(self, objtype:str,
+    def __init__(self, type:str,
                  id_field:Optional[str],
                  url_field:Optional[str],
                  other_fields:List[str],
                  role_template:str='{{ title }}',
                  directive_template:str='{{ content }}'):
-        self.objtype = objtype
+        self.type = type
         self.url_field  = url_field
         self.other_fields = other_fields
         self.role_template = Template(role_template)
         self.directive_template = Template(directive_template)
 
 
-    def _build_directive(self) -> Type[AnyDirective]:
-        ''' Dynamically create directive type for descripting object
-        as required_arguments of schema. '''
+    def generate_directive(self) -> Type[AnyDirective]:
+        """Generate an AnyDirective child class for describing object."""
 
         option_spec = {}
         if self.id_field:
@@ -171,40 +185,28 @@ class Schema(object):
         for field in self.other_fields:
             option_spec[field] = directives.unchanged
 
-        # Create directive class
-        return type('Any%sDirective' % self.objtype.title(),
+        # Generate directive class
+        return type('Any%sDirective' % self.type.title(),
                     (AnyDirective,),
-                    {
-                        'schema': self,
-                        'option_spec': option_spec,
-                    })
+                    { 'schema': self, 'option_spec': option_spec, })
 
 
-    def _build_role(self) -> Type[AnyRole]:
-        ''' Dynamically create directive class for descripting object
-        as requirements of schema. '''
-        return type('Any%sRole' % self.objtype.title(),
+    def generate_role(self) -> Type[AnyRole]:
+        """Generate an AnyRole child class for referencing object."""
+        return type('Any%sRole' % self.type.title(),
                     (AnyRole,),
                     { 'schema': self })
 
 
-    def _build_index(self) -> Optional[Type[Index]]:
+    def generate_index(self) -> Type[Index]:
+        """TODO."""
         return None
 
 
-    def build_domain_objects(self) -> Tuple[Type[AnyDirective],
-                                            Type[AnyRole],
-                                            Optional[Type[Index]]]:
-        '''Dynamically create role type for referencing object as schema.'''
-
-        return (self._build_directive(),
-                self._build_role(),
-                self._build_index())
-
-
 class AnyDomain(Domain):
-    '''
-    The Any domain for descripting anything.'''
+    """
+    The Any domain for describing anything.
+    """
 
     name = 'any'
     label = 'Anything'
@@ -234,27 +236,30 @@ class AnyDomain(Domain):
     def roles(self, val):
         type(self)._roles = val
 
-    initial_data:Dict[str,Tuple[str,ObjType]] = { # fullname -> docname, objtype
+    initial_data:Dict[str,Any] = {
+        # See property object.
         'objects': {},
     }
 
 
     @property
-    def objects(self) -> Dict[Tuple[str, str], Tuple[str, str]]:
-        return self.data.setdefault('objects', {}) # (objtype, fullname) -> (docname, node_id)
+    def objects(self) -> Dict[Tuple[str, str], Tuple[str, str, Dict[str,Any]]]:
+        """(objtype, fullname) -> (docname, node_id, objinfo)"""
+        return self.data.setdefault('objects', {}) # 
 
 
-    def note_object(self, objtype:str, name:str, node_id:str, location:Any=None) -> None:
+    def note_object(self, objtype:str, name:str, node_id:str,
+                    objinfo:Dict[str,Any], location:Any=None) -> None:
         if (objtype, name) in self.objects:
-            docname, node_id = self.objects[objtype, name]
+            docname, node_id, _ = self.objects[objtype, name]
             logger.warning('duplicate name/id of %s %s, other instance in %s' %
                            (objtype, name, docname), location=location)
 
-        self.objects[objtype, name] = (self.env.docname, node_id)
+        self.objects[objtype, name] = (self.env.docname, node_id, objinfo)
 
 
     def clear_doc(self, docname: str) -> None:
-        for (typ, name), (doc, node_id) in list(self.objects.items()):
+        for (typ, name), (doc, _, _) in list(self.objects.items()):
             if doc == docname:
                 del self.objects[typ, name]
 
@@ -264,7 +269,7 @@ class AnyDomain(Domain):
                      node:addnodes.pending_xref, contnode:nodes.Element) -> nodes.Element:
         objtypes = self.objtypes_for_role(typ)
         for objtype in objtypes:
-            todocname, node_id = self.objects.get((objtype, target), (None, None))
+            todocname, node_id, _ = self.objects.get((objtype, target), (None, None, None))
             if todocname:
                 return make_refnode(builder, fromdocname, todocname, node_id,
                                     contnode, target + ' ' + objtype)
@@ -272,19 +277,18 @@ class AnyDomain(Domain):
 
 
     def get_objects(self) -> Iterator[Tuple[str, str, str, str, str, int]]:
-        for (typ, name), (docname, node_id) in self.data['objects'].items():
+        for (typ, name), (docname, node_id, _) in self.data['objects'].items():
             yield name, name, typ, docname, node_id, 1
 
 
     @classmethod
     def add_schema(cls, schema) -> None:
-        if cls._object_types.get(schema.objtype):
-            logger.warning('object %s already exists in %s, override it' %
-                           (schema.objtype), cls)
-        directive, role, _ = schema.build_domain_objects()
-        cls._directives[schema.objtype] = directive
-        cls._roles[schema.objtype] = role()
-        cls._object_types[schema.objtype] = ObjType(schema.objtype, schema.objtype)
+        if cls._object_types.get(schema.type):
+            logger.warning('schema %s already exists in %s, override it' %
+                           (schema.type, cls))
+        cls._directives[schema.type] = schema.generate_directive()
+        cls._roles[schema.type] = schema.generate_role()()
+        cls._object_types[schema.type] = ObjType(schema.type, schema.type)
 
 
 def _config_inited(app:Sphinx, config:Config) -> None:
@@ -294,10 +298,9 @@ def _config_inited(app:Sphinx, config:Config) -> None:
 
 
 def setup(app:Sphinx):
-    '''Sphinx extension entrypoint.'''
+    """Sphinx extension entrypoint."""
 
     app.add_domain(AnyDomain)
-    print('reg domain')
 
     app.add_config_value('any_schemas', [], '')
     app.connect('config-inited', _config_inited)

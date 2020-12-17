@@ -44,10 +44,8 @@ extensions = [
 any_schemas = [{
     'type': 'friend',
     'fields': {
-        'id': 'id',
-        'alias': 'nick',
         'url': 'blog',
-        'others': ['avatar'],
+        'others': ['avatar', 'github', ],
     },
     'templates': {
         'role': '@{{ title }}',
