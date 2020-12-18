@@ -37,42 +37,11 @@ version = release = proj.version
 # ones.
 extensions = [
     'sphinx.ext.githubpages',
-    'sphinxnote.any',
+    'sphinxnotes.any',
 ]
 
-# Config of sphinxnotes.any
-any_schemas = [{
-    'type': 'friend',
-    'fields': {
-        'others': ['avatar', 'blog'],
-    },
-    'templates': {
-        'role': '@{{ title }}',
-        'directive': """
-         .. image:: {{ avatar }}
-            :width: 120px
-            :target: {{ blog }}
-            :alt: {{ names[0] }}
-            :align: left
-
-         :blog: {{ blog }}
-
-         {% for line in content %}{{ line }}{% endfor %}
-        """
-    }
-},{
-    'type': 'book',
-    'fields': {
-        'id': 'isbn',
-        'others': ['cover'],
-    },
-    'templates': {
-        'role': '《{{ title }}》',
-        'directive': """
-         {% for line in content %}{{ line }}{% endfor %}
-        """
-    }
-}]
+any_builtin_schemas = []
+any_custom_schemas = []
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

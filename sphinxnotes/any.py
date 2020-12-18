@@ -2,7 +2,7 @@
     sphinxnotes.any
     ~~~~~~~~~~~~~~~
 
-    Sphinx extension entrypoint.
+    Sphinx domain for describing anything.
 
     :copyright: Copyright 2020 Shengyu Zhang
     :license: BSD, see LICENSE for details.
@@ -251,7 +251,7 @@ class AnyDomain(Domain):
     @property
     def objects(self) -> Dict[Tuple[str, str], Tuple[str, str, Dict[str,Any]]]:
         """(objtype, fullname) -> (docname, node_id, objinfo)"""
-        return self.data.setdefault('objects', {}) # 
+        return self.data.setdefault('objects', {})
 
 
     def note_object(self, objtype:str, name:str, node_id:str,
@@ -298,11 +298,47 @@ class AnyDomain(Domain):
         cls._roles[schema.type] = schema.generate_role()()
         cls._object_types[schema.type] = ObjType(schema.type, schema.type)
 
+_builtin_schemas:Dict[str,Schema] = {
+    'friend': Schema.from_config({
+        'type': 'friend',
+        'fields': {
+            'others': ['avatar', 'blog'],
+        },
+        'templates': {
+            'role': '@{{ title }}',
+            'directive': """
+         .. image:: {{ avatar }}
+            :width: 120px
+            :target: {{ blog }}
+            :alt: {{ names[0] }}
+            :align: left
+
+         :blog: {{ blog }}
+
+         {% for line in content %}{{ line }}{% endfor %}
+            """
+        }
+    }),
+    'book': Schema.from_config({
+        'type': 'book',
+        'fields': {
+            'id': 'isbn',
+            'others': ['cover'],
+        },
+        'templates': {
+            'role': '《{{ title }}》',
+            'directive': """
+         {% for line in content %}{{ line }}{% endfor %}
+            """
+        }
+    }),
+}
 
 def _config_inited(app:Sphinx, config:Config) -> None:
-    for c in config.any_schemas:
-        t = Schema.from_config(c)
-        AnyDomain.add_schema(t)
+    for s in config.any_builtin_schemas:
+        AnyDomain.add_schema(s)
+    for c in config.any_custom_schemas:
+        AnyDomain.add_schema(Schema.from_config(c))
 
 
 def setup(app:Sphinx):
@@ -310,5 +346,6 @@ def setup(app:Sphinx):
 
     app.add_domain(AnyDomain)
 
-    app.add_config_value('any_schemas', [], '')
+    app.add_config_value('any_builtin_schemas', ['book', 'friend'], '')
+    app.add_config_value('any_custom_schemas', [], '')
     app.connect('config-inited', _config_inited)
