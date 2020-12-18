@@ -58,8 +58,6 @@ class AnyDirective(SphinxDirective):
         m['content'] = self.content.data # docutils.statemachine.ViewList.data:List[str]
         if schema.id_field and self.options.get(schema.id_field):
             m[schema.id_field] = self.options.get(schema.id_field)
-        if schema.url_field and self.options.get(schema.url_field):
-            m[schema.url_field] = self.options.get(schema.url_field)
         for field in schema.other_fields:
             if self.options.get(field):
                 m[field] = self.options.get(field)
@@ -67,7 +65,6 @@ class AnyDirective(SphinxDirective):
 
 
     def run(self) -> List[nodes.Node]:
-        print(self.__dict__)
         domainname, objtype = self.name.split(':', 1)
         domain = self.env.get_domain(domainname)
         objinfo = self._build_objinfo()
@@ -98,6 +95,8 @@ class AnyDirective(SphinxDirective):
         contnode = addnodes.desc_content()
         descnode.append(contnode)
         content = self.schema.directive_template.render(objinfo)
+        logger.debug('render directive template %s: %s',
+                    self.schema.directive_template, content)
         nested_parse_with_titles(self.state,
                                  StringList(content.split('\n')),
                                  contnode)
@@ -122,10 +121,22 @@ class AnyRole(XRefRole):
 
         domain = env.get_domain(refnode['refdomain'])
         objtype = refnode['reftype']
-        _, _, objinfo = domain.objects.get((objtype, target), (None, None, {}))
-        objinfo2 = objinfo.copy()
-        objinfo2['title'] = title
-        return self.schema.role_template.render(objinfo2), target
+        a, b, objinfo = domain.objects.get((objtype, target), (None, None, None))
+        if not objinfo:
+            logger.warning('no such %s %s in %s' % (objtype, target, domain),
+                           location=refnode)
+            return (title, target)
+
+        objinfo_with_title = objinfo.copy()
+        if not has_explicit_title and title not in objinfo['names']:
+            # Reference by object ID, replace it with object name
+            objinfo_with_title['title'] = objinfo['names'][0]
+            logger.debug('replace id %s with name %s' % (title, objinfo['names'][0]))
+        else:
+            objinfo_with_title['title'] = title
+        title = self.schema.role_template.render(objinfo_with_title)
+        logger.debug('render role template %s: %s', self.schema.role_template, title)
+        return title, target
 
 # TODO: AnyIndex
 
@@ -141,8 +152,6 @@ class Schema(object):
 
     # Special optional fields, unique ID of object
     id_field:Optional[str] = None
-    # Special optional fields, URL of object
-    url_field:Optional[str] = None
     # Other regular fields
     other_fields:List[str] = []
 
@@ -163,12 +172,11 @@ class Schema(object):
 
     def __init__(self, type:str,
                  id_field:Optional[str],
-                 url_field:Optional[str],
                  other_fields:List[str],
                  role_template:str='{{ title }}',
                  directive_template:str='{{ content }}'):
         self.type = type
-        self.url_field  = url_field
+        self.id_field = id_field
         self.other_fields = other_fields
         self.role_template = Template(role_template)
         self.directive_template = Template(directive_template)
@@ -179,9 +187,7 @@ class Schema(object):
 
         option_spec = {}
         if self.id_field:
-            option_spec[self.id_field] = directives.unchanged
-        if self.url_field:
-            option_spec[self.url_field] = directives.unchanged
+            option_spec[self.id_field] = directives.unchanged_required
         for field in self.other_fields:
             option_spec[field] = directives.unchanged
 
@@ -254,6 +260,8 @@ class AnyDomain(Domain):
             docname, node_id, _ = self.objects[objtype, name]
             logger.warning('duplicate name/id of %s %s, other instance in %s' %
                            (objtype, name, docname), location=location)
+
+        logger.debug('note %s %s: %s' % (objtype, name, objinfo), location=location)
 
         self.objects[objtype, name] = (self.env.docname, node_id, objinfo)
 

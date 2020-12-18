@@ -44,8 +44,7 @@ extensions = [
 any_schemas = [{
     'type': 'friend',
     'fields': {
-        'url': 'blog',
-        'others': ['avatar', 'github', ],
+        'others': ['avatar', 'blog'],
     },
     'templates': {
         'role': '@{{ title }}',
@@ -55,10 +54,10 @@ any_schemas = [{
             :target: {{ blog }}
             :alt: {{ names[0] }}
             :align: left
+
+         :blog: {{ blog }}
         
-         {% for line in contents %}
-            {{ line }}
-         {% endfor %}
+         {% for line in content %}{{ line }}{% endfor %}
         """
     }
 },{
@@ -69,16 +68,9 @@ any_schemas = [{
     },
     'templates': {
         'role': '《{{ title }}》',
-        'directive': '''
-         .. image:: {{ cover }}
-            :width: 120px
-            :alt: {{ names[0] }}
-            :align: left
-         
-         {% for line in contents %}
-            {{ line }}
-         {% endfor %}
-        '''
+        'directive': """
+         {% for line in content %}{{ line }}{% endfor %}
+        """
     }
 }]
 
