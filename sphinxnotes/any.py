@@ -165,7 +165,6 @@ class Schema(object):
         """ Constructor by giving a config. """
         return Schema(config['type'],
                       config['fields'].get('id'),
-                      config['fields'].get('url'),
                       config['fields'].get('others'),
                       role_template = config['templates'].get('role'),
                       directive_template = config['templates'].get('directive'))
@@ -298,7 +297,7 @@ class AnyDomain(Domain):
         cls._roles[schema.type] = schema.generate_role()()
         cls._object_types[schema.type] = ObjType(schema.type, schema.type)
 
-_builtin_schemas:Dict[str,Schema] = {
+_predefined_schemas:Dict[str,Schema] = {
     'friend': Schema.from_config({
         'type': 'friend',
         'fields': {
@@ -319,24 +318,26 @@ _builtin_schemas:Dict[str,Schema] = {
             """
         }
     }),
-    'book': Schema.from_config({
-        'type': 'book',
-        'fields': {
-            'id': 'isbn',
-            'others': ['cover'],
-        },
-        'templates': {
-            'role': '《{{ title }}》',
-            'directive': """
+    'book': Schema.from_config(
+        {
+            'type': 'book',
+            'fields': {
+                'id': 'isbn',
+                'others': ['cover'],
+            },
+            'templates': {
+                'role': '《{{ title }}》',
+                'directive': """
          {% for line in content %}{{ line }}{% endfor %}
-            """
+                """
+            }
         }
-    }),
+    ),
 }
 
 def _config_inited(app:Sphinx, config:Config) -> None:
-    for s in config.any_builtin_schemas:
-        AnyDomain.add_schema(s)
+    for s in config.any_predefined_schemas:
+        AnyDomain.add_schema(_predefined_schemas[s])
     for c in config.any_custom_schemas:
         AnyDomain.add_schema(Schema.from_config(c))
 
@@ -346,6 +347,6 @@ def setup(app:Sphinx):
 
     app.add_domain(AnyDomain)
 
-    app.add_config_value('any_builtin_schemas', ['book', 'friend'], '')
+    app.add_config_value('any_predefined_schemas', ['book', 'friend'], '')
     app.add_config_value('any_custom_schemas', [], '')
     app.connect('config-inited', _config_inited)
