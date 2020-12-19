@@ -306,16 +306,15 @@ _predefined_schemas:Dict[str,Schema] = {
         'templates': {
             'role': '@{{ title }}',
             'directive': """
-         .. image:: {{ avatar }}
-            :width: 120px
-            :target: {{ blog }}
-            :alt: {{ names[0] }}
-            :align: left
+                         .. image:: {{ avatar }}
+                            :width: 120px
+                            :target: {{ blog }}
+                            :alt: {{ names[0] }}
+                            :align: left
 
-         :blog: {{ blog }}
+                         :blog: {{ blog }}
 
-         {% for line in content %}{{ line }}{% endfor %}
-            """
+                         {{ content | join('\n') }}"""
         }
     }),
     'book': Schema.from_config(
@@ -328,8 +327,9 @@ _predefined_schemas:Dict[str,Schema] = {
             'templates': {
                 'role': '《{{ title }}》',
                 'directive': """
-         {% for line in content %}{{ line }}{% endfor %}
-                """
+                             :ISBN: {{ isbn }}
+
+                             {{ content | join('\n') }}"""
             }
         }
     ),
