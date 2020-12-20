@@ -40,8 +40,7 @@ extensions = [
     'sphinxnotes.any',
 ]
 
-any_builtin_schemas = []
-any_custom_schemas = []
+any_custom_schemas = [ __import__("cat").schema ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
