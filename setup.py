@@ -3,15 +3,19 @@
 from setuptools import setup, find_packages
 from doc import project
 
+with open('README.rst') as f:
+    long_desc = f.read()
+
 setup(
     name=project.name,
     version=project.version,
     url=project.url,
     download_url=project.download_url,
+    project_urls=project.project_urls,
     license=project.license,
     author=project.author,
     description=project.description,
-    long_description=None, # TODO
+    long_description=long_desc,
     zip_safe=False,
     classifiers=[
         'Development Status :: 3 - Alpha',
