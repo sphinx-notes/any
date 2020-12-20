@@ -54,7 +54,7 @@ class AnyDirective(SphinxDirective):
 
         schema = self.schema
         m:Dict[str,Any] = {}
-        m['names'] = self.arguments[0].split('\n')
+        m['names'] = [ x.strip() for x in self.arguments[0].split('\n')]
         m['content'] = self.content.data # docutils.statemachine.ViewList.data:List[str]
         if schema.id_field and self.options.get(schema.id_field):
             m[schema.id_field] = self.options.get(schema.id_field)
