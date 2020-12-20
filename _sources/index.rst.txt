@@ -5,7 +5,6 @@ Sphinx Domain for Descibing Anything
 .. image:: https://img.shields.io/github/stars/sphinx-notes/any.svg?style=social&label=Star&maxAge=2592000
    :target: https://github.com/sphinx-notes/any
 
-
 :version: |version|
 :copyright: Copyright ©2020 by Shengyu Zhang.
 :license: BSD, see LICENSE for details.
@@ -100,8 +99,8 @@ The attributes of object can be indicates by directive options(a filed list).
         The value will be one of options of created directive,
         and available as variable when rendering the template.
 
-        For example, if ``['height']`` is specific, the created directive
-        will has ``:height:`` option with ``directives.unchanged`` flag,
+        For example, given ``['height']`` , the created directive
+        will have ``:height:`` option with ``directives.unchanged`` flag,
         and the ``{{ height }}`` variable is available when rendering template.
     **id**
         Type: ``Optonal[str]``, name of the ID field, the value of ID of
@@ -130,12 +129,12 @@ The attributes of object can be indicates by directive options(a filed list).
 
 Now we descibe a cat with the newly created directive:
 
-.. literalinclude:: ./nyan-cat.txt
+.. literalinclude:: nyan-cat.txt
    :language: rst
 
 It will be rendered as:
 
-.. include:: ./nyan-cat.txt
+.. include:: nyan-cat.txt
 
 Use the ``cat`` role under "any" domain to reference Nyan Cat:
 
@@ -160,8 +159,8 @@ book
 
 .. note:: TO BE COMPLETED.
 
-Chang Log
-=========
+Change Log
+==========
 
 2020-12-20 1.0a1
 ----------------
