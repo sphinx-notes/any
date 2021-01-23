@@ -35,6 +35,6 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     # sphinx.util.compat.Directive class is now deprecated in 1.6
-    install_requires= ['Sphinx>=1.6'],
+    install_requires= ['Sphinx>=1.6', 'Jinja2'],
     namespace_packages=['sphinxnotes'],
 )
