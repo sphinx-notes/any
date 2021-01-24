@@ -62,36 +62,34 @@ class AnyDirective(SphinxDirective):
         return m
 
 
-    def run(self) -> List[nodes.Node]:
+    def _setup_nodes(self, objinfo:Dict[str,Any],
+                   sectnode:nodes.Node,
+                   ahrnode:nodes.Node,
+                   contnode:nodes.Node) -> None:
         domainname, objtype = self.name.split(':', 1)
         domain = self.env.get_domain(domainname)
-        objinfo = self._build_objinfo()
         name = objinfo['names'][0]
 
-        descnode = addnodes.desc()
-        descnode['domain'] = domain.name
+        # Attach domain related info to section node
+        sectnode['domain'] = domain.name
         # 'desctype' is a backwards compatible attribute
-        descnode['objtype'] = descnode['desctype'] = objtype
-        descnode['classes'].append(domain.name)
+        sectnode['objtype'] = sectnode['desctype'] = objtype
+        sectnode['classes'].append(domain.name)
 
-        # Generate signature node
-        signode = addnodes.desc_signature(name, '')
-        descnode.append(signode)
-        signode += addnodes.desc_name(name, name)
-
-        # Note target and object
+        # Setup anchor
         node_id = make_id(self.env, self.state.document, objtype, name)
-        signode['ids'].append(node_id)
-        self.state.document.note_explicit_target(signode)
+        ahrnode['ids'].append(node_id)
+        ahrnode['names'].append(name)
+        self.state.document.note_explicit_target(ahrnode)
         if self.schema.id_field and objinfo[self.schema.id_field]:
+            # Note object by ID
             domain.note_object(objtype, objinfo[self.schema.id_field],
-                               node_id, objinfo, location=signode)
+                               node_id, objinfo, location=ahrnode)
         for n in objinfo['names']:
-            domain.note_object(objtype, n, node_id, objinfo, location=signode)
+            # Note object by name and aliases
+            domain.note_object(objtype, n, node_id, objinfo, location=ahrnode)
 
-        # Generate content node
-        contnode = addnodes.desc_content()
-        descnode.append(contnode)
+        # Parse content
         content = self.schema.directive_template.render(objinfo)
         logger.debug('render directive template %s: %s',
                     self.schema.directive_template, content)
@@ -99,7 +97,36 @@ class AnyDirective(SphinxDirective):
                                  StringList(content.split('\n')),
                                  contnode)
 
-        return [descnode]
+
+    def _run_document(self) -> Tuple[nodes.Node,nodes.Node,nodes.Node]:
+        pass
+
+
+    def _run_section(self) -> Tuple[nodes.Node,nodes.Node,nodes.Node]:
+        pass
+
+
+    def _run_objdesc(self, objinfo:Dict[str,Any]) -> Tuple[nodes.Node,nodes.Node,nodes.Node]:
+        name = objinfo['names'][0]
+
+        descnode = addnodes.desc()
+        # Generate signature node
+        signode = addnodes.desc_signature(name, '')
+        signode += addnodes.desc_name(name, name)
+        descnode.append(signode)
+
+        # Generate content node
+        contnode = addnodes.desc_content()
+        descnode.append(contnode)
+
+        return (descnode, signode, contnode)
+
+
+    def run(self) -> List[nodes.Node]:
+        objinfo = self._build_objinfo()
+        sectnode, ahrnode, contnode = self._run_objdesc(objinfo)
+        self._setup_nodes(objinfo, sectnode, ahrnode, contnode )
+        return [sectnode]
 
 
 class AnyRole(XRefRole):
