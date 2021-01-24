@@ -43,9 +43,7 @@ class AnyDirective(SphinxDirective):
     required_arguments:int = 1
     optional_arguments:int = 0
     final_argument_whitespace:bool = True
-    option_spec:Dict[str,callable] = {
-        'noindex': directives.flag,
-    }
+    option_spec:Dict[str,callable] = {}
 
     schema = None
 
@@ -101,10 +99,7 @@ class AnyDirective(SphinxDirective):
                                  StringList(content.split('\n')),
                                  contnode)
 
-        # Create index node
-        indexnode = addnodes.index(entries=[])
-
-        return [indexnode, descnode]
+        return [descnode]
 
 
 class AnyRole(XRefRole):
