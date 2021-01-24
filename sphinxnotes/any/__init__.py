@@ -209,10 +209,19 @@ class Schema(object):
     @classmethod
     def from_config(cls, config:Dict[str,Any]) -> 'Schema':
         """ Constructor by giving a config. """
+
+        # Deal with '' for special fields
+        id_field = config['fields'].get('id')
+        if id_field == '':
+            id_field = 'id'
+        style_field = config['fields'].get('style')
+        if style_field == '':
+            style_field = 'style'
+
         return Schema(config['type'],
                       config['fields'].get('others'),
-                      id_field = config['fields'].get('id'),
-                      style_field = config['fields'].get('style'),
+                      id_field = id_field,
+                      style_field = style_field,
                       role_template = config['templates'].get('role'),
                       directive_template = config['templates'].get('directive'))
 
