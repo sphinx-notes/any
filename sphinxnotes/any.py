@@ -9,6 +9,7 @@
 """
 
 from typing import Tuple, Dict, Optional, Any, Iterator, Type, List
+from enum import Enum
 
 from docutils.parsers.rst import directives
 from docutils import nodes
@@ -66,6 +67,16 @@ class AnyDirective(SphinxDirective):
                    sectnode:nodes.Node,
                    ahrnode:nodes.Node,
                    contnode:nodes.Node) -> None:
+        """
+        Attach necessary informations to nodes.
+
+        The necessary information contains: domain info, basic attributes for nodes
+        (ids, names, classes...), name of anchor, description content and so on.
+
+        :param sectnode: Section node, used as container of the whole object description
+        :param ahrnode: Anchor node, used to mark the location of object description
+        :param contnode: Content node, which contains the description content
+        """
         domainname, objtype = self.name.split(':', 1)
         domain = self.env.get_domain(domainname)
         name = objinfo['names'][0]
@@ -98,35 +109,39 @@ class AnyDirective(SphinxDirective):
                                  contnode)
 
 
-    def _run_document(self) -> Tuple[nodes.Node,nodes.Node,nodes.Node]:
-        pass
-
-
-    def _run_section(self) -> Tuple[nodes.Node,nodes.Node,nodes.Node]:
-        pass
+    def _run_section(self, objinfo:Dict[str,Any]) -> Tuple[nodes.Node,nodes.Node,nodes.Node]:
+        name = objinfo['names'][0]
+        sectnode = nodes.section()
+        sectnode += nodes.title(rawsource=name, text=name)
+        return (sectnode, sectnode, sectnode)
 
 
     def _run_objdesc(self, objinfo:Dict[str,Any]) -> Tuple[nodes.Node,nodes.Node,nodes.Node]:
         name = objinfo['names'][0]
-
         descnode = addnodes.desc()
         # Generate signature node
         signode = addnodes.desc_signature(name, '')
         signode += addnodes.desc_name(name, name)
         descnode.append(signode)
-
         # Generate content node
         contnode = addnodes.desc_content()
         descnode.append(contnode)
-
         return (descnode, signode, contnode)
 
 
     def run(self) -> List[nodes.Node]:
         objinfo = self._build_objinfo()
-        sectnode, ahrnode, contnode = self._run_objdesc(objinfo)
+        style = Style.OBJDESC.value
+        if self.schema.style_field:
+            style = self.options.get(self.schema.style_field) or style
+
+        if style == Style.OBJDESC.value:
+            sectnode, ahrnode, contnode = self._run_objdesc(objinfo)
+        elif style == Style.SECTION.value:
+            sectnode, ahrnode, contnode = self._run_section(objinfo)
+
         self._setup_nodes(objinfo, sectnode, ahrnode, contnode )
-        return [sectnode]
+        return [sectnode] if sectnode else []
 
 
 class AnyRole(XRefRole):
@@ -162,6 +177,13 @@ class AnyRole(XRefRole):
 
 # TODO: AnyIndex
 
+
+class Style(Enum):
+    """Refer to document."""
+    OBJDESC = 'objdesc'
+    SECTION = 'section'
+
+
 class Schema(object):
     """
     Schema holds description meta information of specific object,
@@ -172,8 +194,10 @@ class Schema(object):
     # Object type that the schema descripts
     type:str = None
 
-    # Special optional fields, unique ID of object
+    # Special optional fields, Field name of unique object ID
     id_field:Optional[str] = None
+    # Special optional fields, Field name for specify style of object description
+    style_field:Optional[str] = None
     # Other regular fields
     other_fields:List[str] = []
 
@@ -186,19 +210,22 @@ class Schema(object):
     def from_config(cls, config:Dict[str,Any]) -> 'Schema':
         """ Constructor by giving a config. """
         return Schema(config['type'],
-                      config['fields'].get('id'),
                       config['fields'].get('others'),
+                      id_field = config['fields'].get('id'),
+                      style_field = config['fields'].get('style'),
                       role_template = config['templates'].get('role'),
                       directive_template = config['templates'].get('directive'))
 
     def __init__(self, type:str,
-                 id_field:Optional[str],
                  other_fields:List[str],
+                 id_field:Optional[str]=None,
+                 style_field:Optional[str]=None,
                  role_template:str='{{ title }}',
                  directive_template:str='{{ content }}'):
         self.type = type
-        self.id_field = id_field
         self.other_fields = other_fields
+        self.id_field = id_field
+        self.style_field = style_field
         self.role_template = Template(role_template)
         self.directive_template = Template(directive_template)
 
@@ -206,11 +233,17 @@ class Schema(object):
     def generate_directive(self) -> Type[AnyDirective]:
         """Generate an AnyDirective child class for describing object."""
 
+        def choice_style(argument):
+            """Conversion function for the "style" option."""
+            return directives.choice(argument, (Style.OBJDESC.value, Style.SECTION.value))
+
         option_spec = {}
-        if self.id_field:
-            option_spec[self.id_field] = directives.unchanged_required
         for field in self.other_fields:
             option_spec[field] = directives.unchanged
+        if self.id_field:
+            option_spec[self.id_field] = directives.unchanged_required
+        if self.style_field:
+            option_spec[self.style_field] = choice_style
 
         # Generate directive class
         return type('Any%sDirective' % self.type.title(),
