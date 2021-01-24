@@ -109,6 +109,35 @@ The attributes of object can be indicates by directive options(a filed list).
 
         Same to ``others``, but the created directive option has flag
         ``directives.unchanged_required``.
+    **style**
+        Type: ``Optonal[str]``, name of the style field, determines the
+        node tree style of object description.
+
+        The value of created directive option can only choosed from
+        ``['objdesc', 'section']``.
+
+        The default value is ``'objdesc'`` even if this configuration not set.
+        objdesc uses the object description serial nodes provided by
+        `Sphinx Domain`_ , the doctree looks like::
+
+            <dsec>
+                <desc_sig>
+                    <desc_name>
+                        _name_
+
+                <desc_content>
+                    _content_
+
+        .. _Sphinx Domain: https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html
+
+        ``'section'``'s doctree looks like::
+
+            <section>
+                <title>
+                    _name_
+
+                _content_
+
 
 **templates**
     Type: ``Dict[str,Any]``, descibes how directive and role will be show.

@@ -158,6 +158,31 @@ duplicated, user can still reference the correct object by ID.</p>
 <p>Same to <code class="docutils literal notranslate"><span class="pre">others</span></code>, but the created directive option has flag
 <code class="docutils literal notranslate"><span class="pre">directives.unchanged_required</span></code>.</p>
 </dd>
+<dt><strong>style</strong></dt><dd><p>Type: <code class="docutils literal notranslate"><span class="pre">Optonal[str]</span></code>, name of the style field, determines the
+node tree style of object description.</p>
+<p>The value of created directive option can only choosed from
+<code class="docutils literal notranslate"><span class="pre">['objdesc',</span> <span class="pre">'section']</span></code>.</p>
+<p>The default value is <code class="docutils literal notranslate"><span class="pre">'objdesc'</span></code> even if this configuration not set.
+objdesc uses the object description serial nodes provided by
+<a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html">Sphinx Domain</a> , the doctree looks like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">dsec</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">desc_sig</span><span class="o">&gt;</span>
+        <span class="o">&lt;</span><span class="n">desc_name</span><span class="o">&gt;</span>
+            <span class="n">_name_</span>
+
+    <span class="o">&lt;</span><span class="n">desc_content</span><span class="o">&gt;</span>
+        <span class="n">_content_</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">'section'</span></code>’s doctree looks like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">section</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">title</span><span class="o">&gt;</span>
+        <span class="n">_name_</span>
+
+    <span class="n">_content_</span>
+</pre></div>
+</div>
+</dd>
 </dl>
 </dd>
 <dt><strong>templates</strong></dt><dd><p>Type: <code class="docutils literal notranslate"><span class="pre">Dict[str,Any]</span></code>, descibes how directive and role will be show.
