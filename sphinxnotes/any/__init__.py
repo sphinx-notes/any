@@ -9,7 +9,6 @@
 """
 
 from typing import Tuple, Dict, Optional, Any, Iterator, Type, List
-from enum import Enum
 
 from docutils.parsers.rst import directives
 from docutils import nodes
@@ -105,9 +104,9 @@ class AnyDirective(SphinxDirective):
             domain.note_object(objtype, n, node_id, objinfo, location=ahrnode)
 
         # Parse content
-        content = self.schema.directive_template.render(objinfo)
+        content = self.schema.content_template.render(objinfo)
         logger.debug('render directive template %s: %s',
-                    self.schema.directive_template, content)
+                    self.schema.content_template, content)
         nested_parse_with_titles(self.state,
                                  StringList(content.split('\n')),
                                  contnode)
@@ -186,8 +185,8 @@ class AnyRole(XRefRole):
             logger.debug('replace id %s with name %s' % (title, objinfo['names'][0]))
         else:
             objinfo_with_title['title'] = title
-        title = self.schema.role_template.render(objinfo_with_title)
-        logger.debug('render role template %s: %s', self.schema.role_template, title)
+        title = self.schema.ref_template.render(objinfo_with_title)
+        logger.debug('render role template %s: %s', self.schema.ref_template, title)
         return title, target
 
 # TODO: AnyIndex
@@ -209,9 +208,9 @@ class Schema(object):
     other_fields:List[str] = []
 
     # Templates
-    role_template:Template = None
+    ref_template:Template = None
     # Templates
-    directive_template:Template = None
+    content_template:Template = None
 
     @classmethod
     def from_config(cls, config:Dict[str,Any]) -> 'Schema':
@@ -225,19 +224,19 @@ class Schema(object):
         return Schema(config['type'],
                       config['fields'].get('others'),
                       id_field = id_field,
-                      role_template = config['templates'].get('role'),
-                      directive_template = config['templates'].get('directive'))
+                      ref_template = config['templates'].get('reference'),
+                      content_template = config['templates'].get('content'))
 
     def __init__(self, type:str,
                  other_fields:List[str],
                  id_field:Optional[str]=None,
-                 role_template:str='{{ title }}',
-                 directive_template:str='{{ content }}'):
+                 ref_template:str='{{ title }}',
+                 content_template:str='{{ content }}'):
         self.type = type
         self.other_fields = other_fields
         self.id_field = id_field
-        self.role_template = Template(role_template)
-        self.directive_template = Template(directive_template)
+        self.ref_template = Template(ref_template)
+        self.content_template = Template(content_template)
 
 
     def generate_directive(self) -> Type[AnyDirective]:
@@ -363,8 +362,8 @@ _predefined_schemas:Dict[str,Schema] = {
             'others': ['avatar', 'blog'],
         },
         'templates': {
-            'role': '@{{ title }}',
-            'directive': """
+            'reference': '@{{ title }}',
+            'content': """
                          .. image:: {{ avatar }}
                             :width: 120px
                             :target: {{ blog }}
@@ -384,8 +383,8 @@ _predefined_schemas:Dict[str,Schema] = {
                 'others': ['cover'],
             },
             'templates': {
-                'role': '《{{ title }}》',
-                'directive': """
+                'reference': '《{{ title }}》',
+                'content': """
                              :ISBN: {{ isbn }}
 
                              {{ content | join('\n') }}"""
