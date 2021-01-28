@@ -6,6 +6,9 @@ sphinxnotes.any
 Sphinx Domain for Descibing Anything
 ------------------------------------
 
+.. image:: https://img.shields.io/github/stars/sphinx-notes/any.svg?style=social&label=Star&maxAge=2592000
+   :target: https://github.com/sphinx-notes/any
+
 :version: |version|
 :copyright: Copyright ©2020 by Shengyu Zhang.
 :license: BSD, see LICENSE for details.
@@ -208,6 +211,8 @@ Change Log
 - Fix the missing Jinja2 dependency
 - Use section title as object name when directive argument is omitted
 - Some code cleanups
+- Rename schema field "role" to "reference"
+- Rename schema field "directive" to "content"
 
 .. sectionauthor:: Shengyu Zhang
 
