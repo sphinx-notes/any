@@ -41,8 +41,8 @@ class AnyDirective(SphinxDirective):
     """
 
     has_content:bool = True
-    required_arguments:int = 1
-    optional_arguments:int = 0
+    required_arguments:int = 0
+    optional_arguments:int = 1
     final_argument_whitespace:bool = True
     option_spec:Dict[str,callable] = {}
 
@@ -53,7 +53,11 @@ class AnyDirective(SphinxDirective):
 
         schema = self.schema
         m:Dict[str,Any] = {}
-        m['names'] = [ x.strip() for x in self.arguments[0].split('\n')]
+        if self.arguments:
+            m['names'] = [x.strip() for x in self.arguments[0].split('\n')]
+        else:
+            # Make sure key exists
+            m['names'] = []
         m['content'] = self.content.data # docutils.statemachine.ViewList.data:List[str]
         if schema.id_field and self.options.get(schema.id_field):
             m[schema.id_field] = self.options.get(schema.id_field)
@@ -109,14 +113,26 @@ class AnyDirective(SphinxDirective):
                                  contnode)
 
 
-    def _run_section(self, objinfo:Dict[str,Any]) -> Tuple[nodes.Node,nodes.Node,nodes.Node]:
-        name = objinfo['names'][0]
-        sectnode = nodes.section()
-        sectnode += nodes.title(rawsource=name, text=name)
-        return (sectnode, sectnode, sectnode)
+    def _run_section(self, objinfo:Dict[str,Any]) -> List[nodes.Node]:
+        # Get the title of the "section" where the directive is located
+        sectnode = self.state.parent
+        titlenode = sectnode.next_node(nodes.title)
+        if not titlenode or titlenode.parent != sectnode:
+            # Title should be direct child of section
+            sm = nodes.system_message('Failed to get title of current section',
+                                      type='WARNING', level=2, backrefs=[])
+            sectnode += sm
+            title = ''
+        else:
+            title = titlenode.astext()
+        # Use title as object name
+        objinfo['names'] = [title] + objinfo['names']
+        self._setup_nodes(objinfo, sectnode, sectnode, sectnode)
+        # Add all content to existed section, so return nothing
+        return []
 
 
-    def _run_objdesc(self, objinfo:Dict[str,Any]) -> Tuple[nodes.Node,nodes.Node,nodes.Node]:
+    def _run_objdesc(self, objinfo:Dict[str,Any]) -> List[nodes.Node]:
         name = objinfo['names'][0]
         descnode = addnodes.desc()
         # Generate signature node
@@ -126,22 +142,21 @@ class AnyDirective(SphinxDirective):
         # Generate content node
         contnode = addnodes.desc_content()
         descnode.append(contnode)
-        return (descnode, signode, contnode)
+        self._setup_nodes(objinfo, descnode, signode, contnode)
+        return [descnode]
 
 
     def run(self) -> List[nodes.Node]:
         objinfo = self._build_objinfo()
-        style = Style.OBJDESC.value
-        if self.schema.style_field:
-            style = self.options.get(self.schema.style_field) or style
-
-        if style == Style.OBJDESC.value:
-            sectnode, ahrnode, contnode = self._run_objdesc(objinfo)
-        elif style == Style.SECTION.value:
-            sectnode, ahrnode, contnode = self._run_section(objinfo)
-
-        self._setup_nodes(objinfo, sectnode, ahrnode, contnode )
-        return [sectnode] if sectnode else []
+        if not objinfo['names'] or objinfo['names'][0] == '_':
+            # If no argument is given, or the first argument is '_',
+            # use the section title as object name and anchor,
+            # append content nodes to section node
+            objinfo['names'] = objinfo['names'][1:]
+            return self._run_section(objinfo)
+        else:
+            # Else, create Sphinx ObjectDescription(sphinx.addnodes.dsec_*)
+            return self._run_objdesc(objinfo)
 
 
 class AnyRole(XRefRole):
@@ -178,12 +193,6 @@ class AnyRole(XRefRole):
 # TODO: AnyIndex
 
 
-class Style(Enum):
-    """Refer to document."""
-    OBJDESC = 'objdesc'
-    SECTION = 'section'
-
-
 class Schema(object):
     """
     Schema holds description meta information of specific object,
@@ -196,8 +205,6 @@ class Schema(object):
 
     # Special optional fields, Field name of unique object ID
     id_field:Optional[str] = None
-    # Special optional fields, Field name for specify style of object description
-    style_field:Optional[str] = None
     # Other regular fields
     other_fields:List[str] = []
 
@@ -214,27 +221,21 @@ class Schema(object):
         id_field = config['fields'].get('id')
         if id_field == '':
             id_field = 'id'
-        style_field = config['fields'].get('style')
-        if style_field == '':
-            style_field = 'style'
 
         return Schema(config['type'],
                       config['fields'].get('others'),
                       id_field = id_field,
-                      style_field = style_field,
                       role_template = config['templates'].get('role'),
                       directive_template = config['templates'].get('directive'))
 
     def __init__(self, type:str,
                  other_fields:List[str],
                  id_field:Optional[str]=None,
-                 style_field:Optional[str]=None,
                  role_template:str='{{ title }}',
                  directive_template:str='{{ content }}'):
         self.type = type
         self.other_fields = other_fields
         self.id_field = id_field
-        self.style_field = style_field
         self.role_template = Template(role_template)
         self.directive_template = Template(directive_template)
 
@@ -242,17 +243,11 @@ class Schema(object):
     def generate_directive(self) -> Type[AnyDirective]:
         """Generate an AnyDirective child class for describing object."""
 
-        def choice_style(argument):
-            """Conversion function for the "style" option."""
-            return directives.choice(argument, (Style.OBJDESC.value, Style.SECTION.value))
-
         option_spec = {}
         for field in self.other_fields:
             option_spec[field] = directives.unchanged
         if self.id_field:
             option_spec[self.id_field] = directives.unchanged_required
-        if self.style_field:
-            option_spec[self.style_field] = choice_style
 
         # Generate directive class
         return type('Any%sDirective' % self.type.title(),
