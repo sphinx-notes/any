@@ -5,8 +5,8 @@ schema = {
         'others': ['owner', 'height', 'width', 'picture'],
     },
     'templates': {
-        'role': '🐈{{ title }}',
-        'directive': """
+        'reference': '🐈{{ title }}',
+        'content': """
 .. image:: {{ picture }}
    :align: left
 

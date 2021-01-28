@@ -1,9 +1,10 @@
-====================================
-Sphinx Domain for Descibing Anything
-====================================
+===============
+sphinxnotes.any
+===============
 
-.. image:: https://img.shields.io/github/stars/sphinx-notes/any.svg?style=social&label=Star&maxAge=2592000
-   :target: https://github.com/sphinx-notes/any
+------------------------------------
+Sphinx Domain for Descibing Anything
+------------------------------------
 
 :version: |version|
 :copyright: Copyright ©2020 by Shengyu Zhang.
@@ -44,7 +45,7 @@ Configuration
 The extension provides the following configuration:
 
 :any_predefined_schemas: (Type: ``List[str]``, Default: ``['friend', 'book']``)
-                         List of enabled predefeined :ref:`schema` name.
+                         List of enabled predefeined :ref:`schema <schema>` name.
 
                          For the usage of predefeined schema, please refer to
                          :ref:`predefined-schemas`.
@@ -52,25 +53,24 @@ The extension provides the following configuration:
                          If you want to disable all predefeined schemas, set it
                          to ``[]``.
 :any_custom_schemas: (Type: ``List[Dict[str,Any]]``, Default: ``[]``)
-                     List of enabled custom :ref:`schema`. For the way of writing
+                     List of enabled custom :ref:`schema <schema>`. For the way of writing
                      custom schema, please refer to :ref:`writing-schema`.
 
 Functionalities
 ===============
 
-.. _schema:
-
-Schema
-------
-
-Before descibing any object, we need a "schema" to descibe "how to descibe the object".
-For extension user, "schema" is a python ``dict`` that can specific in :file:`conf.py`.
-See :ref:`Configuration` for details.
-
 .. _writing-schema:
 
 Writing Schema
 --------------
+
+.. _schema:
+
+.. topic:: What is Schema?
+
+    Before descibing any object, we need a "schema" to descibe "how to descibe the object".
+    For extension user, "schema" is a python ``dict`` that can specific in :file:`conf.py`.
+    See :ref:`Configuration` for details.
 
 An schema for descibing cat looks like this:
 
@@ -79,9 +79,6 @@ An schema for descibing cat looks like this:
 
 The aboved schema created a ``cat`` directive under "any" domain that
 can descibe a cat.
-
-The created directive accept only one argument, which indicates the name of object,
-aliases can be added on a new line after name, one alias per line.
 
 The attributes of object can be indicates by directive options(a filed list).
 
@@ -110,24 +107,40 @@ The attributes of object can be indicates by directive options(a filed list).
         Same to ``others``, but the created directive option has flag
         ``directives.unchanged_required``.
 
+        .. versionchanged:: 1.0
+
+           If the value is empty string(``""``), use the default value "id".
+
+
 **templates**
     Type: ``Dict[str,Any]``, descibes how directive and role will be show.
     We use Jinja_ as templating engine.
 
-    **role**
+    **reference**
+
         Template for rendering role's interpreted text, the origin
         interpreted text appears as ``{{ title }}`` variable when rendering.
 
-    **directive**
+        .. versionchanged:: 1.0 Renamed from "role" to "reference"
+
+    **content**
+
         Template for rendering directive's content. the only one argument of
         directive appears as ``{{ name }}`` variable when rendering.
         the origin content appears as ``{{ content }}`` variable when rendering.
 
         .. note:: ``{{ content }}`` is a string list but not string.
 
+        .. versionchanged:: 1.0 Renamed from "directive" to "content"
+
 .. _Jinja: https://jinja.palletsprojects.com/
 
+
+Using Newly Created Directive/Role
+----------------------------------
+
 Now we descibe a cat with the newly created directive:
+
 
 .. literalinclude:: nyan-cat.txt
    :language: rst
@@ -135,6 +148,33 @@ Now we descibe a cat with the newly created directive:
 It will be rendered as:
 
 .. include:: nyan-cat.txt
+
+The created directive accept only one argument, which indicates the name of object,
+aliases can be added on another line after name, one alias per line.
+
+
+
+If no argument given, or first one in argument (split by ``\n``) is ``_`` (underscore).
+the object name will be indicated by title of current section.
+
+.. note::
+
+   This feature is useful when you want to use a whole section or documentation
+   to descibing object, for example:
+
+   .. code-block:: rst
+
+      ========
+      Nyan Dog
+      ========
+
+      .. any:cat::
+         :catid: 2
+
+      Blahblah...
+
+.. versionadded:: 1.0
+
 
 Use the ``cat`` role under "any" domain to reference Nyan Cat:
 
@@ -162,9 +202,18 @@ book
 Change Log
 ==========
 
+2021-01-28 1.0b0
+----------------
+
+- Fix the missing Jinja2 dependency
+- Use section title as object name when directive argument is omitted
+- Some code cleanups
+
+.. sectionauthor:: Shengyu Zhang
+
 2020-12-20 1.0a1
 ----------------
 
- .. sectionauthor:: Shengyu Zhang
-
 The alpha version is out, enjoy~
+
+.. sectionauthor:: Shengyu Zhang
