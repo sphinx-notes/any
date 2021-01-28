@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sphinx Domain for Descibing Anything &#8212; sphinxnotes-any 1.0a1 documentation</title>
+    <title>sphinxnotes.any &#8212; sphinxnotes-any 1.0b0 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -31,12 +31,13 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="sphinx-domain-for-descibing-anything">
-<h1>Sphinx Domain for Descibing Anything<a class="headerlink" href="#sphinx-domain-for-descibing-anything" title="Permalink to this headline">¶</a></h1>
-<a class="reference external image-reference" href="https://github.com/sphinx-notes/any"><img alt="https://img.shields.io/github/stars/sphinx-notes/any.svg?style=social&amp;label=Star&amp;maxAge=2592000" src="https://img.shields.io/github/stars/sphinx-notes/any.svg?style=social&amp;label=Star&amp;maxAge=2592000" /></a>
+  <div class="section" id="sphinxnotes-any">
+<h1>sphinxnotes.any<a class="headerlink" href="#sphinxnotes-any" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="sphinx-domain-for-descibing-anything">
+<h2>Sphinx Domain for Descibing Anything<a class="headerlink" href="#sphinx-domain-for-descibing-anything" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">version</dt>
-<dd class="field-odd"><p>1.0a1</p>
+<dd class="field-odd"><p>1.0b0</p>
 </dd>
 <dt class="field-even">copyright</dt>
 <dd class="field-even"><p>Copyright ©2020 by Shengyu Zhang.</p>
@@ -50,24 +51,25 @@ and roles to descibe and reference arbitrary object by writing restructedText
 template.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><p><a class="reference internal" href="#installation" id="id7">Installation</a></p></li>
-<li><p><a class="reference internal" href="#configuration" id="id8">Configuration</a></p></li>
-<li><p><a class="reference internal" href="#functionalities" id="id9">Functionalities</a></p>
+<li><p><a class="reference internal" href="#installation" id="id6">Installation</a></p></li>
+<li><p><a class="reference internal" href="#configuration" id="id7">Configuration</a></p></li>
+<li><p><a class="reference internal" href="#functionalities" id="id8">Functionalities</a></p>
 <ul>
-<li><p><a class="reference internal" href="#schema" id="id10">Schema</a></p></li>
-<li><p><a class="reference internal" href="#writing-schema" id="id11">Writing Schema</a></p></li>
-<li><p><a class="reference internal" href="#predefined-schemas" id="id12">Predefined Schemas</a></p></li>
+<li><p><a class="reference internal" href="#writing-schema" id="id9">Writing Schema</a></p></li>
+<li><p><a class="reference internal" href="#using-newly-created-directive-role" id="id10">Using Newly Created Directive/Role</a></p></li>
+<li><p><a class="reference internal" href="#predefined-schemas" id="id11">Predefined Schemas</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#change-log" id="id13">Change Log</a></p>
+<li><p><a class="reference internal" href="#change-log" id="id12">Change Log</a></p>
 <ul>
+<li><p><a class="reference internal" href="#b0" id="id13">2021-01-28 1.0b0</a></p></li>
 <li><p><a class="reference internal" href="#a1" id="id14">2020-12-20 1.0a1</a></p></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
 <p>Download it from official Python Package Index:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pip install sphinxnotes-any
 </pre></div>
@@ -82,12 +84,12 @@ template.</p>
 </div>
 </div>
 <div class="section" id="configuration">
-<span id="id1"></span><h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h3>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
 <p>The extension provides the following configuration:</p>
 <dl class="field-list">
 <dt class="field-odd">any_predefined_schemas</dt>
 <dd class="field-odd"><p>(Type: <code class="docutils literal notranslate"><span class="pre">List[str]</span></code>, Default: <code class="docutils literal notranslate"><span class="pre">['friend',</span> <span class="pre">'book']</span></code>)
-List of enabled predefeined <a class="reference internal" href="#schema"><span class="std std-ref">Schema</span></a> name.</p>
+List of enabled predefeined <a class="reference internal" href="#schema"><span class="std std-ref">schema</span></a> name.</p>
 <p>For the usage of predefeined schema, please refer to
 <a class="reference internal" href="#predefined-schemas"><span class="std std-ref">Predefined Schemas</span></a>.</p>
 <p>If you want to disable all predefeined schemas, set it
@@ -95,21 +97,21 @@ to <code class="docutils literal notranslate"><span class="pre">[]</span></code>
 </dd>
 <dt class="field-even">any_custom_schemas</dt>
 <dd class="field-even"><p>(Type: <code class="docutils literal notranslate"><span class="pre">List[Dict[str,Any]]</span></code>, Default: <code class="docutils literal notranslate"><span class="pre">[]</span></code>)
-List of enabled custom <a class="reference internal" href="#schema"><span class="std std-ref">Schema</span></a>. For the way of writing
+List of enabled custom <a class="reference internal" href="#schema"><span class="std std-ref">schema</span></a>. For the way of writing
 custom schema, please refer to <a class="reference internal" href="#writing-schema"><span class="std std-ref">Writing Schema</span></a>.</p>
 </dd>
 </dl>
 </div>
 <div class="section" id="functionalities">
-<h2>Functionalities<a class="headerlink" href="#functionalities" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="schema">
-<span id="id2"></span><h3>Schema<a class="headerlink" href="#schema" title="Permalink to this headline">¶</a></h3>
+<h3>Functionalities<a class="headerlink" href="#functionalities" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="writing-schema">
+<span id="id2"></span><h4>Writing Schema<a class="headerlink" href="#writing-schema" title="Permalink to this headline">¶</a></h4>
+<div class="topic" id="schema">
+<p class="topic-title">What is Schema?</p>
 <p>Before descibing any object, we need a “schema” to descibe “how to descibe the object”.
 For extension user, “schema” is a python <code class="docutils literal notranslate"><span class="pre">dict</span></code> that can specific in <code class="file docutils literal notranslate"><span class="pre">conf.py</span></code>.
 See <a class="reference internal" href="#configuration"><span class="std std-ref">Configuration</span></a> for details.</p>
 </div>
-<div class="section" id="writing-schema">
-<span id="id3"></span><h3>Writing Schema<a class="headerlink" href="#writing-schema" title="Permalink to this headline">¶</a></h3>
 <p>An schema for descibing cat looks like this:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">schema</span> <span class="o">=</span> <span class="p">{</span>
    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span>
@@ -118,8 +120,8 @@ See <a class="reference internal" href="#configuration"><span class="std std-ref
         <span class="s1">&#39;others&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;owner&#39;</span><span class="p">,</span> <span class="s1">&#39;height&#39;</span><span class="p">,</span> <span class="s1">&#39;width&#39;</span><span class="p">,</span> <span class="s1">&#39;picture&#39;</span><span class="p">],</span>
     <span class="p">},</span>
     <span class="s1">&#39;templates&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;🐈{{ title }}&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;directive&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+        <span class="s1">&#39;reference&#39;</span><span class="p">:</span> <span class="s1">&#39;🐈{{ title }}&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">.. image:: {{ picture }}</span>
 <span class="s2">   :align: left</span>
 
@@ -134,8 +136,6 @@ See <a class="reference internal" href="#configuration"><span class="std std-ref
 </div>
 <p>The aboved schema created a <code class="docutils literal notranslate"><span class="pre">cat</span></code> directive under “any” domain that
 can descibe a cat.</p>
-<p>The created directive accept only one argument, which indicates the name of object,
-aliases can be added on a new line after name, one alias per line.</p>
 <p>The attributes of object can be indicates by directive options(a filed list).</p>
 <dl>
 <dt><strong>type</strong></dt><dd><p>Type: <code class="docutils literal notranslate"><span class="pre">str</span></code>, type of the object, it determines the name of the corresponding
@@ -157,51 +157,40 @@ should be unique among whole documentation, when the object name is
 duplicated, user can still reference the correct object by ID.</p>
 <p>Same to <code class="docutils literal notranslate"><span class="pre">others</span></code>, but the created directive option has flag
 <code class="docutils literal notranslate"><span class="pre">directives.unchanged_required</span></code>.</p>
-</dd>
-<dt><strong>style</strong></dt><dd><p>Type: <code class="docutils literal notranslate"><span class="pre">Optonal[str]</span></code>, name of the style field, determines the
-node tree style of object description.</p>
-<p>The value of created directive option can only choosed from
-<code class="docutils literal notranslate"><span class="pre">['objdesc',</span> <span class="pre">'section']</span></code>.</p>
-<p>The default value is <code class="docutils literal notranslate"><span class="pre">'objdesc'</span></code> even if this configuration not set.
-objdesc uses the object description serial nodes provided by
-<a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html">Sphinx Domain</a> , the doctree looks like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">dsec</span><span class="o">&gt;</span>
-    <span class="o">&lt;</span><span class="n">desc_sig</span><span class="o">&gt;</span>
-        <span class="o">&lt;</span><span class="n">desc_name</span><span class="o">&gt;</span>
-            <span class="n">_name_</span>
-
-    <span class="o">&lt;</span><span class="n">desc_content</span><span class="o">&gt;</span>
-        <span class="n">_content_</span>
-</pre></div>
-</div>
-<p><code class="docutils literal notranslate"><span class="pre">'section'</span></code>’s doctree looks like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">section</span><span class="o">&gt;</span>
-    <span class="o">&lt;</span><span class="n">title</span><span class="o">&gt;</span>
-        <span class="n">_name_</span>
-
-    <span class="n">_content_</span>
-</pre></div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 1.0: </span>If the value is empty string(<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>), use the default value “id”.</p>
 </div>
 </dd>
 </dl>
 </dd>
 <dt><strong>templates</strong></dt><dd><p>Type: <code class="docutils literal notranslate"><span class="pre">Dict[str,Any]</span></code>, descibes how directive and role will be show.
 We use <a class="reference external" href="https://jinja.palletsprojects.com/">Jinja</a> as templating engine.</p>
-<dl>
-<dt><strong>role</strong></dt><dd><p>Template for rendering role’s interpreted text, the origin
+<p><strong>reference</strong></p>
+<blockquote>
+<div><p>Template for rendering role’s interpreted text, the origin
 interpreted text appears as <code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">title</span> <span class="pre">}}</span></code> variable when rendering.</p>
-</dd>
-<dt><strong>directive</strong></dt><dd><p>Template for rendering directive’s content. the only one argument of
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 1.0: </span>Renamed from “role” to “reference”</p>
+</div>
+</div></blockquote>
+<p><strong>content</strong></p>
+<blockquote>
+<div><p>Template for rendering directive’s content. the only one argument of
 directive appears as <code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">name</span> <span class="pre">}}</span></code> variable when rendering.
 the origin content appears as <code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">content</span> <span class="pre">}}</span></code> variable when rendering.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p><code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">content</span> <span class="pre">}}</span></code> is a string list but not string.</p>
 </div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 1.0: </span>Renamed from “directive” to “content”</p>
+</div>
+</div></blockquote>
 </dd>
 </dl>
-</dd>
-</dl>
+</div>
+<div class="section" id="using-newly-created-directive-role">
+<h4>Using Newly Created Directive/Role<a class="headerlink" href="#using-newly-created-directive-role" title="Permalink to this headline">¶</a></h4>
 <p>Now we descibe a cat with the newly created directive:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="ow">any:cat</span><span class="p">::</span> Nyan Cat
              Nyan_Cat
@@ -240,14 +229,36 @@ the origin content appears as <code class="docutils literal notranslate"><span c
 which became an internet meme. The video merged a Japanese pop song with
 an animated cartoon cat with a Pop-Tart for a torso, flying through space,
 and leaving a rainbow trail behind it. The video ranked at number 5 on
-the list of most viewed YouTube videos in 2011. <a class="footnote-reference brackets" href="#id5" id="id4">1</a></p>
+the list of most viewed YouTube videos in 2011. <a class="footnote-reference brackets" href="#id4" id="id3">1</a></p>
 <dl class="footnote brackets">
-<dt class="label" id="id5"><span class="brackets"><a class="fn-backref" href="#id4">1</a></span></dt>
+<dt class="label" id="id4"><span class="brackets"><a class="fn-backref" href="#id3">1</a></span></dt>
 <dd><p><a class="reference external" href="https://en.wikipedia.org/wiki/Nyan_Cat">https://en.wikipedia.org/wiki/Nyan_Cat</a></p>
 </dd>
 </dl>
 </dd></dl>
 
+<p>The created directive accept only one argument, which indicates the name of object,
+aliases can be added on another line after name, one alias per line.</p>
+<p>If no argument given, or first one in argument (split by <code class="docutils literal notranslate"><span class="pre">\n</span></code>) is <code class="docutils literal notranslate"><span class="pre">_</span></code> (underscore).
+the object name will be indicated by title of current section.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This feature is useful when you want to use a whole section or documentation
+to descibing object, for example:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="gh">========</span>
+<span class="gh">Nyan Dog</span>
+<span class="gh">========</span>
+
+<span class="p">..</span> <span class="ow">any:cat</span><span class="p">::</span>
+   <span class="nc">:catid:</span> <span class="nf">2</span>
+
+Blahblah...
+</pre></div>
+</div>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 1.0.</span></p>
+</div>
 <p>Use the <code class="docutils literal notranslate"><span class="pre">cat</span></code> role under “any” domain to reference Nyan Cat:</p>
 <ul class="simple">
 <li><p>Reference by name: <code class="docutils literal notranslate"><span class="pre">:any:cat:`Nyan</span> <span class="pre">Cat`</span></code> -&gt; <a class="reference internal" href="#cat-Nyan-Cat" title="Nyan Cat cat"><code class="xref any any-cat docutils literal notranslate"><span class="pre">🐈Nyan</span> <span class="pre">Cat</span></code></a></p></li>
@@ -257,7 +268,7 @@ the list of most viewed YouTube videos in 2011. <a class="footnote-reference bra
 </ul>
 </div>
 <div class="section" id="predefined-schemas">
-<span id="id6"></span><h3>Predefined Schemas<a class="headerlink" href="#predefined-schemas" title="Permalink to this headline">¶</a></h3>
+<span id="id5"></span><h4>Predefined Schemas<a class="headerlink" href="#predefined-schemas" title="Permalink to this headline">¶</a></h4>
 <p>The extension provides some predefeined schemas for testing purpose and for
 light users:</p>
 <dl class="simple">
@@ -274,13 +285,21 @@ directive and <code class="docutils literal notranslate"><span class="pre">frien
 </div>
 </div>
 <div class="section" id="change-log">
-<h2>Change Log<a class="headerlink" href="#change-log" title="Permalink to this headline">¶</a></h2>
+<h3>Change Log<a class="headerlink" href="#change-log" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="b0">
+<h4>2021-01-28 1.0b0<a class="headerlink" href="#b0" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li><p>Fix the missing Jinja2 dependency</p></li>
+<li><p>Use section title as object name when directive argument is omitted</p></li>
+<li><p>Some code cleanups</p></li>
+</ul>
+<p><em>Section author: Shengyu Zhang</em></p>
+</div>
 <div class="section" id="a1">
-<h3>2020-12-20 1.0a1<a class="headerlink" href="#a1" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><p><em>Section author: Shengyu Zhang</em></p>
-</div></blockquote>
+<h4>2020-12-20 1.0a1<a class="headerlink" href="#a1" title="Permalink to this headline">¶</a></h4>
 <p>The alpha version is out, enjoy~</p>
+<p><em>Section author: Shengyu Zhang</em></p>
+</div>
 </div>
 </div>
 </div>
