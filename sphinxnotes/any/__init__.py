@@ -27,6 +27,7 @@ from sphinx.util.nodes import make_refnode, make_id, nested_parse_with_titles
 
 from jinja2 import Template
 
+from . import perset
 
 logger = logging.getLogger(__name__)
 
@@ -355,49 +356,16 @@ class AnyDomain(Domain):
         cls._roles[schema.type] = schema.generate_role()()
         cls._object_types[schema.type] = ObjType(schema.type, schema.type)
 
-_predefined_schemas:Dict[str,Schema] = {
-    'friend': Schema.from_config({
-        'type': 'friend',
-        'fields': {
-            'others': ['avatar', 'blog'],
-        },
-        'templates': {
-            'reference': '@{{ title }}',
-            'content': """
-                         .. image:: {{ avatar }}
-                            :width: 120px
-                            :target: {{ blog }}
-                            :alt: {{ names[0] }}
-                            :align: left
-
-                         :blog: {{ blog }}
-
-                         {{ content | join('\n') }}"""
-        }
-    }),
-    'book': Schema.from_config(
-        {
-            'type': 'book',
-            'fields': {
-                'id': 'isbn',
-                'others': ['cover'],
-            },
-            'templates': {
-                'reference': '《{{ title }}》',
-                'content': """
-                             :ISBN: {{ isbn }}
-
-                             {{ content | join('\n') }}"""
-            }
-        }
-    ),
-}
 
 def _config_inited(app:Sphinx, config:Config) -> None:
-    for s in config.any_predefined_schemas:
-        AnyDomain.add_schema(_predefined_schemas[s])
-    for c in config.any_custom_schemas:
-        AnyDomain.add_schema(Schema.from_config(c))
+    perset_tbl = {
+        'friend': perset.friend,
+        'book': perset.book,
+    }
+    for v in config.any_schemas:
+        if isinstance(v, str):
+            v = perset_tbl[v]
+        AnyDomain.add_schema(Schema.from_config(v))
 
 
 def setup(app:Sphinx):
@@ -405,6 +373,5 @@ def setup(app:Sphinx):
 
     app.add_domain(AnyDomain)
 
-    app.add_config_value('any_predefined_schemas', ['book', 'friend'], '')
-    app.add_config_value('any_custom_schemas', [], '')
+    app.add_config_value('any_schemas', [], '')
     app.connect('config-inited', _config_inited)
