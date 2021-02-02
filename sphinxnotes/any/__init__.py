@@ -8,29 +8,35 @@
     :license: BSD, see LICENSE for details.
 """
 
-from typing import Tuple, Dict, Optional, Any, Iterator, Type, List
+from __future__ import annotations
+from typing import Tuple, Dict, Optional, Any, Iterator, Type, List, TYPE_CHECKING
 
 from docutils.parsers.rst import directives
 from docutils import nodes
 from docutils.statemachine import StringList
 
-from sphinx.application import Sphinx
-from sphinx.config import Config
 from sphinx import addnodes
-from sphinx.builders import Builder
-from sphinx.domains import Domain, ObjType, Index
-from sphinx.environment import BuildEnvironment
+from sphinx.domains import Domain, ObjType
 from sphinx.roles import XRefRole
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_refnode, make_id, nested_parse_with_titles
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.config import Config
+    from sphinx.builders import Builder
+    from sphinx.domains import Index
+    from sphinx.environment import BuildEnvironment
 
-from jinja2 import Template
+if TYPE_CHECKING:
+    from jinja2 import Template
 
+from .template import Environment as TemplateEnvironment
 from . import perset
 
 logger = logging.getLogger(__name__)
 
+tmplenv:TemplateEnvironment = None
 
 class AnyDirective(SphinxDirective):
     """
@@ -236,8 +242,8 @@ class Schema(object):
         self.type = type
         self.other_fields = other_fields
         self.id_field = id_field
-        self.ref_template = Template(ref_template)
-        self.content_template = Template(content_template)
+        self.ref_template = tmplenv.from_string(ref_template)
+        self.content_template = tmplenv.from_string(content_template)
 
 
     def generate_directive(self) -> Type[AnyDirective]:
@@ -370,6 +376,10 @@ def _config_inited(app:Sphinx, config:Config) -> None:
 
 def setup(app:Sphinx):
     """Sphinx extension entrypoint."""
+
+    # Init template environment
+    global tmplenv
+    tmplenv = TemplateEnvironment(app)
 
     app.add_domain(AnyDomain)
 
