@@ -47,17 +47,13 @@ Configuration
 
 The extension provides the following configuration:
 
-:any_predefined_schemas: (Type: ``List[str]``, Default: ``['friend', 'book']``)
-                         List of enabled predefeined :ref:`schema <schema>` name.
+:any_schemas: (Type: ``List[Union[str,Dict]]``, Default: ``[]``)
+              List of :ref:`preset-schemas` name or :ref:`schema <schema>` definition.
 
-                         For the usage of predefeined schema, please refer to
-                         :ref:`predefined-schemas`.
+              For the way of writing schema definition, please refer to
+              :ref:`writing-schema`.
 
-                         If you want to disable all predefeined schemas, set it
-                         to ``[]``.
-:any_custom_schemas: (Type: ``List[Dict[str,Any]]``, Default: ``[]``)
-                     List of enabled custom :ref:`schema <schema>`. For the way of writing
-                     custom schema, please refer to :ref:`writing-schema`.
+              .. versionchanged:: 1.0 List element can be schema name or schema definition.
 
 Functionalities
 ===============
@@ -110,34 +106,95 @@ The attributes of object can be indicates by directive options(a filed list).
         Same to ``others``, but the created directive option has flag
         ``directives.unchanged_required``.
 
-        .. versionchanged:: 1.0
+        .. versionchanged:: 1.0b0
 
            If the value is empty string(``""``), use the default value "id".
 
 
 **templates**
-    Type: ``Dict[str,Any]``, descibes how directive and role will be show.
-    We use Jinja_ as templating engine.
+    Type: ``Dict[str,Any]``, contains templates that descibe how object
+    will be show. Please refer to :ref:`writing-template` for more details.
 
     **reference**
 
-        Template for rendering role's interpreted text, the origin
-        interpreted text appears as ``{{ title }}`` variable when rendering.
+        Template for rendering role's interpreted text.
 
-        .. versionchanged:: 1.0 Renamed from "role" to "reference"
+        .. versionchanged:: 1.0b0 Renamed from "role" to "reference"
 
     **content**
 
-        Template for rendering directive's content. the only one argument of
-        directive appears as ``{{ name }}`` variable when rendering.
-        the origin content appears as ``{{ content }}`` variable when rendering.
+        Template for rendering directive's content.
 
-        .. note:: ``{{ content }}`` is a string list but not string.
+        .. versionchanged:: 1.0b0 Renamed from "directive" to "content"
 
-        .. versionchanged:: 1.0 Renamed from "directive" to "content"
 
-.. _Jinja: https://jinja.palletsprojects.com/
+.. _writing-template:
 
+Writing Template
+----------------
+
+We use Jinja2_ as our templating engine.
+
+.. _Jinja2: https://jinja.palletsprojects.com/
+
+Variables
+~~~~~~~~~
+
+For the usage of Jinja's variable, please refer to `Jinja2's Variables`_.
+
+All fields defined in schema are available as variables in template.
+Beside, there are some special variable:
+
+``{{ title }}``
+    Type: ``str``, Only available in "reference" template,
+    represents the origin interpreted text.
+
+``{{ names }}``
+   Type: ``List[str]``, Available in both "reference" and "content" template,
+   represents the the only one directive argument after being ``split('\n')``.
+   So note that it is **array of string** but not string.
+
+   User can reference object name by ``{{ name[0] }}``.
+
+``{{ content }}``
+   Type: ``List[str]``, Available in both "reference" and "content" template,
+   represents the origin directive content after being ``split('\n')``.
+   So note that it is **array of string** but not string.
+
+   If you want content to be parsed by Sphinx, you should use
+   ``{{ content | join('\n') }}``.
+
+.. _Jinja2's Variables: <https://jinja.palletsprojects.com/en/2.11.x/templates/#variables
+
+Filters
+~~~~~~~
+
+For the usage of Jinja's filter, please refer to `Jinja2's Filters`_.
+
+All `Jinja2's Builtin Filters`_ are available.
+In additional, we provide the following custom filters to enhance the template:
+
+``copyfile(fn)``
+    Copy a file in Sphinx srcdir to outdir, return the URI of file which relative
+    to current documentation.
+
+    The relative path to srcdir will be preserved, for example,
+    ``{{ fn | copyfile }}`` while ``fn`` is :file:`_images/foo.jpg`,
+    the file will copied to :file:`<OUTDIR>/_any/_images/foo.jpg`, and returns
+    a POSIX path of ``fn`` which relative to current documentation.
+
+``thumbnail(img, width, height)``
+    Changes the size of an image to the given dimensions and removes any
+    associated profiles, returns a a POSIX path of thumbnail which relative to
+    current documentation.
+
+    This filter always keep the origin aspect ratio of image.
+    The width and height are optional, By default are 1280 and 720 respectively.
+
+.. versionadded:: 1.0
+
+.. _Jinja2's Filters: https://jinja.palletsprojects.com/en/2.11.x/templates/#filters>
+.. _Jinja2's Builtin Filters: https://jinja.palletsprojects.com/en/2.11.x/templates/#builtin-filters
 
 Using Newly Created Directive/Role
 ----------------------------------
@@ -154,8 +211,6 @@ It will be rendered as:
 
 The created directive accept only one argument, which indicates the name of object,
 aliases can be added on another line after name, one alias per line.
-
-
 
 If no argument given, or first one in argument (split by ``\n``) is ``_`` (underscore).
 the object name will be indicated by title of current section.
@@ -186,10 +241,10 @@ Use the ``cat`` role under "any" domain to reference Nyan Cat:
 - Reference by ID: ``:any:cat:`1``` -> :any:cat:`1`
 - Explicit title is supported: ``:any:cat:`This cat <Nyan Cat>``` -> :any:cat:`This cat <Nyan Cat>`
 
-.. _predefined-schemas:
+.. _preset-schemas:
 
-Predefined Schemas
-------------------
+Preset Schemas
+--------------
 
 The extension provides some predefeined schemas for testing purpose and for
 light users:
@@ -204,6 +259,15 @@ book
 
 Change Log
 ==========
+
+2021-02-XX 1.0
+--------------
+
+- Move preset schemas to standalone package
+- Add custom filter support to template
+- Combine ``any_predefined_schemas`` and ``any_custom_schemas`` to ``any_schemas``
+
+.. sectionauthor:: Shengyu Zhang
 
 2021-01-28 1.0b0
 ----------------
