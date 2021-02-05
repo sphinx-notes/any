@@ -52,19 +52,26 @@ and roles to descibe and reference arbitrary object by writing restructedText
 template.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><p><a class="reference internal" href="#installation" id="id6">Installation</a></p></li>
-<li><p><a class="reference internal" href="#configuration" id="id7">Configuration</a></p></li>
-<li><p><a class="reference internal" href="#functionalities" id="id8">Functionalities</a></p>
+<li><p><a class="reference internal" href="#installation" id="id7">Installation</a></p></li>
+<li><p><a class="reference internal" href="#configuration" id="id8">Configuration</a></p></li>
+<li><p><a class="reference internal" href="#functionalities" id="id9">Functionalities</a></p>
 <ul>
-<li><p><a class="reference internal" href="#writing-schema" id="id9">Writing Schema</a></p></li>
-<li><p><a class="reference internal" href="#using-newly-created-directive-role" id="id10">Using Newly Created Directive/Role</a></p></li>
-<li><p><a class="reference internal" href="#predefined-schemas" id="id11">Predefined Schemas</a></p></li>
+<li><p><a class="reference internal" href="#writing-schema" id="id10">Writing Schema</a></p></li>
+<li><p><a class="reference internal" href="#writing-template" id="id11">Writing Template</a></p>
+<ul>
+<li><p><a class="reference internal" href="#variables" id="id12">Variables</a></p></li>
+<li><p><a class="reference internal" href="#filters" id="id13">Filters</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#change-log" id="id12">Change Log</a></p>
+<li><p><a class="reference internal" href="#using-newly-created-directive-role" id="id14">Using Newly Created Directive/Role</a></p></li>
+<li><p><a class="reference internal" href="#preset-schemas" id="id15">Preset Schemas</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#change-log" id="id16">Change Log</a></p>
 <ul>
-<li><p><a class="reference internal" href="#b0" id="id13">2021-01-28 1.0b0</a></p></li>
-<li><p><a class="reference internal" href="#a1" id="id14">2020-12-20 1.0a1</a></p></li>
+<li><p><a class="reference internal" href="#xx-1-0" id="id17">2021-02-XX 1.0</a></p></li>
+<li><p><a class="reference internal" href="#b0" id="id18">2021-01-28 1.0b0</a></p></li>
+<li><p><a class="reference internal" href="#a1" id="id19">2020-12-20 1.0a1</a></p></li>
 </ul>
 </li>
 </ul>
@@ -88,18 +95,14 @@ template.</p>
 <span id="id1"></span><h3>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
 <p>The extension provides the following configuration:</p>
 <dl class="field-list">
-<dt class="field-odd">any_predefined_schemas</dt>
-<dd class="field-odd"><p>(Type: <code class="docutils literal notranslate"><span class="pre">List[str]</span></code>, Default: <code class="docutils literal notranslate"><span class="pre">['friend',</span> <span class="pre">'book']</span></code>)
-List of enabled predefeined <a class="reference internal" href="#schema"><span class="std std-ref">schema</span></a> name.</p>
-<p>For the usage of predefeined schema, please refer to
-<a class="reference internal" href="#predefined-schemas"><span class="std std-ref">Predefined Schemas</span></a>.</p>
-<p>If you want to disable all predefeined schemas, set it
-to <code class="docutils literal notranslate"><span class="pre">[]</span></code>.</p>
-</dd>
-<dt class="field-even">any_custom_schemas</dt>
-<dd class="field-even"><p>(Type: <code class="docutils literal notranslate"><span class="pre">List[Dict[str,Any]]</span></code>, Default: <code class="docutils literal notranslate"><span class="pre">[]</span></code>)
-List of enabled custom <a class="reference internal" href="#schema"><span class="std std-ref">schema</span></a>. For the way of writing
-custom schema, please refer to <a class="reference internal" href="#writing-schema"><span class="std std-ref">Writing Schema</span></a>.</p>
+<dt class="field-odd">any_schemas</dt>
+<dd class="field-odd"><p>(Type: <code class="docutils literal notranslate"><span class="pre">List[Union[str,Dict]]</span></code>, Default: <code class="docutils literal notranslate"><span class="pre">[]</span></code>)
+List of <a class="reference internal" href="#preset-schemas"><span class="std std-ref">Preset Schemas</span></a> name or <a class="reference internal" href="#schema"><span class="std std-ref">schema</span></a> definition.</p>
+<p>For the way of writing schema definition, please refer to
+<a class="reference internal" href="#writing-schema"><span class="std std-ref">Writing Schema</span></a>.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 1.0: </span>List element can be schema name or schema definition.</p>
+</div>
 </dd>
 </dl>
 </div>
@@ -159,36 +162,79 @@ duplicated, user can still reference the correct object by ID.</p>
 <p>Same to <code class="docutils literal notranslate"><span class="pre">others</span></code>, but the created directive option has flag
 <code class="docutils literal notranslate"><span class="pre">directives.unchanged_required</span></code>.</p>
 <div class="versionchanged">
-<p><span class="versionmodified changed">Changed in version 1.0: </span>If the value is empty string(<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>), use the default value “id”.</p>
+<p><span class="versionmodified changed">Changed in version 1.0b0: </span>If the value is empty string(<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>), use the default value “id”.</p>
 </div>
 </dd>
 </dl>
 </dd>
-<dt><strong>templates</strong></dt><dd><p>Type: <code class="docutils literal notranslate"><span class="pre">Dict[str,Any]</span></code>, descibes how directive and role will be show.
-We use <a class="reference external" href="https://jinja.palletsprojects.com/">Jinja</a> as templating engine.</p>
+<dt><strong>templates</strong></dt><dd><p>Type: <code class="docutils literal notranslate"><span class="pre">Dict[str,Any]</span></code>, contains templates that descibe how object
+will be show. Please refer to <a class="reference internal" href="#writing-template"><span class="std std-ref">Writing Template</span></a> for more details.</p>
 <p><strong>reference</strong></p>
 <blockquote>
-<div><p>Template for rendering role’s interpreted text, the origin
-interpreted text appears as <code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">title</span> <span class="pre">}}</span></code> variable when rendering.</p>
+<div><p>Template for rendering role’s interpreted text.</p>
 <div class="versionchanged">
-<p><span class="versionmodified changed">Changed in version 1.0: </span>Renamed from “role” to “reference”</p>
+<p><span class="versionmodified changed">Changed in version 1.0b0: </span>Renamed from “role” to “reference”</p>
 </div>
 </div></blockquote>
 <p><strong>content</strong></p>
 <blockquote>
-<div><p>Template for rendering directive’s content. the only one argument of
-directive appears as <code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">name</span> <span class="pre">}}</span></code> variable when rendering.
-the origin content appears as <code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">content</span> <span class="pre">}}</span></code> variable when rendering.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">content</span> <span class="pre">}}</span></code> is a string list but not string.</p>
-</div>
+<div><p>Template for rendering directive’s content.</p>
 <div class="versionchanged">
-<p><span class="versionmodified changed">Changed in version 1.0: </span>Renamed from “directive” to “content”</p>
+<p><span class="versionmodified changed">Changed in version 1.0b0: </span>Renamed from “directive” to “content”</p>
 </div>
 </div></blockquote>
 </dd>
 </dl>
+</div>
+<div class="section" id="writing-template">
+<span id="id3"></span><h4>Writing Template<a class="headerlink" href="#writing-template" title="Permalink to this headline">¶</a></h4>
+<p>We use <a class="reference external" href="https://jinja.palletsprojects.com/">Jinja2</a> as our templating engine.</p>
+<div class="section" id="variables">
+<h5>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h5>
+<p>For the usage of Jinja’s variable, please refer to <a class="reference external" href="&lt;https://jinja.palletsprojects.com/en/2.11.x/templates/#variables">Jinja2’s Variables</a>.</p>
+<p>All fields defined in schema are available as variables in template.
+Beside, there are some special variable:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">title</span> <span class="pre">}}</span></code></dt><dd><p>Type: <code class="docutils literal notranslate"><span class="pre">str</span></code>, Only available in “reference” template,
+represents the origin interpreted text.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">names</span> <span class="pre">}}</span></code></dt><dd><p>Type: <code class="docutils literal notranslate"><span class="pre">List[str]</span></code>, Available in both “reference” and “content” template,
+represents the the only one directive argument after being <code class="docutils literal notranslate"><span class="pre">split('\n')</span></code>.
+So note that it is <strong>array of string</strong> but not string.</p>
+<p>User can reference object name by <code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">name[0]</span> <span class="pre">}}</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">content</span> <span class="pre">}}</span></code></dt><dd><p>Type: <code class="docutils literal notranslate"><span class="pre">List[str]</span></code>, Available in both “reference” and “content” template,
+represents the origin directive content after being <code class="docutils literal notranslate"><span class="pre">split('\n')</span></code>.
+So note that it is <strong>array of string</strong> but not string.</p>
+<p>If you want content to be parsed by Sphinx, you should use
+<code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">content</span> <span class="pre">|</span> <span class="pre">join('\n')</span> <span class="pre">}}</span></code>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="filters">
+<h5>Filters<a class="headerlink" href="#filters" title="Permalink to this headline">¶</a></h5>
+<p>For the usage of Jinja’s filter, please refer to <a class="reference external" href="https://jinja.palletsprojects.com/en/2.11.x/templates/#filters&gt;">Jinja2’s Filters</a>.</p>
+<p>All <a class="reference external" href="https://jinja.palletsprojects.com/en/2.11.x/templates/#builtin-filters">Jinja2’s Builtin Filters</a> are available.
+In additional, we provide the following custom filters to enhance the template:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">copyfile(fn)</span></code></dt><dd><p>Copy a file in Sphinx srcdir to outdir, return the URI of file which relative
+to current documentation.</p>
+<p>The relative path to srcdir will be preserved, for example,
+<code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">fn</span> <span class="pre">|</span> <span class="pre">copyfile</span> <span class="pre">}}</span></code> while <code class="docutils literal notranslate"><span class="pre">fn</span></code> is <code class="file docutils literal notranslate"><span class="pre">_images/foo.jpg</span></code>,
+the file will copied to <code class="file docutils literal notranslate"><span class="pre">&lt;OUTDIR&gt;/_any/_images/foo.jpg</span></code>, and returns
+a POSIX path of <code class="docutils literal notranslate"><span class="pre">fn</span></code> which relative to current documentation.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">thumbnail(img,</span> <span class="pre">width,</span> <span class="pre">height)</span></code></dt><dd><p>Changes the size of an image to the given dimensions and removes any
+associated profiles, returns a a POSIX path of thumbnail which relative to
+current documentation.</p>
+<p>This filter always keep the origin aspect ratio of image.
+The width and height are optional, By default are 1280 and 720 respectively.</p>
+</dd>
+</dl>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 1.0.</span></p>
+</div>
+</div>
 </div>
 <div class="section" id="using-newly-created-directive-role">
 <h4>Using Newly Created Directive/Role<a class="headerlink" href="#using-newly-created-directive-role" title="Permalink to this headline">¶</a></h4>
@@ -230,9 +276,9 @@ the origin content appears as <code class="docutils literal notranslate"><span c
 which became an internet meme. The video merged a Japanese pop song with
 an animated cartoon cat with a Pop-Tart for a torso, flying through space,
 and leaving a rainbow trail behind it. The video ranked at number 5 on
-the list of most viewed YouTube videos in 2011. <a class="footnote-reference brackets" href="#id4" id="id3">1</a></p>
+the list of most viewed YouTube videos in 2011. <a class="footnote-reference brackets" href="#id5" id="id4">1</a></p>
 <dl class="footnote brackets">
-<dt class="label" id="id4"><span class="brackets"><a class="fn-backref" href="#id3">1</a></span></dt>
+<dt class="label" id="id5"><span class="brackets"><a class="fn-backref" href="#id4">1</a></span></dt>
 <dd><p><a class="reference external" href="https://en.wikipedia.org/wiki/Nyan_Cat">https://en.wikipedia.org/wiki/Nyan_Cat</a></p>
 </dd>
 </dl>
@@ -268,8 +314,8 @@ Blahblah...
 <li><p>Explicit title is supported: <code class="docutils literal notranslate"><span class="pre">:any:cat:`This</span> <span class="pre">cat</span> <span class="pre">&lt;Nyan</span> <span class="pre">Cat&gt;`</span></code> -&gt; <a class="reference internal" href="#cat-Nyan-Cat" title="Nyan Cat cat"><code class="xref any any-cat docutils literal notranslate"><span class="pre">🐈This</span> <span class="pre">cat</span></code></a></p></li>
 </ul>
 </div>
-<div class="section" id="predefined-schemas">
-<span id="id5"></span><h4>Predefined Schemas<a class="headerlink" href="#predefined-schemas" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="preset-schemas">
+<span id="id6"></span><h4>Preset Schemas<a class="headerlink" href="#preset-schemas" title="Permalink to this headline">¶</a></h4>
 <p>The extension provides some predefeined schemas for testing purpose and for
 light users:</p>
 <dl class="simple">
@@ -287,6 +333,15 @@ directive and <code class="docutils literal notranslate"><span class="pre">frien
 </div>
 <div class="section" id="change-log">
 <h3>Change Log<a class="headerlink" href="#change-log" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="xx-1-0">
+<h4>2021-02-XX 1.0<a class="headerlink" href="#xx-1-0" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li><p>Move preset schemas to standalone package</p></li>
+<li><p>Add custom filter support to template</p></li>
+<li><p>Combine <code class="docutils literal notranslate"><span class="pre">any_predefined_schemas</span></code> and <code class="docutils literal notranslate"><span class="pre">any_custom_schemas</span></code> to <code class="docutils literal notranslate"><span class="pre">any_schemas</span></code></p></li>
+</ul>
+<p><em>Section author: Shengyu Zhang</em></p>
+</div>
 <div class="section" id="b0">
 <h4>2021-01-28 1.0b0<a class="headerlink" href="#b0" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
