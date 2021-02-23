@@ -5,7 +5,7 @@ Project Meta Information
 '''
 
 name = 'sphinxnotes-any'
-version = '1.0b0'
+version = '1.0'
 github_user = 'sphinx-notes'
 github_repo = 'any'
 url = 'https://github.com/' + github_user + '/' + github_repo

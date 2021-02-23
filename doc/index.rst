@@ -260,7 +260,7 @@ book
 Change Log
 ==========
 
-2021-02-XX 1.0
+2021-02-23 1.0
 --------------
 
 - Move preset schemas to standalone package
