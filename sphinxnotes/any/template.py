@@ -51,6 +51,8 @@ class Environment(jinja2.Environment):
         self._builder = app.builder
         self._tempdir = tempfile.mkdtemp(prefix=_ANYDIR)
         self._tempsym = path.join(app.srcdir, _ANYDIR)
+        if path.islink(self._tempsym):
+            os.unlink(self._tempsym)
         os.symlink(self._tempdir, self._tempsym)
 
 
