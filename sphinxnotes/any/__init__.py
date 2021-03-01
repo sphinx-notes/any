@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 from typing import Tuple, Dict, Optional, Any, Iterator, Type, List, TYPE_CHECKING
+from datetime import datetime
 
 from docutils.parsers.rst import directives
 from docutils import nodes
@@ -73,8 +74,10 @@ class AnyDirective(SphinxDirective):
             # Make sure key exists
             m['names'] = []
         m['content'] = self.content.data # docutils.statemachine.ViewList.data:List[str]
-        if schema.id_field and self.options.get(schema.id_field):
-            m[schema.id_field] = self.options.get(schema.id_field)
+        special_fields = [schema.id_field, schema.date_field, schema.dateend_field]
+        for f in special_fields:
+            if f and self.options.get(f):
+                m[f] = self.options.get(f)
         for field in schema.other_fields:
             if self.options.get(field):
                 m[field] = self.options.get(field)
@@ -110,13 +113,15 @@ class AnyDirective(SphinxDirective):
         ahrnode['ids'].append(node_id)
         ahrnode['names'].append(name)
         self.state.document.note_explicit_target(ahrnode)
-        if self.schema.id_field and objinfo[self.schema.id_field]:
+        if self.schema.id_field:
             # Note object by ID
             domain.note_object(objtype, objinfo[self.schema.id_field],
                                node_id, objinfo, location=ahrnode)
-        for n in objinfo['names']:
+            # TODO: note by self
+        else:
             # Note object by name and aliases
-            domain.note_object(objtype, n, node_id, objinfo, location=ahrnode)
+            for n in objinfo['names']:
+                domain.note_object(objtype, n, node_id, objinfo, location=ahrnode)
 
         # Parse content
         content = self.schema.content_template.render(objinfo)
@@ -219,6 +224,10 @@ class Schema(object):
 
     # Special optional fields, Field name of unique object ID
     id_field:Optional[str] = None
+    # Special optional fields, Field name of a date value
+    date_field:Optional[str] = None
+    # Special optional fields, Field name of a date value
+    dateend_field:Optional[str] = None
     # Other regular fields
     other_fields:List[str] = []
 
@@ -236,20 +245,40 @@ class Schema(object):
         if id_field == '':
             id_field = 'id'
 
+        dateend_field = config['fields'].get('dateend')
+        if dateend_field == '':
+            dateend_field = 'dateend'
+
+        date_field = config['fields'].get('date')
+        if date_field == '':
+            if dateend_field:
+                date_field = 'datestart'
+            else:
+                date_field = 'date'
+
         return Schema(config['type'],
                       config['fields'].get('others'),
-                      id_field = id_field,
-                      ref_template = config['templates'].get('reference'),
-                      content_template = config['templates'].get('content'))
+                      id_field=id_field,
+                      date_field=date_field,
+                      dateend_field=dateend_field,
+                      ref_template=config['templates'].get('reference'),
+                      content_template=config['templates'].get('content'),
+                      date_template=config['templates'].get('date'))
 
     def __init__(self, type:str,
                  other_fields:List[str],
                  id_field:Optional[str]=None,
+                 date_field:Optional[str]=None,
+                 dateend_field:Optional[str]=None,
                  ref_template:str='{{ title }}',
-                 content_template:str='{{ content }}'):
+                 content_template:str='{{ content }}',
+                 date_input_template:str='%Y-%m-%d',
+                 date_output_template:str='%Y-%m-%d') -> None:
         self.type = type
         self.other_fields = other_fields
         self.id_field = id_field
+        self.date_field = date_field
+        self.dateend_field = dateend_field
         self.ref_template = tmplenv.from_string(ref_template)
         self.content_template = tmplenv.from_string(content_template)
 
@@ -262,6 +291,10 @@ class Schema(object):
             option_spec[field] = directives.unchanged
         if self.id_field:
             option_spec[self.id_field] = directives.unchanged_required
+        if self.date_field:
+            option_spec[self.date_field] = self.date_option
+        if self.dateend_field:
+            option_spec[self.dateend_field] = self.date_option
 
         # Generate directive class
         return type('Any%sDirective' % self.type.title(),
@@ -279,6 +312,11 @@ class Schema(object):
     def generate_index(self) -> Type[Index]:
         """TODO."""
         return None
+
+
+    def date_option(self, argument:str) -> datetime :
+        """Conversion function for the "date*" option."""
+        return datetime.strptime(argument, self.date_input_template)
 
 
 class AnyDomain(Domain):
