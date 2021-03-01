@@ -13,21 +13,18 @@
 import os
 import sys
 from datetime import datetime
-
-sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('..'))
-
 # Import proj's meta info
-import project as proj
+sys.path.insert(0, os.path.abspath('../sphinxnotes'))
+import any as proj
 
 # -- Project information -----------------------------------------------------
 
-project = proj.name
-copyright = '%s, %s' % (datetime.now().year, proj.author)
-author = proj.author
+project = proj.__title__
+copyright = '%s, %s' % (datetime.now().year, proj.__author__)
+author = proj.__author__
 
 # The full version, including alpha/beta/rc tags
-version = release = proj.version
+version = release = proj.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -40,6 +37,8 @@ extensions = [
     'sphinxnotes.any',
 ]
 
+
+sys.path.insert(0, os.path.abspath('.'))
 any_schemas = [ __import__("cat").schema ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -67,8 +66,6 @@ show_authors = True
 html_theme = 'alabaster'
 
 html_theme_options = {
-    'github_user': proj.github_user,
-    'github_repo': proj.github_repo,
     'nosidebar': True,
 }
 

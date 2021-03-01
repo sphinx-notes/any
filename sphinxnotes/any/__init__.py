@@ -34,6 +34,14 @@ if TYPE_CHECKING:
 from .template import Environment as TemplateEnvironment
 from . import perset
 
+__title__= 'sphinxnotes-any'
+__license__ = 'BSD',
+__version__ = '1.1'
+__author__ = 'Shengyu Zhang'
+__url__ = 'https://sphinx-notes.github.io/any'
+__description__ = 'Sphinx Domain for describing Anything'
+__keywords__ = 'documentation, sphinx, extension'
+
 logger = logging.getLogger(__name__)
 
 tmplenv:TemplateEnvironment = None
