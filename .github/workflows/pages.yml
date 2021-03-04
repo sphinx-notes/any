@@ -4,14 +4,6 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
-    - name: Setup locale
-      run: |
-        sudo locale-gen en_US.UTF-8
-        sudo update-locale
-    - name: Install dependencies
-      run: |
-        sudo apt-get update;
-        sudo apt-get install lilypond timidity imagemagick fonts-noto-cjk
     - name: Checkout
       uses: actions/checkout@master
       with:
