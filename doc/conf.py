@@ -34,7 +34,7 @@ version = release = proj.__version__
 # ones.
 extensions = [
     'sphinx.ext.githubpages',
-    'sphinxnotes.any',
+    'any',
 ]
 
 
