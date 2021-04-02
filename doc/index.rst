@@ -14,7 +14,7 @@ Sphinx Domain for Descibing Anything
 :license: BSD, see LICENSE for details.
 
 The extension provides a domain named "any", allows user creates directive
-and roles to descibe and reference arbitrary object by writing restructedText
+and roles to descibe and reference arbitrary object by writing reStructuredText
 template.
 
 .. contents::
