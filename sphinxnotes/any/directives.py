@@ -132,8 +132,8 @@ class AnyDirective(SphinxDirective):
         else:
             title = titlenode.astext()
         # Replace "_" with section titl
-        # FIXME:
-        obj.names[0] = title
+        # FIXME: it is dirty
+        obj.name = title + obj.name[1:]
         self._setup_nodes(obj, sectnode, sectnode, sectnode)
         # Add all content to existed section, so return nothing
         return []
