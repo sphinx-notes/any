@@ -187,8 +187,8 @@ for example, try ``any:cat.name``:
 Change Log
 ==========
 
-2021-05-22 2.0rc1
------------------
+2021-05-22 2.0a0
+----------------
 
 - Descibing schema with python object instead of dict
 - Support index
