@@ -22,7 +22,7 @@ from .schema import Schema, Field
 
 __title__= 'sphinxnotes-any'
 __license__ = 'BSD',
-__version__ = '2.1'
+__version__ = '2.0rc1'
 __author__ = 'Shengyu Zhang'
 __url__ = 'https://sphinx-notes.github.io/any'
 __description__ = 'Sphinx Domain for describing Anything'
@@ -51,6 +51,8 @@ def setup(app:Sphinx) -> None:
     # Init template environment
     TemplateEnvironment.setup(app)
 
-    app.add_config_value('any_domain_name', 'any', 'env', types=str)
-    app.add_config_value('any_schemas', [], 'env', types=List[Schema])
+    app.add_config_value('any_domain_name', 'any', '', types=str)
+    # BUG: any_schemas is list of object instance so it changes everytime,
+    # rebuild='env' causes a long rebuild time.
+    app.add_config_value('any_schemas', [], '', types=List[Schema])
     app.connect('config-inited', _config_inited)
