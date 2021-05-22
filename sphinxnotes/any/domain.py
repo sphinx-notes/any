@@ -106,7 +106,9 @@ class AnyDomain(Domain):
         objids = set()
         if objfield:
             # NOTE: To prevent change domain data, dont use ``objids = xxx``
-            objids.update(self.references.get((objtype, objfield, target)))
+            ids = self.references.get((objtype, objfield, target))
+            if ids:
+                objids.update(ids)
         else:
             for (t, _, r), ids in self.references.items():
                 if t == objtype and r == target:
