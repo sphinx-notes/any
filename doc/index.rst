@@ -10,12 +10,10 @@ Sphinx Domain for Descibing Anything
    :target: https://github.com/sphinx-notes/any
 
 :version: |version|
-:copyright: Copyright ©2020 by Shengyu Zhang.
+:copyright: Copyright ©2021 by Shengyu Zhang.
 :license: BSD, see LICENSE for details.
 
-:ref:`any-catindex`
-
-The extension provides a domain named "any", allows user creates directive
+The extension provides a domain, allows user creates directive
 and roles to descibe and reference arbitrary object by writing reStructuredText
 template.
 
@@ -49,13 +47,14 @@ Configuration
 
 The extension provides the following configuration:
 
-:any_schemas: (Type: ``List[Union[str,Dict]]``, Default: ``[]``)
-              List of :ref:`preset-schemas` name or :ref:`schema <schema>` definition.
+:any_domain_name: (Type: ``str``, Default: `'any'`)
+                  Name of the domain.
+
+:any_schemas: (Type: ``List[sphinxnotes.any.Schema]``, Default: ``[]``)
+              List of :ref:`schema <schema>` instances.
 
               For the way of writing schema definition, please refer to
               :ref:`writing-schema`.
-
-              .. versionchanged:: 1.0 List element can be schema name or schema definition.
 
 Functionalities
 ===============
@@ -70,7 +69,7 @@ Writing Schema
 .. topic:: What is Schema?
 
     Before descibing any object, we need a "schema" to descibe "how to descibe the object".
-    For extension user, "schema" is a python ``dict`` that can specific in :file:`conf.py`.
+    For extension user, "schema" is a python object that can specific in :file:`conf.py`.
     See :ref:`Configuration` for details.
 
 An schema for descibing cat looks like this:
@@ -81,54 +80,7 @@ An schema for descibing cat looks like this:
 The aboved schema created a ``cat`` directive under "any" domain that
 can descibe a cat.
 
-The attributes of object can be indicates by directive options(a filed list).
-
-**type**
-    Type: ``str``, type of the object, it determines the name of the corresponding
-    directive and role.
-**fields**
-    Type: ``Dict[str,Any]``, describe how many attributes the object has,
-    it determines the options of corresponding directive,  and the **available
-    variables when rendering template** (see below)
-
-    **others**
-        Type: ``List[str]``, list of name of non-special object attributes.
-
-        The value will be one of options of created directive,
-        and available as variable when rendering the template.
-
-        For example, given ``['height']`` , the created directive
-        will have ``:height:`` option with ``directives.unchanged`` flag,
-        and the ``{{ height }}`` variable is available when rendering template.
-    **id**
-        Type: ``Optonal[str]``, name of the ID field, the value of ID of
-        should be unique among whole documentation, when the object name is
-        duplicated, user can still reference the correct object by ID.
-
-        Same to ``others``, but the created directive option has flag
-        ``directives.unchanged_required``.
-
-        .. versionchanged:: 1.0b0
-
-           If the value is empty string(``""``), use the default value "id".
-
-
-**templates**
-    Type: ``Dict[str,Any]``, contains templates that descibe how object
-    will be show. Please refer to :ref:`writing-template` for more details.
-
-    **reference**
-
-        Template for rendering role's interpreted text.
-
-        .. versionchanged:: 1.0b0 Renamed from "role" to "reference"
-
-    **content**
-
-        Template for rendering directive's content.
-
-        .. versionchanged:: 1.0b0 Renamed from "directive" to "content"
-
+.. note:: TODO
 
 .. _writing-template:
 
@@ -148,23 +100,15 @@ All fields defined in schema are available as variables in template.
 Beside, there are some special variable:
 
 ``{{ title }}``
-    Type: ``str``, Only available in "reference" template,
-    represents the origin interpreted text.
+    Only available in "reference" template, represents the interpreted text.
 
 ``{{ names }}``
-   Type: ``List[str]``, Available in both "reference" and "content" template,
-   represents the the only one directive argument after being ``split('\n')``.
-   So note that it is **array of string** but not string.
-
-   User can reference object name by ``{{ name[0] }}``.
+   Available in both "reference" and "description" template, represents the
+   directive argument.
 
 ``{{ content }}``
-   Type: ``List[str]``, Available in both "reference" and "content" template,
-   represents the origin directive content after being ``split('\n')``.
-   So note that it is **array of string** but not string.
-
-   If you want content to be parsed by Sphinx, you should use
-   ``{{ content | join('\n') }}``.
+   Available in both "reference" and "description" template, represents the
+   directive content.
 
 .. _Jinja2's Variables: <https://jinja.palletsprojects.com/en/2.11.x/templates/#variables
 
@@ -203,7 +147,6 @@ Using Newly Created Directive/Role
 
 Now we descibe a cat with the newly created directive:
 
-
 .. literalinclude:: nyan-cat.txt
    :language: rst
 
@@ -216,51 +159,40 @@ aliases can be added on another line after name, one alias per line.
 
 If no argument given, or first one in argument (split by ``\n``) is ``_`` (underscore).
 the object name will be indicated by title of current section.
+This feature is useful when you want to use a whole section or documentation
+to descibing object, for example:
 
-.. note::
+.. literalinclude:: mimi.txt
+   :language: rst
 
-   This feature is useful when you want to use a whole section or documentation
-   to descibing object, for example:
+It will be rendered as:
 
-   .. code-block:: rst
-
-      ========
-      Nyan Dog
-      ========
-
-      .. any:cat::
-         :id: 2
-
-      Blahblah...
+.. include:: mimi.txt
 
 .. versionadded:: 1.0
 
-
-Use the ``cat`` role under "any" domain to reference Nyan Cat:
+Use the ``any:cat`` role under "any" domain to reference Nyan Cat:
 
 - Reference by name: ``:any:cat:`Nyan Cat``` -> :any:cat:`Nyan Cat`
 - Reference by alias: ``:any:cat:`Nyan_Cat``` -> :any:cat:`Nyan_Cat`
 - Reference by ID: ``:any:cat:`1``` -> :any:cat:`1`
 - Explicit title is supported: ``:any:cat:`This cat <Nyan Cat>``` -> :any:cat:`This cat <Nyan Cat>`
+- Reference a nonexistent cat: ``:any:cat:`gg``` -> :any:cat:`gg`
 
-.. _preset-schemas:
+Beside, for all referenceable fieds, the corresponding roles is generated,
+for example, try ``any:cat.name``:
 
-Preset Schemas
---------------
-
-The extension provides some predefeined schemas for testing purpose and for
-light users:
-
-friend
-    The "friend" schema is used to descibe your friend, provides ``friend``
-    directive and ``friend`` role that helps you to contstruct your friend links.
-book
-    The "book" schema is used to note your book have read.
-
-.. note:: TO BE COMPLETED.
+- Exactly reference by name: ``:any:cat.name:`Nyan Cat``` -> :any:cat.name:`Nyan Cat`
 
 Change Log
 ==========
+
+2021-05-22 2.0rc1
+-----------------
+
+- Descibing schema with python object instead of dict
+- Support index
+- Refactor
 
 2021-02-28 1.1
 --------------
