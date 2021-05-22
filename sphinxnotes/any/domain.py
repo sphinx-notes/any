@@ -115,12 +115,13 @@ class AnyDomain(Domain):
             logger.warning(f'no such {objtype} {target} in {self}')
             return None
         elif len(objids) == 1:
-            todocname, anchor, _ = self.objects[objtype, objids.copy().pop()]
+            todocname, anchor, _ = self.objects[objtype, objids.pop()]
             return make_refnode(builder, fromdocname, todocname, anchor,
                                 contnode, objtype + ' ' + target)
         else:
             todocname, anchor, = self._get_index_anchor(typ, target)
-            logger.info(f'ambiguous {objtype} {target} in {self}: {todocname}#{anchor}')
+            logger.info(f'ambiguous {objtype} {target} in {self}, ' +
+                        f'ids: {objids} index: {todocname}#{anchor}')
         return make_refnode(builder, fromdocname, todocname, anchor,
                             contnode, objtype + ' ' + target)
 
