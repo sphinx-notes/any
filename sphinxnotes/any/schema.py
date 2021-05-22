@@ -255,6 +255,7 @@ class Schema(object):
         context =  self._context_without_object()
         context.update({
             self.NAME_KEY: self.name_of(obj),
+            self.TITLE_KEY: self.title_of(obj),
             self.CONTENT_KEY: self.content_of(obj),
             **self.attrs_of(obj),
         })
