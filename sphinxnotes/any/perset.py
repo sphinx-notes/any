@@ -8,37 +8,18 @@
     :license: BSD, see LICENSE for details.
 """
 
-friend = {
-    'type': 'friend',
-    'fields': {
-        'others': ['avatar', 'blog'],
-    },
-    'templates': {
-        'reference': '@{{ title }}',
-        'content': """
-.. image:: {{ avatar }}
-   :width: 120px
-   :target: {{ blog }}
-   :alt: {{ names[0] }}
-   :align: left
+from .domain import Schema, Field, dedent
 
-:blog: {{ blog }}
+friend = Schema('friend',
+                {'avatar': Field(type=str), 'blog': Field(type=str)},
+                description_template=dedent("""
+                    .. image:: {{ avatar }}
+                       :width: 120px
+                       :target: {{ blog }}
+                       :alt: {{ names[0] }}
+                       :align: left
 
-{{ content | join('\n') }}"""
-    }
-}
+                    :blog: {{ blog }}
 
-book = {
-    'type': 'book',
-    'fields': {
-        'id': 'isbn',
-        'others': ['cover'],
-    },
-    'templates': {
-        'reference': '《{{ title }}》',
-        'content': """
-:ISBN: {{ isbn }}
-
-{{ content | join('\n') }}"""
-    }
-}
+                    {{ content | join('\n') }}"""),
+                reference_template='@{{ title }}')

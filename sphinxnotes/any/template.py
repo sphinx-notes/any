@@ -30,35 +30,42 @@ from wand.image import Image
 
 
 class Environment(jinja2.Environment):
-
     _builder:Builder
     # Temp directory inside source dir
     _tempdir:str
     # Softlink link to tempdir that inside sphinx srcdir
     _tempsym:str
 
-    def __init__(self, app:Sphinx, *args, **kwargs):
+
+    @classmethod
+    def setup(cls, app:Sphinx):
+        """You must call this method before instantiating"""
+        app.connect('builder-inited', cls._on_builder_inited)
+        app.connect('build-finished', cls._on_build_finished)
+
+
+    @classmethod
+    def _on_builder_inited(cls, app:Sphinx):
+        cls._builder = app.builder
+        cls._tempdir = tempfile.mkdtemp(prefix=_ANYDIR)
+        cls._tempsym = path.join(app.srcdir, _ANYDIR)
+        if path.islink(cls._tempsym):
+            os.unlink(cls._tempsym)
+        os.symlink(cls._tempdir, cls._tempsym)
+
+
+    @classmethod
+    def _on_build_finished(cls, app:Sphinx, exception):
+        shutil.rmtree(cls._tempdir)
+        os.unlink(cls._tempsym)
+
+
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        app.connect('builder-inited', self._on_builder_inited)
-        app.connect('build-finished', self._on_build_finished)
 
         self.filters['thumbnail'] = self._thumbnail_filter
         # self.filters['watermark'] = self._watermark_filter
         self.filters['copyfile'] = self._copyfile_filter
-
-
-    def _on_builder_inited(self, app:Sphinx):
-        self._builder = app.builder
-        self._tempdir = tempfile.mkdtemp(prefix=_ANYDIR)
-        self._tempsym = path.join(app.srcdir, _ANYDIR)
-        if path.islink(self._tempsym):
-            os.unlink(self._tempsym)
-        os.symlink(self._tempdir, self._tempsym)
-
-
-    def _on_build_finished(self, app:Sphinx, exception):
-        shutil.rmtree(self._tempdir)
-        os.unlink(self._tempsym)
 
 
     def _thumbnail_filter(self, imgfn:str, width:int=1280, height:int=720) -> str:
