@@ -51,8 +51,6 @@ class Field(object):
     def __post_init__(self) -> None:
         # Unique field must be required
         if self.unique:
-            if not self.required:
-                raise SchemaError('Unique field must be required')
             if self.form != self.Form.PLAIN:
                 raise SchemaError('Unique field must has PLAIN from')
 
@@ -225,9 +223,11 @@ class Schema(object):
         """
         assert obj
         for name, field, rawval in self.fields_of(obj):
-            if field.unique:
-                # rawval must not None
-                return name, self._value_as_single(field, rawval)
+            if not field.unique:
+                continue
+            if rawval is None:
+                break
+            return name, self._value_as_single(field, rawval)
         return None, uuid.uuid4().hex[:7]
 
 
