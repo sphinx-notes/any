@@ -163,7 +163,7 @@ class Schema(object):
                      content=content)
         for name, field, rawval in self.fields_of(obj):
             if field.required and rawval is None:
-                raise ObjectError('value of field {name} is none while it is required')
+                raise ObjectError(f'value of field {name} is none while it is required')
         return obj
 
 
