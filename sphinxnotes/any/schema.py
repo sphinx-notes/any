@@ -15,7 +15,7 @@ import uuid
 from sphinx.util import logging
 
 from .errors import AnyExtensionError
-from .template import Environment as TemplateEnvironment   
+from .template import Environment as TemplateEnvironment
 
 
 logger = logging.getLogger(__name__)
@@ -59,16 +59,19 @@ class Field(object):
 
     def as_plain(self, rawval:str) -> str:
         assert self.form == self.Form.PLAIN
+        assert rawval is not None
         return rawval
 
 
     def as_words(self, rawval:str) -> List[str]:
         assert self.form == self.Form.WORDS
+        assert rawval is not None
         return [x.strip() for x in rawval.split(' ') if x.strip() != '']
 
 
     def as_lines(self, rawval:str) -> List[str]:
         assert self.form == self.Form.LINES
+        assert rawval is not None
         return [x.strip() for x in rawval.split('\n') if x.strip() != '']
 
 
@@ -197,7 +200,7 @@ class Schema(object):
     def _value_as_single(field:Field, rawval:str) -> str:
         """Helper method for getting value of field"""
         if field.form == Field.Form.PLAIN:
-            return rawval
+            return field.as_plain(rawval)
         elif field.form == Field.Form.WORDS:
             return field.as_words(rawval)[0]
         elif field.form == Field.Form.LINES:
@@ -208,7 +211,7 @@ class Schema(object):
     def _value_as_list(field:Field, rawval:str) -> List[str]:
         """Helper method for getting value of field"""
         if field.form == Field.Form.PLAIN:
-            return [rawval]
+            return [field.as_plain(rawval)]
         elif field.form == Field.Form.WORDS:
             return field.as_words(rawval)
         elif field.form == Field.Form.LINES:
@@ -223,6 +226,7 @@ class Schema(object):
         assert obj
         for name, field, rawval in self.fields_of(obj):
             if field.unique:
+                # rawval must not None
                 return name, self._value_as_single(field, rawval)
         return None, uuid.uuid4().hex[:7]
 
@@ -240,8 +244,11 @@ class Schema(object):
         assert obj
         refs = []
         for name, field, rawval in self.fields_of(obj):
-            if field.referenceable:
-                refs += [(name, x) for x in self._value_as_list(field, rawval)]
+            if not field.referenceable:
+                continue
+            if rawval is None:
+                continue
+            refs += [(name, x) for x in self._value_as_list(field, rawval)]
         return refs
 
 
