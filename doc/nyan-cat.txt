@@ -1,6 +1,6 @@
 .. any:cat:: Nyan Cat
              Nyan_Cat
-   :catid: 1
+   :id: 1
    :owner: prguitarman
    :height: 200px
    :width: 220px
