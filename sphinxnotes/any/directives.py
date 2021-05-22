@@ -8,10 +8,11 @@
     :license: BSD, see LICENSE for details.
 """
 from __future__ import annotations
-from typing import Dict, List
+from typing import Dict, List, Type
 
 from docutils import nodes
 from docutils.statemachine import StringList
+from docutils.parsers.rst import directives
 
 from sphinx import addnodes
 from sphinx.util.docutils import SphinxDirective
@@ -38,6 +39,37 @@ class AnyDirective(SphinxDirective):
     optional_arguments:int = 0
     final_argument_whitespace:bool = True
     option_spec:Dict[str,callable] = {}
+
+    @classmethod
+    def derive(cls, schema:Schema) -> Type["AnyDirective"]:
+        """Generate an AnyDirective child class for describing object."""
+        has_content = schema.content is not None
+
+        if not schema.name:
+            required_arguments = 0
+            optional_arguments = 0
+        elif schema.name.required:
+            required_arguments = 1
+            optional_arguments = 0
+        else:
+            required_arguments = 0
+            optional_arguments = 1
+
+        option_spec = {}
+        for name, field in schema.attrs.items():
+            if field.required:
+                option_spec[name] = directives.unchanged_required
+            else:
+                option_spec[name] = directives.unchanged
+
+        # Generate directive class
+        return type('Any%sDirective' % schema.objtype.title(),
+                    (AnyDirective,),
+                    {'schema': schema,
+                     'has_content': has_content,
+                     'required_arguments': required_arguments,
+                     'optional_arguments': optional_arguments,
+                     'option_spec': option_spec, })
 
 
     def _build_object(self) -> Object:
@@ -73,7 +105,7 @@ class AnyDirective(SphinxDirective):
 
         # Setup anchor
         ahrid = make_id(self.env, self.state.document,
-                        prefix=objtype, term=self.schema.identifier_of(obj))
+                        prefix=objtype, term=self.schema.identifier_of(obj)[1])
         ahrnode['ids'].append(ahrid)
         ahrnode['names'].append(self.schema.title_of(obj))
         self.state.document.note_explicit_target(ahrnode)

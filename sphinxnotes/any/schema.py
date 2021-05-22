@@ -10,6 +10,7 @@
 from typing import Tuple, Dict, Any, Iterator, List, Set, Optional
 from enum import Enum, auto
 from dataclasses import dataclass
+import uuid
 
 from sphinx.util import logging
 
@@ -94,6 +95,7 @@ class Schema(object):
     """
 
     # Class-wide shared Special keys used in template rendering context
+    TYPE_KEY = 'type'
     NAME_KEY = 'name'
     CONTENT_KEY = 'content'
     TITLE_KEY = 'title'
@@ -120,6 +122,8 @@ class Schema(object):
     #   _pickle.PicklingError: Can't pickle <function sync_do_first at 0x7f839bc9d790>: it's not the same object as jinja2.filters.sync_do_first
     description_template:str
     reference_template:str
+    missing_reference_template:str
+    ambiguous_reference_template:str
     # TODO: index template
 
     def __init__(self, objtype:str,
@@ -127,13 +131,17 @@ class Schema(object):
                  attrs:Dict[str,Field]={},
                  content:Field=Field(),
                  description_template:str='{{ content }}',
-                 reference_template:str='{{ title }}') -> None:
+                 reference_template:str='{{ title }}',
+                 missing_reference_template:str='{{ title }} (missing reference)',
+                 ambiguous_reference_template:str='{{ title }} (disambiguation)') -> None:
         self.objtype = objtype
         self.name = name
         self.attrs = attrs
         self.content = content
         self.description_template = description_template
         self.reference_template = reference_template
+        self.missing_reference_template = missing_reference_template
+        self.ambiguous_reference_template = ambiguous_reference_template
 
         # Check attrs constraint
         has_unique = False
@@ -207,13 +215,16 @@ class Schema(object):
             return field.as_lines(rawval)
 
 
-    def identifier_of(self, obj:Object) -> Optional[str]:
-        """Return unique identifier of object. """
+    def identifier_of(self, obj:Object) -> Tuple[Optional[str],str]:
+        """
+        Return unique identifier of object.
+        If there is not any unique field, return (None, uuid[:7] instead.
+        """
         assert obj
-        for _, field, rawval in self.fields_of(obj):
+        for name, field, rawval in self.fields_of(obj):
             if field.unique:
-                return self._value_as_single(field, rawval)
-        return None
+                return name, self._value_as_single(field, rawval)
+        return None, uuid.uuid4().hex[:7]
 
 
     def title_of(self, obj:Object) -> Optional[str]:
@@ -234,15 +245,26 @@ class Schema(object):
         return refs
 
 
-    def render_description(self, obj:Object) -> List[str]:
-        assert obj
-        context = {
+    def _context_without_object(self) -> Dict[str,Any]:
+        return  {
+            self.TYPE_KEY: self.objtype,
+        }
+
+
+    def _context_of(self, obj:Object) -> Dict[str,Any]:
+        context =  self._context_without_object()
+        context.update({
             self.NAME_KEY: self.name_of(obj),
             self.CONTENT_KEY: self.content_of(obj),
             **self.attrs_of(obj),
-        }
+        })
+        return context
+
+
+    def render_description(self, obj:Object) -> List[str]:
+        assert obj
         tmpl = TemplateEnvironment().from_string(self.description_template)
-        description = tmpl.render(context)
+        description = tmpl.render(self._context_of(obj))
         logger.debug('[any] render description template %s: %s' %
                     (self.description_template, description))
         return description.split('\n')
@@ -250,14 +272,36 @@ class Schema(object):
 
     def render_reference(self, obj:Object, explicit_title:str=None) -> str:
         assert obj
-        context = {
-            self.NAME_KEY: self.name_of(obj),
-            self.CONTENT_KEY: self.content_of(obj),
-            self.TITLE_KEY: explicit_title or self.title_of(obj),
-            **self.attrs_of(obj),
-        }
         tmpl = TemplateEnvironment().from_string(self.reference_template)
+        context = self._context_of(obj)
+        if explicit_title:
+            context[self.TITLE_KEY] = explicit_title
         reference = tmpl.render(context)
         logger.debug('[any] render references template %s: %s',
                     self.reference_template, reference)
         return reference
+
+
+    def _render_reference_without_object(self, explicit_title:str,
+                                         reference_template:str) -> str:
+        tmpl = TemplateEnvironment().from_string(self.reference_template)
+        context = self._context_without_object()
+        context[self.TITLE_KEY] = explicit_title
+        reference = tmpl.render(context)
+        tmpl = TemplateEnvironment().from_string(reference_template)
+        reference = tmpl.render(context)
+        logger.debug('[any] render references template without object %s: %s',
+                    reference_template, reference)
+        return reference
+
+
+    def render_missing_reference(self, explicit_title:str) -> str:
+        logger.debug('[any] render missing references template %s', explicit_title)
+        return self._render_reference_without_object(
+            explicit_title, self.missing_reference_template)
+
+
+    def render_ambiguous_reference(self, explicit_title:str) -> str:
+        logger.debug('[any] render ambiguous references template %s', explicit_title)
+        return self._render_reference_without_object(
+            explicit_title, self.ambiguous_reference_template)

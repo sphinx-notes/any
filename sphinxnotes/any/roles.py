@@ -8,12 +8,12 @@
     :license: BSD, see LICENSE for details.
 """
 from __future__ import annotations
-from typing import Tuple, TYPE_CHECKING
+from typing import Tuple, Type, TYPE_CHECKING
 
 from docutils import nodes
 
-from sphinx.roles import XRefRole
 from sphinx.util import logging
+from sphinx.roles import XRefRole
 if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
 
@@ -32,33 +32,45 @@ class AnyRole(XRefRole):
 
     schema:Schema
 
+    @classmethod
+    def derive(cls, schema:Schema, field:str=None) -> Type["AnyRole"]:
+        """Generate an AnyRole child class for referencing object."""
+        return type('Any%s%sRole' % (schema.objtype.title(), field.title() if field else ''),
+                    (cls,),
+                    { 'schema': schema })
+
+
     def process_link(self, env:BuildEnvironment, refnode:nodes.Element,
                      has_explicit_title:bool, title:str, target:str) -> Tuple[str,str]:
         """Override parent method."""
 
         domain = env.get_domain(refnode['refdomain'])
-        splited_reftype = refnode['reftype'].split('.', maxsplit=1)
-        reftype = splited_reftype[0]
-        reffield = splited_reftype[1] if len(splited_reftype) > 1 else None
-        objids = set()
-        for (objtype, objfield, objref), ids in domain.data['references'].items():
-            if objtype != reftype:
-                continue
-            if reffield and objfield != reffield:
-                continue
-            if objref == target:
-                objids = objids.union(ids)
+        objtype, objfield = reftype_to_objtype_and_objfield(refnode['reftype'])
+        if objfield:
+            objids = domain.data['references'].get((objtype, objfield, target))
+        else:
+            objids = set()
+            for (typ, _, ref), ids in domain.data['references'].items():
+                if typ == objtype and ref == target:
+                    objids.update(ids)
+        logger.debug('[any] processing link get %d objects for target %s',
+                     len(objids), target)
         if not objids:
-            logger.warning(f'no such {reftype} {target} in {domain}')
-            if has_explicit_title:
-                title = f'{title} (no {reftype} named {target})'
-            else:
-                title = f'{title} (no such {reftype})'
+            title = self.schema.render_missing_reference(title)
         elif len(objids) == 1:
-            # Rewrite object referencee to object id
-            target = objids.pop()
-            _, _, obj = domain.data['objects'][reftype, target]
+            _, _, obj = domain.data['objects'][objtype, objids.pop()]
             title = self.schema.render_reference(obj, title if has_explicit_title else None)
         else:
-            raise NotImplementedError
+            title = self.schema.render_ambiguous_reference(title)
         return title, target
+
+
+def reftype_to_objtype_and_objfield(reftype:str) -> Tuple[str,str]:
+    """Helper function for converting reftype(role name) to object infos."""
+    reftype = reftype.split('.', maxsplit=1)
+    return reftype[0], reftype[1] if len(reftype) == 2 else None
+
+
+def objtype_and_objfield_to_reftype(objtype:str, objfield:str) -> str:
+    """Helper function for converting object infos to reftype(role name)."""
+    return objtype + '.' + objfield

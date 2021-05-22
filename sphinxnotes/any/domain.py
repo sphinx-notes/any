@@ -12,7 +12,6 @@ from __future__ import annotations
 from typing import Tuple, Dict, Any, Iterator, Type, Set, List, TYPE_CHECKING
 
 from docutils import nodes
-from docutils.parsers.rst import directives
 
 from sphinx import addnodes
 from sphinx.domains import Domain, ObjType
@@ -25,7 +24,7 @@ if TYPE_CHECKING:
 
 from .schema import Schema, Object
 from .directives import AnyDirective
-from .roles import AnyRole
+from .roles import AnyRole, objtype_and_objfield_to_reftype, reftype_to_objtype_and_objfield
 from .indices import AnyIndex
 
 logger = logging.getLogger(__name__)
@@ -48,6 +47,8 @@ class AnyDomain(Domain):
     roles:Dict[str,RoleFunction] = {}
     #: A list of Index subclasses
     indices:List[Type[AnyIndex]] = []            
+    #: AnyDomain specific: Type -> index class
+    _indices_for_reftype:Dict[str,Type[AnyIndex]] = {}
 
     initial_data:Dict[str,Any] = {
         # See property object
@@ -69,7 +70,7 @@ class AnyDomain(Domain):
 
     def note_object(self, docname:str, anchor:str, schema:Schema, obj:Object) -> None:
         objtype = obj.objtype
-        objid = schema.identifier_of(obj)
+        _, objid = schema.identifier_of(obj)
         objrefs = schema.references_of(obj)
         if (objtype, objid) in self.objects:
             other_docname, other_anchor, other_obj = self.objects[objtype, objid]
@@ -96,21 +97,32 @@ class AnyDomain(Domain):
                 del self.references[objtype, objfield, objref]
 
 
-    def setup(self) -> None:
-        print('setup')
-        super().setup() 
-
     # Override parent method
     def resolve_xref(self, env:BuildEnvironment, fromdocname:str,
                      builder:Builder, typ:str, target:str,
                      node:addnodes.pending_xref, contnode:nodes.Element) -> nodes.Element:
-        objtypes = self.objtypes_for_role(typ)
-        for objtype in objtypes:
-            todocname, anchor, _ = self.objects.get((objtype, target), (None, None, None))
-            if todocname:
-                return make_refnode(builder, fromdocname, todocname, anchor,
-                                    contnode, objtype + ' ' + target)
-        return None
+        objtype, objfield = reftype_to_objtype_and_objfield(typ)
+        if objfield:
+            objids = self.references.get((objtype, objfield, target))
+        else:
+            objids = set()
+            for (typ, field, ref), ids in self.references.items():
+                if typ != objtype:
+                    continue
+                if ref == target:
+                    objids = objids.union(ids)
+        if not objids:
+            logger.warning(f'no such {objtype} {target} in {self}')
+            return None
+        elif len(objids) == 1:
+            todocname, anchor, _ = self.objects[objtype, objids.pop()]
+            return make_refnode(builder, fromdocname, todocname, anchor,
+                                contnode, objtype + ' ' + target)
+        else:
+            todocname, anchor, = self._get_index_anchor(typ, target)
+            logger.info(f'ambiguous {objtype} {target} in {self}: {todocname}#{anchor}')
+        return make_refnode(builder, fromdocname, todocname, anchor,
+                            contnode, objtype + ' ' + target)
 
 
     # Override parent method
@@ -121,70 +133,32 @@ class AnyDomain(Domain):
 
     @classmethod
     def add_schema(cls, schema:Schema) -> None:
-        # Generates role names for all referenceable fields
-        roles = [schema.objtype]
+        # Generates reftypes(role names) for all referenceable fields
+        reftypes = [schema.objtype]
         for name, field, _ in schema.fields_of(None):
             if field.referenceable:
-                roles.append(schema.objtype + '.' + name)
+                reftypes.append(objtype_and_objfield_to_reftype(schema.objtype, name))
 
-        cls.object_types[schema.objtype] = ObjType(schema.objtype, *roles)
-        cls.directives[schema.objtype] = generate_directive(schema)
-        cls.roles[schema.objtype] = generate_role(schema)()
-        for r in roles:
-            cls.roles[r] = generate_role(schema)() # TODO: Shared?
-        cls.indices.append(generate_index(schema))
+        # Roles is used for converting role name to corrsponding objtype
+        cls.object_types[schema.objtype] = ObjType(schema.objtype, *reftypes)
+        cls.directives[schema.objtype] = AnyDirective.derive(schema)
+        for r in reftypes:
+            # Create role for referencing object (by various fields)
+            _, field = reftype_to_objtype_and_objfield(r)
 
+            cls.roles[r] = AnyRole.derive(schema, field)()
 
-def generate_directive(schema:Schema) -> Type[AnyDirective]:
-    """Generate an AnyDirective child class for describing object."""
-
-    has_content = schema.content is not None
-
-    if not schema.name:
-        required_arguments = 0
-        optional_arguments = 0
-    elif schema.name.required:
-        required_arguments = 1
-        optional_arguments = 0
-    else:
-        required_arguments = 0
-        optional_arguments = 1
-
-    option_spec = {}
-    for name, field in schema.attrs.items():
-        if field.required:
-            option_spec[name] = directives.unchanged_required
-        else:
-            option_spec[name] = directives.unchanged
+            index = AnyIndex.derive(schema, field)
+            cls.indices.append(index)
+            cls._indices_for_reftype[r] = index
 
 
-    # Generate directive class
-    return type('Any%sDirective' % schema.objtype.title(),
-                (AnyDirective,),
-                { 'schema': schema,
-                    'has_content': has_content,
-                    'required_arguments': required_arguments,
-                    'optional_arguments': optional_arguments,
-                    'option_spec': option_spec, })
+    def _get_index_anchor(self, reftype:str, refval:str) -> Tuple[str,str]:
+        """
+        Return the docname and anchor name of index page. Can be used for ``make_refnode()``.
 
-
-def generate_role(schema:Schema) -> Type[AnyRole]:
-    """Generate an AnyRole child class for referencing object."""
-    return type('Any%sRole' % schema.objtype.title(),
-                (AnyRole,),
-                { 'schema': schema })
-
-
-def generate_index(schema:Schema) -> Type[AnyIndex]:
-    """Generate an AnyIndex child class for indexing object."""
-    return type('Any%sIndex' % schema.objtype.title(),
-                (AnyIndex,),
-                { 'schema': schema, 
-                 'name': schema.objtype + 'index',
-                 'localname': f'{schema.objtype.title()} Reference Index', 
-                 'shortname': 'references', })
-
-
-def generate_objtype(schema:Schema) -> ObjType:
-    """Generate an ObjType instance."""
-    return ObjType(schema.objtype, (schema.objtype))
+        .. warning:: This is no public API of sphinx and may broken in future version.
+        """
+        domain = self.name
+        index = self._indices_for_reftype[reftype].name
+        return f'{domain}-{index}', f'cap-{refval}'
