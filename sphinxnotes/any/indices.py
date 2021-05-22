@@ -62,7 +62,7 @@ class AnyIndex(Index):
             # 1: Entry with sub-entries.
             entries = content.setdefault(objref, [])
             for objid in sorted(objids):
-                docname, anchor, obj = self.domain.data['objects'][objtype, objid]
+                docname, anchor, obj = self.domain.data['objects'][self.schema.objtype, objid]
                 if docnames and docname not in docnames:
                     continue
                 idfield, _ = self.schema.identifier_of(obj)
