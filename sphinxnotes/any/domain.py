@@ -101,21 +101,21 @@ class AnyDomain(Domain):
     def resolve_xref(self, env:BuildEnvironment, fromdocname:str,
                      builder:Builder, typ:str, target:str,
                      node:addnodes.pending_xref, contnode:nodes.Element) -> nodes.Element:
+        logger.debug('[any] resolveing xref of %s', (typ, target))
         objtype, objfield = reftype_to_objtype_and_objfield(typ)
+        objids = set()
         if objfield:
-            objids = self.references.get((objtype, objfield, target))
+            # NOTE: To prevent change domain data, dont use ``objids = xxx``
+            objids.update(self.references.get((objtype, objfield, target)))
         else:
-            objids = set()
-            for (typ, field, ref), ids in self.references.items():
-                if typ != objtype:
-                    continue
-                if ref == target:
-                    objids = objids.union(ids)
+            for (t, _, r), ids in self.references.items():
+                if t == objtype and r == target:
+                    objids.update(ids)
         if not objids:
             logger.warning(f'no such {objtype} {target} in {self}')
             return None
         elif len(objids) == 1:
-            todocname, anchor, _ = self.objects[objtype, objids.pop()]
+            todocname, anchor, _ = self.objects[objtype, objids.copy().pop()]
             return make_refnode(builder, fromdocname, todocname, anchor,
                                 contnode, objtype + ' ' + target)
         else:

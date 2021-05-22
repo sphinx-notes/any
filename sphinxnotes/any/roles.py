@@ -46,10 +46,11 @@ class AnyRole(XRefRole):
 
         domain = env.get_domain(refnode['refdomain'])
         objtype, objfield = reftype_to_objtype_and_objfield(refnode['reftype'])
+        objids = set()
         if objfield:
-            objids = domain.data['references'].get((objtype, objfield, target))
+            # NOTE: To prevent change domain data, dont use ``objids = xxx``
+            objids.update(domain.data['references'].get((objtype, objfield, target)))
         else:
-            objids = set()
             for (typ, _, ref), ids in domain.data['references'].items():
                 if typ == objtype and ref == target:
                     objids.update(ids)
