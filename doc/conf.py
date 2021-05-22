@@ -39,7 +39,7 @@ extensions = [
 
 
 sys.path.insert(0, os.path.abspath('.'))
-any_schemas = [ __import__("cat").schema ]
+any_schemas = [ __import__("cat").cat ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

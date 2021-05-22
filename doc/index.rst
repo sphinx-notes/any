@@ -13,6 +13,8 @@ Sphinx Domain for Descibing Anything
 :copyright: Copyright ©2020 by Shengyu Zhang.
 :license: BSD, see LICENSE for details.
 
+:ref:`any-catindex`
+
 The extension provides a domain named "any", allows user creates directive
 and roles to descibe and reference arbitrary object by writing reStructuredText
 template.
@@ -227,7 +229,7 @@ the object name will be indicated by title of current section.
       ========
 
       .. any:cat::
-         :catid: 2
+         :id: 2
 
       Blahblah...
 

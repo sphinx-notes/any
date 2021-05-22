@@ -1,19 +1,23 @@
-schema = {
-   'type': 'cat',
-    'fields': {
-        'id': 'catid',
-        'others': ['owner', 'height', 'width', 'picture'],
+from textwrap import dedent
+from any.schema import Schema, Field
+
+cat = Schema(
+    'cat',
+    name=Field(referenceable=True, form=Field.Form.LINES),
+    attrs={
+        'id': Field(unique=True, referenceable=True, required=True),
+        'owner': Field(),
+        'height': Field(),
+        'width': Field(),
+        'picture': Field(),
     },
-    'templates': {
-        'reference': '🐈{{ title }}',
-        'content': """
-.. image:: {{ picture }}
-   :align: left
+    description_template=dedent("""
+        .. image:: {{ picture }}
+           :align: left
 
-:owner: {{ owner }}
-:height: {{ height }}
-:width: {{ width }}
+        :owner: {{ owner }}
+        :height: {{ height }}
+        :width: {{ width }}
 
-{{ content | join('\n') }}"""
-    }
-}
+        {{ content }}"""),
+    reference_template='🐈{{ title }}')
