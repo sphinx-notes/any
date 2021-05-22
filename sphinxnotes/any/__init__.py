@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 from .template import Environment as TemplateEnvironment
 from .domain import AnyDomain
-from .schema import Schema
+from .schema import Schema, Field
 
 __title__= 'sphinxnotes-any'
 __license__ = 'BSD',
@@ -30,6 +30,9 @@ __keywords__ = 'documentation, sphinx, extension'
 
 logger = logging.getLogger(__name__)
 
+# Export
+Field = Field
+Schema = Schema
 
 def _config_inited(app:Sphinx, config:Config) -> None:
     AnyDomain.name = config.any_domain_name
