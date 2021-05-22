@@ -49,10 +49,7 @@ class Field(object):
     required:bool=False
 
     def __post_init__(self) -> None:
-        # Unique field must be required
-        if self.unique:
-            if self.form != self.Form.PLAIN:
-                raise SchemaError('Unique field must has PLAIN from')
+        pass
 
 
     def as_plain(self, rawval:str) -> str:
@@ -125,10 +122,9 @@ class Schema(object):
     reference_template:str
     missing_reference_template:str
     ambiguous_reference_template:str
-    # TODO: index template
 
     def __init__(self, objtype:str,
-                 name:Field=Field(unique=True, referenceable=True, required=True),
+                 name:Field=Field(unique=True, referenceable=True),
                  attrs:Dict[str,Field]={},
                  content:Field=Field(),
                  description_template:str='{{ content }}',
