@@ -43,6 +43,9 @@ class AnyRole(XRefRole):
     def process_link(self, env:BuildEnvironment, refnode:nodes.Element,
                      has_explicit_title:bool, title:str, target:str) -> Tuple[str,str]:
         """Override parent method."""
+        if has_explicit_title:
+            # Don't apply any template if has_explicit_title
+            return title, target
 
         domain = env.get_domain(refnode['refdomain'])
         objtype, objfield = reftype_to_objtype_and_objfield(refnode['reftype'])
@@ -62,7 +65,7 @@ class AnyRole(XRefRole):
             title = self.schema.render_missing_reference(title)
         elif len(objids) == 1:
             _, _, obj = domain.data['objects'][objtype, objids.pop()]
-            title = self.schema.render_reference(obj, title if has_explicit_title else None)
+            title = self.schema.render_reference(obj)
         else:
             title = self.schema.render_ambiguous_reference(title)
         return title, target
