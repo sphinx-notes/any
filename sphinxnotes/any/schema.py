@@ -48,23 +48,19 @@ class Field(object):
     referenceable:bool=False
     required:bool=False
 
-    def __post_init__(self) -> None:
-        pass
-
-
-    def as_plain(self, rawval:str) -> str:
+    def _as_plain(self, rawval:str) -> str:
         assert self.form == self.Form.PLAIN
         assert rawval is not None
         return rawval
 
 
-    def as_words(self, rawval:str) -> List[str]:
+    def _as_words(self, rawval:str) -> List[str]:
         assert self.form == self.Form.WORDS
         assert rawval is not None
         return [x.strip() for x in rawval.split(' ') if x.strip() != '']
 
 
-    def as_lines(self, rawval:str) -> List[str]:
+    def _as_lines(self, rawval:str) -> List[str]:
         assert self.form == self.Form.LINES
         assert rawval is not None
         return [x.strip() for x in rawval.split('\n') if x.strip() != '']
@@ -76,11 +72,11 @@ class Field(object):
             return None
 
         if self.form == self.Form.PLAIN:
-            return self.as_plain(rawval)
+            return self._as_plain(rawval)
         elif self.form == self.Form.WORDS:
-            return self.as_words(rawval)
+            return self._as_words(rawval)
         elif self.form == self.Form.LINES:
-            return self.as_lines(rawval)
+            return self._as_lines(rawval)
         else:
             raise NotImplementedError
 
@@ -155,20 +151,24 @@ class Schema(object):
                      name=name,
                      attrs=attrs,
                      content=content)
-        for name, field, rawval in self.fields_of(obj):
-            if field.required and rawval is None:
+        for name, field, val in self.fields_of(obj):
+            if field.required and val is None:
                 raise ObjectError(f'value of field {name} is none while it is required')
         return obj
 
 
-    def fields_of(self, obj:Object) -> Iterator[Tuple[str,Field,str]]:
-        """Helper method for returning all fields of object and its raw values"""
+    def fields_of(self, obj:Object) -> Iterator[Tuple[str,Field,Union[None,str,List[str]]]]:
+        """
+        Helper method for returning all fields of object and its raw values.
+        -> Iterator[field_name, field_instance, field_value],
+        while the field_value is Union[string_value, string_list_value].
+        """
         if self.name:
-            yield (self.NAME_KEY, self.name, obj.name if obj else None)
+            yield (self.NAME_KEY, self.name, self.name.value_of(obj.name) if obj else None)
         for name, field in self.attrs.items():
-            yield (name, field, obj.attrs.get(name) if obj else None)
+            yield (name, field, field.value_of(obj.attrs.get(name)) if obj else None)
         if self.content:
-            yield (self.CONTENT_KEY, self.content, obj.content if obj else None)
+            yield (self.CONTENT_KEY, self.content, self.content.value_of(obj.content) if obj else None)
 
 
     def name_of(self, obj:Object) -> Union[None,str,List[str]]:
@@ -176,42 +176,14 @@ class Schema(object):
         return self.content.value_of(obj.name)
 
 
-    def attrs_of(self, obj:Object) -> Dict[str,Union[str,List[str]]]:
+    def attrs_of(self, obj:Object) -> Dict[str,Union[None,str,List[str]]]:
         assert obj
-        attrs = {}
-        for name, field in self.attrs.items():
-            rawval = obj.attrs.get(name)
-            val = field.value_of(rawval)
-            if val is not None:
-                attrs[name]= val
-        return attrs
+        return {k: f.value_of(obj.attrs.get(k)) for k, f in self.attrs.items()}
 
 
     def content_of(self, obj:Object) -> Union[None,str,List[str]]:
         assert obj
         return self.content.value_of(obj.content)
-
-
-    @staticmethod
-    def _value_as_single(field:Field, rawval:str) -> str:
-        """Helper method for getting value of field"""
-        if field.form == Field.Form.PLAIN:
-            return field.as_plain(rawval)
-        elif field.form == Field.Form.WORDS:
-            return field.as_words(rawval)[0]
-        elif field.form == Field.Form.LINES:
-            return field.as_lines(rawval)[0]
-
-
-    @staticmethod
-    def _value_as_list(field:Field, rawval:str) -> List[str]:
-        """Helper method for getting value of field"""
-        if field.form == Field.Form.PLAIN:
-            return [field.as_plain(rawval)]
-        elif field.form == Field.Form.WORDS:
-            return field.as_words(rawval)
-        elif field.form == Field.Form.LINES:
-            return field.as_lines(rawval)
 
 
     def identifier_of(self, obj:Object) -> Tuple[Optional[str],str]:
@@ -220,33 +192,44 @@ class Schema(object):
         If there is not any unique field, return (None, uuid[:7] instead.
         """
         assert obj
-        for name, field, rawval in self.fields_of(obj):
+        for name, field, val in self.fields_of(obj):
             if not field.unique:
                 continue
-            if rawval is None:
+            if val is None:
                 break
-            return name, self._value_as_single(field, rawval)
+            elif isinstance(val, str):
+                return name, val
+            elif isinstance(val, list) and len(val) > 0:
+                return name, val[0]
+            return name, val
         return None, uuid.uuid4().hex[:7]
 
 
     def title_of(self, obj:Object) -> Optional[str]:
         """Return title (display name) of object."""
         assert obj
-        if obj.name is None:
+        name = self.name.value_of(obj.name)
+        if isinstance(name, str):
+            return name
+        elif isinstance(name, list) and len(name) > 0:
+            return name[0]
+        else:
             return None
-        return self._value_as_single(self.name, obj.name)
 
 
     def references_of(self, obj:Object) -> Set[Tuple[str,str]]:
         """Return all references (referenceable fields) of object"""
         assert obj
         refs = []
-        for name, field, rawval in self.fields_of(obj):
+        for name, field, val in self.fields_of(obj):
             if not field.referenceable:
                 continue
-            if rawval is None:
+            if val is None:
                 continue
-            refs += [(name, x) for x in self._value_as_list(field, rawval)]
+            elif isinstance(val, str):
+                refs.append((name, val))
+            elif isinstance(val, list):
+                refs += [(name, x) for x in val]
         return set(refs)
 
 
@@ -258,9 +241,6 @@ class Schema(object):
 
     def _context_of(self, obj:Object) -> Dict[str,Union[str,List[str]]]:
         context = self._context_without_object()
-        context.update({
-            **self.attrs_of(obj),
-        })
 
         def set_if_not_none(key:str, val:Union[str,List[str]]) -> None:
             if val is not None:
@@ -268,6 +248,8 @@ class Schema(object):
         set_if_not_none(self.NAME_KEY, self.name_of(obj))
         set_if_not_none(self.TITLE_KEY, self.title_of(obj))
         set_if_not_none(self.CONTENT_KEY, self.content_of(obj))
+        for key, val in self.attrs_of(obj).items():
+            set_if_not_none(key, val)
 
         return context
 
