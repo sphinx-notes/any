@@ -281,13 +281,10 @@ class Schema(object):
         return description.split('\n')
 
 
-    def render_reference(self, obj:Object, explicit_title:str=None) -> str:
+    def render_reference(self, obj:Object) -> str:
         assert obj
         tmpl = TemplateEnvironment().from_string(self.reference_template)
-        context = self._context_of(obj)
-        if explicit_title:
-            context[self.TITLE_KEY] = explicit_title
-        reference = tmpl.render(context)
+        reference = tmpl.render(self._context_of(obj))
         logger.debug('[any] render references template %s: %s',
                     self.reference_template, reference)
         return reference
@@ -295,10 +292,8 @@ class Schema(object):
 
     def _render_reference_without_object(self, explicit_title:str,
                                          reference_template:str) -> str:
-        tmpl = TemplateEnvironment().from_string(self.reference_template)
         context = self._context_without_object()
         context[self.TITLE_KEY] = explicit_title
-        reference = tmpl.render(context)
         tmpl = TemplateEnvironment().from_string(reference_template)
         reference = tmpl.render(context)
         logger.debug('[any] render references template without object %s: %s',
