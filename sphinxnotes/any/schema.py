@@ -7,10 +7,11 @@
     :copyright: Copyright 2021 Shengyu Zhang
     :license: BSD, see LICENSE for details.
 """
-from typing import Tuple, Dict, Iterator, List, Set, Optional, Union
+from typing import Tuple, Dict, Iterator, List, Set, Optional, Union, Any
 from enum import Enum, auto
 from dataclasses import dataclass
 import uuid
+import pickle
 
 from sphinx.util import logging
 
@@ -293,3 +294,14 @@ class Schema(object):
         logger.debug('[any] render ambiguous references template %s', explicit_title)
         return self._render_reference_without_object(
             explicit_title, self.ambiguous_reference_template)
+
+
+    def __eq__(self, other:Any) -> bool:
+        """
+        Schema is dynamically created and used in sphinx configuration,
+        in order to prevent config changed (lead to sphinx environment rebuild),
+        we regard schemas with same attributes are equal.
+        """
+        if not isinstance(other, Schema):
+            return False
+        return pickle.dumps(self) == pickle.dumps(other)
