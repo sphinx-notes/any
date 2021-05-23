@@ -187,6 +187,12 @@ for example, try ``any:cat.name``:
 Change Log
 ==========
 
+2021-05-23 2.0a1
+----------------
+
+- Template variable must be non None (fb9678e)
+- Template will not apply on role with explicit title (5bdaad1)
+
 2021-05-22 2.0a0
 ----------------
 
