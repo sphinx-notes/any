@@ -7,7 +7,7 @@
     :copyright: Copyright 2021 Shengyu Zhang
     :license: BSD, see LICENSE for details.
 """
-from typing import Tuple, Dict, Any, Iterator, List, Set, Optional
+from typing import Tuple, Dict, Iterator, List, Set, Optional, Union
 from enum import Enum, auto
 from dataclasses import dataclass
 import uuid
@@ -70,7 +70,7 @@ class Field(object):
         return [x.strip() for x in rawval.split('\n') if x.strip() != '']
 
 
-    def value_of(self, rawval:Optional[str]) -> Any:
+    def value_of(self, rawval:Optional[str]) -> Union[None,str,List[str]]:
         if rawval is None:
             assert not self.required
             return None
@@ -171,21 +171,23 @@ class Schema(object):
             yield (self.CONTENT_KEY, self.content, obj.content if obj else None)
 
 
-    def name_of(self, obj:Object) -> Any:
+    def name_of(self, obj:Object) -> Union[None,str,List[str]]:
         assert obj
         return self.content.value_of(obj.name)
 
 
-    def attrs_of(self, obj:Object) -> Dict[str,Any]:
+    def attrs_of(self, obj:Object) -> Dict[str,Union[str,List[str]]]:
         assert obj
         attrs = {}
         for name, field in self.attrs.items():
             rawval = obj.attrs.get(name)
-            attrs[name]= field.value_of(rawval)
+            val = field.value_of(rawval)
+            if val is not None:
+                attrs[name]= val
         return attrs
 
 
-    def content_of(self, obj:Object) -> Any:
+    def content_of(self, obj:Object) -> Union[None,str,List[str]]:
         assert obj
         return self.content.value_of(obj.content)
 
@@ -245,23 +247,28 @@ class Schema(object):
             if rawval is None:
                 continue
             refs += [(name, x) for x in self._value_as_list(field, rawval)]
-        return refs
+        return set(refs)
 
 
-    def _context_without_object(self) -> Dict[str,Any]:
+    def _context_without_object(self) -> Dict[str,Union[str,List[str]]]:
         return  {
             self.TYPE_KEY: self.objtype,
         }
 
 
-    def _context_of(self, obj:Object) -> Dict[str,Any]:
-        context =  self._context_without_object()
+    def _context_of(self, obj:Object) -> Dict[str,Union[str,List[str]]]:
+        context = self._context_without_object()
         context.update({
-            self.NAME_KEY: self.name_of(obj),
-            self.TITLE_KEY: self.title_of(obj),
-            self.CONTENT_KEY: self.content_of(obj),
             **self.attrs_of(obj),
         })
+
+        def set_if_not_none(key:str, val:Union[str,List[str]]) -> None:
+            if val is not None:
+                context[key] = val
+        set_if_not_none(self.NAME_KEY, self.name_of(obj))
+        set_if_not_none(self.TITLE_KEY, self.title_of(obj))
+        set_if_not_none(self.CONTENT_KEY, self.content_of(obj))
+
         return context
 
 

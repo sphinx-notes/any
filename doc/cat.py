@@ -12,8 +12,10 @@ cat = Schema(
         'picture': Field(),
     },
     description_template=dedent("""
+        {% if picture %}
         .. image:: {{ picture }}
            :align: left
+        {% endif %}
 
         :owner: {{ owner }}
         :height: {{ height }}
