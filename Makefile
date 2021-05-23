@@ -24,5 +24,5 @@ install: dist
 	$(PY) -m pip install --user --no-deps --force-reinstall dist/*.whl
 
 .PHONY: test
-test:
-	$(PY) -m unittest -v
+test: tests
+	$(PY) -m unittest discover -s tests -v
