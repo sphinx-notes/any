@@ -13,6 +13,7 @@ from typing import Dict, List, Type
 from docutils import nodes
 from docutils.statemachine import StringList
 from docutils.parsers.rst import directives
+from docutils.nodes import whitespace_normalize_name, fully_normalize_name
 
 from sphinx import addnodes
 from sphinx.util.docutils import SphinxDirective
@@ -104,10 +105,17 @@ class AnyDirective(SphinxDirective):
         sectnode['classes'].append(domain.name)
 
         # Setup anchor
-        ahrid = make_id(self.env, self.state.document,
-                        prefix=objtype, term=self.schema.identifier_of(obj)[1])
+        _, objid = self.schema.identifier_of(obj)
+        ahrid = make_id(self.env, self.state.document, prefix=objtype, term=objid)
         ahrnode['ids'].append(ahrid)
-        ahrnode['names'].append(self.schema.title_of(obj))
+        # Add object name to node's names attribute.
+        # 'names' is space-separated list containing normalized reference
+        # names of an element.
+        name = self.schema.name_of(obj)
+        if isinstance(name, str):
+            ahrnode['names'].append(fully_normalize_name(name))
+        elif isinstance(name, list):
+            ahrnode['names'].extend([fully_normalize_name(x) for x in name])
         self.state.document.note_explicit_target(ahrnode)
         # Note object by docu fields
         # FIXME: Cast to AnyDomain
@@ -143,6 +151,15 @@ class AnyDirective(SphinxDirective):
         descnode = addnodes.desc()
         # Generate signature node
         title = self.schema.title_of(obj)
+        if title is None:
+            # Use non-generated object ID as replacement of title
+            idfield, objid = self.schema.identifier_of(obj)
+            if idfield is not None:
+                # ID is not generated
+                title = objid
+            else:
+                # ID is auto-generated, Use '' is better than None
+                title = ''
         signode = addnodes.desc_signature(title, '')
         signode += addnodes.desc_name(title, title)
         descnode.append(signode)
