@@ -38,10 +38,42 @@ class Object(object):
 
 @dataclass
 class Field(object):
+    """
+    Describes value constraint of field of Object.
+
+    The value of field can be single or mulitple string.
+
+    :param form: The form of value.
+    :param unique: Whether the field is unique.
+        If true, the value of field must be unique within the scope of objects
+        with same type. And it will be used as base string of object
+        identifier.
+
+        Only one unique field is allowed in one object type.
+
+        .. note::
+
+            Duplicated value causes a warning when building documentation,
+            and the corresponding object cannot be referenced correctly.
+    :param referenceable: Whether the field is referenceable.
+        If ture, object can be referenced by field value.
+        See :ref:`roles` for more details.
+
+    :param required: Whether the field is required.
+        If ture, :py:exc:`ObjectError` will be raised when building documentation
+        if the value is no given.
+    """
 
     class Form(Enum):
+        "An enumeration represents various string forms."
+
+        #: A single string
         PLAIN = auto()
+
+        #: Mulitple string separated by whitespace
         WORDS = auto()
+
+        #: Mulitple string separated by newline(``\n``)
         LINES = auto()
 
     form:Form=Form.PLAIN
@@ -84,15 +116,18 @@ class Field(object):
 
 class Schema(object):
     """
-    Schema describes a class of object, and be able to dynamically generate
-    corresponding directive, role and index for describing, referencing,
-    and indexing specific object.
+    Schema is used to describe objects, and be able to generate corresponding
+    directive, role and index for describing, referencing, and indexing specific
+    object.
     """
 
-    # Class-wide shared Special keys used in template rendering context
+    #: Template variable name of object type
     TYPE_KEY = 'type'
+    #: Template variable name of object name
     NAME_KEY = 'name'
+    #: Template variable name of object content
     CONTENT_KEY = 'content'
+    #: Template variable name of object title
     TITLE_KEY = 'title'
 
     # Object type
@@ -121,13 +156,27 @@ class Schema(object):
     ambiguous_reference_template:str
 
     def __init__(self, objtype:str,
-                 name:Field=Field(unique=True, referenceable=True),
+                 name:Optional[Field]=Field(unique=True, referenceable=True),
                  attrs:Dict[str,Field]={},
-                 content:Field=Field(),
+                 content:Optional[Field]=Field(),
                  description_template:str='{{ content }}',
                  reference_template:str='{{ title }}',
                  missing_reference_template:str='{{ title }} (missing reference)',
                  ambiguous_reference_template:str='{{ title }} (disambiguation)') -> None:
+        """Create a Schema instance.
+
+        :param objtype: The unique type name of object, it will be used as
+            basename of corresponding :ref:`directives`, :ref:`roles` and
+            :ref:`indices`
+        :param name: Constraints of optional object name
+        :param attrs: Constraints of object attributes
+        :param content: Constraints of object content
+        :param description_template: See :ref:`description-template`
+        :param reference_template: See :ref:`reference-template`
+        :param missing_reference_template: See :ref:`reference-template`
+        :param ambiguous_reference_template: See :ref:`reference-template`
+        """
+
         self.objtype = objtype
         self.name = name
         self.attrs = attrs

@@ -33,13 +33,27 @@ version = release = proj.__version__
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.githubpages',
     'any',
+    'sphinx.ext.githubpages',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
 ]
 
-
 sys.path.insert(0, os.path.abspath('.'))
-any_schemas = [ __import__("cat").cat ]
+any_schemas = [
+    __import__("cat").cat,
+    __import__("confval").confval,
+    __import__("tmplvar").tmplvar,
+]
+
+autoclass_content = 'init'
+autodoc_typehints = 'description'
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'sphinx': ('https://www.sphinx-doc.org/en/master', None),
+    'jinja': ('https://jinja.palletsprojects.com/en/latest/', None),
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
