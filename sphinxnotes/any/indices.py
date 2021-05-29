@@ -28,14 +28,19 @@ class AnyIndex(Index):
     @classmethod
     def derive(cls, schema:Schema, field:str=None) -> Type["AnyIndex"]:
         """Generate an AnyIndex child class for indexing object."""
-        dispfield = field or ''
-        return type('Any%s%sIndex' % (schema.objtype.title(), dispfield.title()),
-                    (cls,),
+        if field:
+            typ = f'Any{schema.objtype.title()}{field.title()}Index'
+            name = schema.objtype + '.' + field
+            localname = f'{schema.objtype.title()} {field.title()} Reference Index'
+        else:
+            typ = f'Any{schema.objtype.title()}Index'
+            name = schema.objtype
+            localname = f'{schema.objtype.title()} Reference Index'
+        return type(typ, (cls,),
                     { 'schema': schema,
                      'field': field,
-                     'name': '%s%sindex' % (schema.objtype, dispfield),
-                     'localname': '%s %s Reference Index' % (
-                         schema.objtype.title(), dispfield.title()),
+                     'name': name,
+                     'localname': localname,
                      'shortname': 'references',})
 
 
