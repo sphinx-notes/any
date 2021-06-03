@@ -187,6 +187,11 @@ for example, try ``any:cat.name``:
 Change Log
 ==========
 
+2021-06-03 2.0a3
+----------------
+
+- Simplify index name (e4d9207)
+
 2021-05-23 2.0a2
 ----------------
 
