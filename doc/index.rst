@@ -141,7 +141,7 @@ Options
    In this case, the directive has three options: ``id``, ``color`` and ``picture``.
 
 Content
-   Cotent is used to specify the :any:tmplvar:`content` of the object.
+   Content is used to specify the :any:tmplvar:`content` of the object.
 
    - A ``None`` field means no content is required
    - For a non-``None`` Field, see :py:attr:`any.Field` for more details
