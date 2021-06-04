@@ -1,9 +1,7 @@
 .. any:cat:: Nyan Cat
              Nyan_Cat
    :id: 1
-   :owner: prguitarman
-   :height: 200px
-   :width: 220px
+   :color: pink gray
    :picture: _images/nyan-cat.gif
 
    Nyan Cat is the name of a YouTube video uploaded in April 2011,

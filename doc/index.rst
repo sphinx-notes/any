@@ -13,9 +13,7 @@ Sphinx Domain for Descibing Anything
 :copyright: Copyright ©2021 by Shengyu Zhang.
 :license: BSD, see LICENSE for details.
 
-The extension provides a domain, allows user creates directive
-and roles to descibe and reference arbitrary object by writing reStructuredText
-template.
+The extension provides a domain which allows user creates directive and roles to descibe, reference and index arbitrary object in documentation by writing reStructuredText templates. It is a bit like :py:meth:`sphinx.application.Sphinx.add_object_type`, but more powerful.
 
 .. contents::
    :local:
@@ -47,40 +45,184 @@ Configuration
 
 The extension provides the following configuration:
 
-:any_domain_name: (Type: ``str``, Default: `'any'`)
-                  Name of the domain.
+.. any:confval:: any_domain_name
+   :type: str
+   :default: 'any'
 
-:any_schemas: (Type: ``List[sphinxnotes.any.Schema]``, Default: ``[]``)
-              List of :ref:`schema <schema>` instances.
+   Name of the domain.
 
-              For the way of writing schema definition, please refer to
-              :ref:`writing-schema`.
+.. any:confval:: any_schemas
+   :type: List[sphinxnotes.any.Schema]
+   :default: []
+
+   List of :ref:`schema <schema>` instances. For the way of writing schema definition, please refer to :ref:`writing-schema`.
 
 Functionalities
 ===============
 
 .. _writing-schema:
 
-Writing Schema
---------------
+Defining Schema
+---------------
 
 .. _schema:
 
 .. topic:: What is Schema?
 
-    Before descibing any object, we need a "schema" to descibe "how to descibe the object".
-    For extension user, "schema" is a python object that can specific in :file:`conf.py`.
-    See :ref:`Configuration` for details.
+    Before descibing any object, we need a "schema" to tell extension "how to descibe the object". For extension user, "schema" is a :py:class:`python object <any.Schema>` that can specific in configuration value :any:confval:`any_schemas`.
 
-An schema for descibing cat looks like this:
+The necessary python classes for writing schema are listed here:
+
+.. autoclass:: any.Schema
+
+   Class-wide shared special keys used in template rendering context:
+
+   .. autoattribute:: any.Schema.TYPE_KEY
+   .. autoattribute:: any.Schema.NAME_KEY
+   .. autoattribute:: any.Schema.CONTENT_KEY
+   .. autoattribute:: any.Schema.TITLE_KEY
+
+   |
+
+.. autoclass:: any.Field
+
+   |
+
+.. autoclass:: any.Field.Form
+
+   .. autoattribute:: any.Field.Form.PLAIN
+   .. autoattribute:: any.Field.Form.WORDS
+   .. autoattribute:: any.Field.Form.LINES
+
+Documenting Object
+------------------
+
+Once a schema created, the corresponding :ref:`directives`, :ref:`roles` and :ref:`indices` will be generated. You can use them to descibe, reference and index object in your documentation.
+
+For the convenience, we use default domain name "any", and we assume that we have the following schema with in :any:confval:`any_schemas`:
 
 .. literalinclude:: ./cat.py
    :language: python
 
-The aboved schema created a ``cat`` directive under "any" domain that
-can descibe a cat.
 
-.. note:: TODO
+.. _directives:
+
+Directives
+~~~~~~~~~~
+
+.. _object-description:
+
+Object Description
+^^^^^^^^^^^^^^^^^^
+
+The aboved schema created a Directive_ named with "``domain``-\ ``objtype``" (In this case, it is ``any:cat``) for descibing object(INC, it is cat🐈).
+
+Arguments
+   Arguments are used to specify the :any:tmplvar:`name` of the object. The number argument is depends on the name :py:class:`any.Field` of Schema.
+
+   - A ``None`` field means no argument is required
+   - For a non-``None`` Field, see :py:attr:`any.Field` for more details
+
+   .. _underscore-argument:
+
+   Specially, If first argument is ``_`` (underscore), the directive must be located after a `Section Title`_, the text of section title is the real first argument.
+
+   In this case, the ``any:cat`` directive accepts multiple argument split by newline.
+
+Options
+   All attributes defined in schema are converted to options of directive. Further, they will available in various :ref:`Templates <writing-template>`.
+
+   - A ``None`` field is no allowed for now means no argument is required
+
+     .. hint:: May be changed in the future vesrion.
+
+   - For a non-``None`` Field, see :py:attr:`any.Field` for more details
+
+   In this case, the directive has three options: ``id``, ``color`` and ``picture``.
+
+Content
+   Cotent is used to specify the :any:tmplvar:`content` of the object.
+
+   - A ``None`` field means no content is required
+   - For a non-``None`` Field, see :py:attr:`any.Field` for more details
+
+   In this case, the directive accepts content.
+
+The directive will be rendered to a reStructuredText snippet, by :ref:`description-template`, then inserted to documentation.
+
+Let's documenting such a cat:
+
+.. literalinclude:: nyan-cat.txt
+   :language: rst
+
+It will be rendered as:
+
+.. include:: nyan-cat.txt
+
+.. _Directive: https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#directives
+.. _Section Title: https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#sections
+
+.. _roles:
+
+Roles
+~~~~~
+
+Same to :ref:`sphinx:xref-syntax`, explicit title ``:role:`title <target>``` is supported by all the Role_\ s. If not explicit title specific, reference title will be rendered by one of :ref:`reference-template`.
+
+.. _Role: https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#interpreted-text
+
+General Reference
+^^^^^^^^^^^^^^^^^
+
+The aboved schema created a role named with "``domain``-\ ``objtype``" (In this case, it is ``any:cat``) for creating a reference to :ref:`object-description`. The interpreted text can be value of *any referenceable field*.
+
+=================== =================================== ========================
+Reference by name   ``:any:cat:`Nyan Cat```             :any:cat:`Nyan Cat`
+By another name     ``:any:cat:`Nyan_Cat```             :any:cat:`Nyan_Cat`
+By ID               ``:any:cat:`1```                    :any:cat:`1`
+Explicit title      ``:any:cat:`This cat <Nyan Cat>```  :any:cat:`This cat <Nyan Cat>`
+A nonexistent cat   ``:any:cat:`mimi```                 :any:cat:`mimi`
+=================== =================================== ========================
+
+Field-Specific Reference
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Role "``domain``-\ ``objtype``.\ ``field``" will be created for all referenceable Fields (In this case, it is ``any:cat.name``, ``any:cat.id`` and ``any:cat.color``).
+
+These roles also create reference to :ref:`object-description`. But the interpreted text must be value of field in role's name.
+
+=================== =============================== ============================
+Reference by name   ``:any:cat.name:`Nyan Cat```    :any:cat.name:`Nyan Cat`
+By ID               ``:any:cat.id:`1```             :any:cat.id:`1`
+=================== =============================== ============================
+
+.. _indices:
+
+Indices
+~~~~~~~
+
+According to sphinx documentation, we use :ref:`sphinx:ref-role` to create reference to object indices, and the index name should prefixed with domain name.
+
+General Index
+^^^^^^^^^^^^^
+
+Index "``domain``-\ ``objtype``" (In this case, it is ``any-cat``) creates reference to object index which grouped by all referenceable field values.
+
+================== ==============
+``:ref:`any-cat``` :ref:`any-cat`
+================== ==============
+
+Field Specific Index
+^^^^^^^^^^^^^^^^^^^^
+
+Index "``domain``-\ ``objtype``.\ ``field``" will be created for all reference Fields (In this case, it is ``any-cat.name``, ``any-cat.id`` and ``any-cat.color``).
+
+These indices create reference to object index which grouped by specific field values.
+
+======================= ===================
+``:ref:`any-cat.name``` :ref:`any-cat.name`
+``:ref:`any-cat.id```   :ref:`any-cat.id`
+======================= ===================
 
 .. _writing-template:
 
@@ -91,26 +233,70 @@ We use Jinja2_ as our templating engine.
 
 .. _Jinja2: https://jinja.palletsprojects.com/
 
+Currently we need two kinds of template to let .
+
+.. _description-template:
+
+Description Template
+~~~~~~~~~~~~~~~~~~~~
+
+Used to generate object description. Can be written in reStructuredText.
+
+.. _reference-template:
+
+Reference Template
+~~~~~~~~~~~~~~~~~~
+
+Used to generate object reference. Only plain text is allowed for now.
+
+Reference Template has two various variants:
+
+Missing Reference Template
+   Applied when the reference is missing.
+
+   .. hint:: In this template, only variables :any:tmplvar:`objtype` and :any:tmplvar:`title`  are available.
+
+Ambiguous Reference Template
+   Applied when the reference is ambiguous.
+
+   .. hint:: In this template, only variables :any:tmplvar:`objtype` and :any:tmplvar:`title`  are available.
+
 Variables
 ~~~~~~~~~
 
 For the usage of Jinja's variable, please refer to `Jinja2's Variables`_.
 
-All fields defined in schema are available as variables in template.
+.. _Jinja2's Variables: <https://jinja.palletsprojects.com/en/2.11.x/templates/#variables
+
+All attributes defined in schema are available as variables in template. Note the value of variable might be *string or string list* (depends on value of :py:class:`any.Schema.Field.Form`).
+
 Beside, there are some special variable:
 
-``{{ title }}``
-    Only available in "reference" template, represents the interpreted text.
+.. any:tmplvar:: objtype
+   :type: str
+   :conf: TYPE_KEY
 
-``{{ names }}``
-   Available in both "reference" and "description" template, represents the
-   directive argument.
+   Type of object.
 
-``{{ content }}``
-   Available in both "reference" and "description" template, represents the
-   directive content.
+.. any:tmplvar:: name
+   :type: Union[None,str,List[str]]
+   :conf: NAME_KEY
 
-.. _Jinja2's Variables: <https://jinja.palletsprojects.com/en/2.11.x/templates/#variables
+   Name of object.
+
+.. any:tmplvar:: content
+   :type: Union[None,str,List[str]]
+   :conf: CONTENT_KEY
+
+   Content of object.
+
+.. any:tmplvar:: title
+   :type: str
+   :conf: TITLE_KEY
+
+   Title of object.
+
+   In :ref:`reference-template`, its value might be overwritten by explicit title.
 
 Filters
 ~~~~~~~
@@ -137,55 +323,49 @@ In additional, we provide the following custom filters to enhance the template:
     This filter always keep the origin aspect ratio of image.
     The width and height are optional, By default are 1280 and 720 respectively.
 
-.. versionadded:: 1.0
+   .. versionadded:: 1.0
 
 .. _Jinja2's Filters: https://jinja.palletsprojects.com/en/2.11.x/templates/#filters>
 .. _Jinja2's Builtin Filters: https://jinja.palletsprojects.com/en/2.11.x/templates/#builtin-filters
 
-Using Newly Created Directive/Role
-----------------------------------
+Tips
+====
 
-Now we descibe a cat with the newly created directive:
+Omit Domain Name
+----------------
 
-.. literalinclude:: nyan-cat.txt
-   :language: rst
+You can omit the prefixed domain name in directives and roles by setting the ``primary_domain`` to your :any:confval:`any_domain_name` in :file:`conf.py`. For example, you can use `.. cat::` rather than `.. any:cat::`.
 
-It will be rendered as:
+Documenting Section and Documentation
+-------------------------------------
 
-.. include:: nyan-cat.txt
+By using the :ref:`Underscore Argument <underscore-argument>`, you can
+document a section and reference to it. For example:
 
-The created directive accept only one argument, which indicates the name of object,
-aliases can be added on another line after name, one alias per line.
+.. code-block:: rst
 
-If no argument given, or first one in argument (split by ``\n``) is ``_`` (underscore).
-the object name will be indicated by title of current section.
-This feature is useful when you want to use a whole section or documentation
-to descibing object, for example:
+   ================
+   The Story of Art
+   ================
 
-.. literalinclude:: mimi.txt
-   :language: rst
+   .. book:: _
+      :publisher: Phaidon Press; 16th edition (April 9, 1995) 
+      :isbn: 0714832472
+      :language: English 
 
-It will be rendered as:
+You not need to create a reST label by yourself, just use role like ``:book:`The Story of Art```. Beside, it is also a better replacement of  `Bibliographic Fields`_.
 
-.. include:: mimi.txt
-
-.. versionadded:: 1.0
-
-Use the ``any:cat`` role under "any" domain to reference Nyan Cat:
-
-- Reference by name: ``:any:cat:`Nyan Cat``` -> :any:cat:`Nyan Cat`
-- Reference by alias: ``:any:cat:`Nyan_Cat``` -> :any:cat:`Nyan_Cat`
-- Reference by ID: ``:any:cat:`1``` -> :any:cat:`1`
-- Explicit title is supported: ``:any:cat:`This cat <Nyan Cat>``` -> :any:cat:`This cat <Nyan Cat>`
-- Reference a nonexistent cat: ``:any:cat:`gg``` -> :any:cat:`gg`
-
-Beside, for all referenceable fieds, the corresponding roles is generated,
-for example, try ``any:cat.name``:
-
-- Exactly reference by name: ``:any:cat.name:`Nyan Cat``` -> :any:cat.name:`Nyan Cat`
+.. _Bibliographic Fields: https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#bibliographic-fields
 
 Change Log
 ==========
+
+2021-06-03 2.0a3
+----------------
+
+- Simplify index name (e4d9207)
+
+.. sectionauthor:: Shengyu Zhang
 
 2021-06-03 2.0a3
 ----------------
@@ -199,6 +379,7 @@ Change Log
 - Prevent sphinx config changed everytime (f7b316b)
 
 .. sectionauthor:: Shengyu Zhang
+
 2021-05-23 2.0a1
 ----------------
 
