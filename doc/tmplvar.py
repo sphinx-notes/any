@@ -20,4 +20,5 @@ tmplvar = Schema(
            :py:attr:`~any.Schema.{{ conf }}`
         {% endif %}"""),
 
-    reference_template="{{ '{{' }}{{ title }}{{ '}}' }}")
+    reference_template="{{ '{{' }}{{ title }}{{ '}}' }}",
+    missing_reference_template="{{ '{{' }}{{ title }}{{ '}}' }}")
