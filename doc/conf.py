@@ -44,6 +44,7 @@ any_schemas = [
     __import__("cat").cat,
     __import__("confval").confval,
     __import__("tmplvar").tmplvar,
+    __import__("dog2").dog,
 ]
 
 autoclass_content = 'init'

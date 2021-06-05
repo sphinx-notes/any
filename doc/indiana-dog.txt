@@ -1,0 +1,3 @@
+.. any:dog:: Indiana
+   :breed: Husky
+   :color: Black White
