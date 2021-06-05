@@ -1,10 +1,6 @@
-===============
-sphinxnotes.any
-===============
-
-------------------------------------
-Sphinx Domain for Descibing Anything
-------------------------------------
+======================================================
+sphinxnotes.any - Sphinx Domain for Descibing Anything
+======================================================
 
 .. image:: https://img.shields.io/github/stars/sphinx-notes/any.svg?style=social&label=Star&maxAge=2592000
    :target: https://github.com/sphinx-notes/any
