@@ -122,7 +122,7 @@ class AnyDomain(Domain):
                                 contnode, objtype + ' ' + target)
         else:
             todocname, anchor, = self._get_index_anchor(typ, target)
-            logger.info(f'ambiguous {objtype} {target} in {self}, ' +
+            logger.debug(f'ambiguous {objtype} {target} in {self}, ' +
                         f'ids: {objids} index: {todocname}#{anchor}')
         return make_refnode(builder, fromdocname, todocname, anchor,
                             contnode, objtype + ' ' + target)
