@@ -111,7 +111,7 @@ Directives
 Object Description
 ^^^^^^^^^^^^^^^^^^
 
-The aboved schema created a Directive_ named with "``domain``-\ ``objtype``" (In this case, it is ``any:cat``) for descibing object(INC, it is cat🐈).
+The aboved schema created a Directive_ named with "``domain``:\ ``objtype``" (In this case, it is ``any:cat``) for descibing object(INC, it is cat🐈).
 
 Arguments
    Arguments are used to specify the :any:tmplvar:`name` of the object. The number argument is depends on the name :py:class:`any.Field` of Schema.
@@ -330,7 +330,7 @@ Tips
 Omit Domain Name
 ----------------
 
-You can omit the prefixed domain name in directives and roles by setting the ``primary_domain`` to your :any:confval:`any_domain_name` in :file:`conf.py`. For example, you can use `.. cat::` rather than `.. any:cat::`.
+You can omit the prefixed domain name in directives and roles by setting the ``primary_domain`` to your :any:confval:`any_domain_name` in :file:`conf.py`. For example, you can use ``.. cat::`` rather than ``.. any:cat::``.
 
 Documenting Section and Documentation
 -------------------------------------
@@ -361,7 +361,7 @@ As the :ref:`description-template` supports reStructuredText, We have a lot of r
 Categorizing and Tagging
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-When we descibing a object, usually we are categorizing and tagging them,
+When we descibing a object, usually we are categorizing and tagging them.
 For dog, we may define such a Schema: 
 
 .. literalinclude:: ./dog1.py
