@@ -13,7 +13,7 @@ from typing import Dict, List, Type
 from docutils import nodes
 from docutils.statemachine import StringList
 from docutils.parsers.rst import directives
-from docutils.nodes import whitespace_normalize_name, fully_normalize_name
+from docutils.nodes import fully_normalize_name
 
 from sphinx import addnodes
 from sphinx.util.docutils import SphinxDirective
