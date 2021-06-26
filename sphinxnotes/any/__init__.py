@@ -21,7 +21,7 @@ from .domain import AnyDomain
 from .schema import Schema, Field
 
 __title__= 'sphinxnotes-any'
-__license__ = 'BSD',
+__license__ = 'BSD'
 __version__ = '2.1'
 __author__ = 'Shengyu Zhang'
 __url__ = 'https://sphinx-notes.github.io/any'
