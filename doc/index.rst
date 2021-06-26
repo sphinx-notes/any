@@ -386,7 +386,7 @@ The rendered reStructuredText looks like this:
 .. code-block:: rst
 
    :Breed: :any:dog.breed:`Husky`
-   :Colors: :any:dog.color:`Black` any:dog.color:`White` 
+   :Colors: :any:dog.color:`Black` any:dog.color:`White`
 
 The rendered object description:
 
@@ -394,6 +394,13 @@ The rendered object description:
 
 Change Log
 ==========
+
+2021-06-26 2.1
+--------------
+
+- Report ambiguous object via debug log
+- Some doc fixes
+- Remove unused import
 
 2021-06-05 2.0
 --------------
