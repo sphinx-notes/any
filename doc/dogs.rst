@@ -4,7 +4,7 @@
 Dogs
 ====
 
-This pages describe some Town Dogs[#]_ in Terraria[#]_:
+This pages describe some Town Dogs [#]_ in Terraria [#]_:
 
 .. any:dog:: Arthur
    :breed: Labrador
@@ -18,10 +18,10 @@ This pages describe some Town Dogs[#]_ in Terraria[#]_:
    :breed: Pit Bull
    :color: Brown White
 
-.. any:dog:: Ginger 
+.. any:dog:: Ginger
    :breed: Pit Bull
    :color: Brown White
-   
+
 .. any:dog:: Hachiko
    :breed: Husky
    :color: Black White
