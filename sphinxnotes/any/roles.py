@@ -8,7 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 from __future__ import annotations
-from typing import Tuple, Type, TYPE_CHECKING
+from typing import Tuple, Type, List, TYPE_CHECKING
 
 from docutils import nodes
 
@@ -40,15 +40,18 @@ class AnyRole(XRefRole):
                     { 'schema': schema })
 
 
-    def process_link(self, env:BuildEnvironment, refnode:nodes.Element,
-                     has_explicit_title:bool, title:str, target:str) -> Tuple[str,str]:
+    def result_nodes(self, document: nodes.document, env: "BuildEnvironment", node: nodes.Element,
+                     is_ref: bool) -> Tuple[List[nodes.Node], List[nodes.system_message]]:
         """Override parent method."""
-        if has_explicit_title:
-            # Don't apply any template if has_explicit_title
-            return title, target
+        if not is_ref:
+            return [node], []
+        if node['refexplicit']:
+            return [node], []
 
-        domain = env.get_domain(refnode['refdomain'])
-        objtype, objfield = reftype_to_objtype_and_objfield(refnode['reftype'])
+        domain = env.get_domain(node['refdomain'])
+        title = node[0].astext()
+        target = node['reftarget']
+        objtype, objfield = reftype_to_objtype_and_objfield(node['reftype'])
         objids = set()
         if objfield:
             # NOTE: To prevent change domain data, dont use ``objids = xxx``
@@ -68,7 +71,10 @@ class AnyRole(XRefRole):
             title = self.schema.render_reference(obj)
         else:
             title = self.schema.render_ambiguous_reference(title)
-        return title, target
+
+        node[0] = self.innernodeclass(self.rawtext, title, classes=self.classes)
+
+        return [node], []
 
 
 def reftype_to_objtype_and_objfield(reftype:str) -> Tuple[str,str]:
