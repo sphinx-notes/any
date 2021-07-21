@@ -46,7 +46,7 @@ class AnyDomain(Domain):
     #: Role name -> role callable
     roles:Dict[str,RoleFunction] = {}
     #: A list of Index subclasses
-    indices:List[Type[AnyIndex]] = []            
+    indices:List[Type[AnyIndex]] = []
     #: AnyDomain specific: Type -> index class
     _indices_for_reftype:Dict[str,Type[AnyIndex]] = {}
 
@@ -113,6 +113,7 @@ class AnyDomain(Domain):
             for (t, _, r), ids in self.references.items():
                 if t == objtype and r == target:
                     objids.update(ids)
+
         if not objids:
             logger.warning(f'no such {objtype} {target} in {self}')
             return None
@@ -124,8 +125,8 @@ class AnyDomain(Domain):
             todocname, anchor, = self._get_index_anchor(typ, target)
             logger.debug(f'ambiguous {objtype} {target} in {self}, ' +
                         f'ids: {objids} index: {todocname}#{anchor}')
-        return make_refnode(builder, fromdocname, todocname, anchor,
-                            contnode, objtype + ' ' + target)
+            return make_refnode(builder, fromdocname, todocname, anchor,
+                                contnode, objtype + ' ' + target)
 
 
     # Override parent method
