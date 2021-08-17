@@ -70,10 +70,10 @@ class AnyIndex(Index):
                 docname, anchor, obj = self.domain.data['objects'][self.schema.objtype, objid]
                 if docnames and docname not in docnames:
                     continue
-                idfield, _ = self.schema.identifier_of(obj)
-                extra = f'{idfield}: {objid}' if idfield else ''
-                name = self.schema.title_of(obj) or ''
-                desc = self.schema.content_of(obj)[:50] + '…'
+                name = self.schema.title_of(obj) or objid
+                extra = '' if name == objid else objid
+                objcont = self.schema.content_of(obj)
+                desc = objcont[:50] + '…' if len(objcont) > 50 else objcont
                 # 0: Normal entry
                 entries.append(IndexEntry(name, 0, docname, anchor, extra, '', desc))
 
