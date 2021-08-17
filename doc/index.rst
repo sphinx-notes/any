@@ -395,6 +395,11 @@ The rendered object description:
 Change Log
 ==========
 
+2021-08-18 2.2
+--------------
+
+- Use the Object ID as index name when no object title available
+
 2021-06-26 2.1
 --------------
 
@@ -412,8 +417,6 @@ Change Log
 
 - Simplify index name (e4d9207)
 
-.. sectionauthor:: Shengyu Zhang
-
 2021-06-03 2.0a3
 ----------------
 
@@ -425,15 +428,11 @@ Change Log
 - Fix none object signture (6a5f75f)
 - Prevent sphinx config changed everytime (f7b316b)
 
-.. sectionauthor:: Shengyu Zhang
-
 2021-05-23 2.0a1
 ----------------
 
 - Template variable must be non None (fb9678e)
 - Template will not apply on role with explicit title (5bdaad1)
-
-.. sectionauthor:: Shengyu Zhang
 
 2021-05-22 2.0a0
 ----------------
@@ -454,8 +453,6 @@ Change Log
 - Add custom filter support to template
 - Combine ``any_predefined_schemas`` and ``any_custom_schemas`` to ``any_schemas``
 
-.. sectionauthor:: Shengyu Zhang
-
 2021-01-28 1.0b0
 ----------------
 
@@ -465,11 +462,7 @@ Change Log
 - Rename schema field "role" to "reference"
 - Rename schema field "directive" to "content"
 
-.. sectionauthor:: Shengyu Zhang
-
 2020-12-20 1.0a1
 ----------------
 
 The alpha version is out, enjoy~
-
-.. sectionauthor:: Shengyu Zhang
