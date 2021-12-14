@@ -37,6 +37,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
+    'sphinxcontrib.restbuilder',
 ]
 
 sys.path.insert(0, os.path.abspath('.'))

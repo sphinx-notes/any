@@ -8,7 +8,8 @@ SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = .
 BUILDDIR      = _build
 
-default: html
+default: html rst
+	mv "$(BUILDDIR)/rst/index.rst" ../README.rst
 
 # Put it first so that "make" without argument is like "make help".
 help:
