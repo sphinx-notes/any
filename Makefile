@@ -7,7 +7,7 @@ RM   = rm -rf
 .PHONY: doc
 doc:
 	$(RM) doc/_build
-	$(MAKE) -C doc/
+	$(MAKE) -C doc/ markdown
 
 .PHONY: dist
 dist: setup.py

@@ -140,11 +140,11 @@ Content
    Content is used to specify the :any:tmplvar:`content` of the object.
 
    - A ``None`` field means no content is required
-   - For a non-``None`` Field, see :py:attr:`any.Field` for more details
+   - for a non-``none`` field, see :py:attr:`any.field` for more details
 
-   In this case, the directive accepts content.
+   in this case, the directive accepts content.
 
-The directive will be rendered to a reStructuredText snippet, by :ref:`description-template`, then inserted to documentation.
+the directive will be rendered to a restructuredtext snippet, by :ref:`description-template`, then inserted to documentation.
 
 Let's documenting such a cat:
 
