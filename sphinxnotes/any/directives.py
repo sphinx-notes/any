@@ -139,9 +139,10 @@ class AnyDirective(SphinxDirective):
             title = ''
         else:
             title = titlenode.astext()
-        # Replace "_" with section titl
-        # FIXME: it is dirty
-        obj.name = title + obj.name[1:]
+        # Replace the first name "_" with section title
+        name = title + obj.name[1:]
+        # Object is immutable, so create a new one
+        obj = self.schema.object(name=title, attrs=obj.attrs, content=obj.content)
         self._setup_nodes(obj, sectnode, sectnode, sectnode)
         # Add all content to existed section, so return nothing
         return []

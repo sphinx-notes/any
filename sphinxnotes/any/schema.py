@@ -28,7 +28,7 @@ class SchemaError(AnyExtensionError):
     pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Object(object):
     objtype:str
     name:str
