@@ -10,8 +10,8 @@
 from typing import Tuple, Dict, Iterator, List, Set, Optional, Union, Any
 from enum import Enum, auto
 from dataclasses import dataclass
-import uuid
 import pickle
+import hashlib
 
 from sphinx.util import logging
 
@@ -34,6 +34,9 @@ class Object(object):
     name:str
     attrs:Dict[str,str]
     content:str
+
+    def hexdigest(self) -> str:
+        return hashlib.sha1(pickle.dumps(self)).hexdigest()[:7]
 
 
 @dataclass
@@ -239,7 +242,7 @@ class Schema(object):
     def identifier_of(self, obj:Object) -> Tuple[Optional[str],str]:
         """
         Return unique identifier of object.
-        If there is not any unique field, return (None, uuid[:7] instead.
+        If there is not any unique field, return (None, obj.hexdigest()) instead.
         """
         assert obj
         for name, field, val in self.fields_of(obj):
@@ -252,7 +255,7 @@ class Schema(object):
             elif isinstance(val, list) and len(val) > 0:
                 return name, val[0]
             return name, val
-        return None, uuid.uuid4().hex[:7]
+        return None, obj.hexdigest()
 
 
     def title_of(self, obj:Object) -> Optional[str]:
