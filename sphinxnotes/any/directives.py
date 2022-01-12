@@ -142,7 +142,7 @@ class AnyDirective(SphinxDirective):
         # Replace the first name "_" with section title
         name = title + obj.name[1:]
         # Object is immutable, so create a new one
-        obj = self.schema.object(name=title, attrs=obj.attrs, content=obj.content)
+        obj = self.schema.object(name=name, attrs=obj.attrs, content=obj.content)
         self._setup_nodes(obj, sectnode, sectnode, sectnode)
         # Add all content to existed section, so return nothing
         return []
