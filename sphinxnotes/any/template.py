@@ -133,7 +133,7 @@ class Environment(jinja2.Environment):
             outfn = path.join(self._srcdir, fn)
             # Make sure output dir exists
             ensuredir(path.dirname(outfn))
-        relfn = path.relpath(outfn, self._builder.srcdir)
+        relfn = self._relative_uri(ANYDIR, fn)
         return (infn, outfn, relfn)
 
 
