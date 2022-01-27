@@ -104,7 +104,7 @@ class Environment(jinja2.Environment):
     def _relative_uri(self, *args):
         """Return a relative URL from current docname to ``*args``."""
         docname = self._builder.env.docname
-        base = self._builder.get_target_uri(docname),
+        base = self._builder.get_target_uri(docname)
         return relative_uri(base, posixpath.join(*args))
 
 
