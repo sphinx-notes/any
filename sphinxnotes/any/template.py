@@ -11,7 +11,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Tuple
 
-
 import os
 from os import path
 import posixpath
@@ -68,18 +67,13 @@ class Environment(jinja2.Environment):
         self.filters['copyfile'] = self._copyfile_filter
 
 
-    def _thumbnail_filter(self, imgfn:str, width:int=1280, height:int=720) -> str:
+    def _thumbnail_filter(self, imgfn:str) -> str:
         infn, outfn, relfn = self._get_in_out_rel(imgfn)
         with Image(filename=infn) as img:
-            # TODO:
-            if img.width > width:
-                height = int((img.height / img.width) * width)
-            elif img.height > height:
-                width = int((img.width / img.height) * height)
-            else:
-                width = img.width
-                height = img.height
-            img.thumbnail(width, height)
+            # Remove any associated profiles
+            img.thumbnail()
+            # If larger than 640x480, fit within box, preserving aspect ratio
+            img.transform(resize='640x480>')
             img.save(filename=outfn)
         return relfn
 
