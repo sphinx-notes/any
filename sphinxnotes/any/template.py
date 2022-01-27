@@ -94,6 +94,9 @@ class Environment(jinja2.Environment):
         Copy the file from sphinx srcdir to sphinx outdir, return the relative
         uri of current docname.
         """
+        if path.isabs(fn):
+            # Convert absoulte path to relative path
+            fn = path.relpath(fn, '/')
         src = path.join(self._builder.srcdir, fn)
         dst = path.join(self._builder.outdir, _ANYDIR, fn)
         ensuredir(path.dirname(dst))
@@ -109,12 +112,15 @@ class Environment(jinja2.Environment):
 
 
     def _get_in_out_rel(self, fn:str) -> Tuple[str,str,str]:
+        if path.isabs(fn):
+            # Convert absoulte path to relative path
+            fn = path.relpath(fn, '/')
         infn = path.join(self._builder.srcdir, fn)
         if infn.startswith(self._tempsym):
-            # fn outputted by other filters
+            # fn is outputted by other filters
             outfn = infn
         else:
-            # fn specified by user
+            # fn is specified by user
             outfn = path.join(self._tempsym, fn)
             if path.isfile(outfn):
                 # fn is already processed by other filters
