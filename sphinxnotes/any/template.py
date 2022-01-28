@@ -9,23 +9,22 @@
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Tuple
-
+from typing import Tuple
 import os
 from os import path
 import posixpath
 import tempfile
 import shutil
 
-from sphinx.util import ensuredir, relative_uri
-if TYPE_CHECKING:
-    from sphinx.application import Sphinx
-    from sphinx.builders import Builder
+from sphinx.util import ensuredir, relative_uri, logging
+from sphinx.application import Sphinx
+from sphinx.builders import Builder
 
 import jinja2
 from wand.image import Image
 
 ANYDIR = '_any'
+logger = logging.getLogger(__name__)
 
 class Environment(jinja2.Environment):
     _builder:Builder
@@ -53,6 +52,8 @@ class Environment(jinja2.Environment):
             os.unlink(cls._srcdir)
         os.symlink(cls._outdir, cls._srcdir)
 
+        logger.info(f'[any] exclusive srcdir: {cls._srcdir}')
+        logger.info(f'[any] exclusive outdir: {cls._outdir}')
 
     @classmethod
     def _on_build_finished(cls, app:Sphinx, exception):
@@ -61,14 +62,19 @@ class Environment(jinja2.Environment):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.filters['thumbnail'] = self._thumbnail_filter
+        self.filters['thumbnail'] = self.thumbnail_filter
+        self.filters['install'] = self.install_filter
         # self.filters['watermark'] = self._watermark_filter
-        self.filters['copyfile'] = self._copyfile_filter
 
 
-    def _thumbnail_filter(self, imgfn:str) -> str:
+    def thumbnail_filter(self, imgfn:str) -> str:
+        imgfn = self._ensure_rel(imgfn)
         infn, outfn, relfn = self._get_in_out_rel(imgfn)
+
+        if not self._is_outdated(outfn, infn):
+            # No need to make thumbnail
+            return relfn
+
         with Image(filename=infn) as img:
             # Remove any associated profiles
             img.thumbnail()
@@ -78,7 +84,25 @@ class Environment(jinja2.Environment):
         return relfn
 
 
-    def _watermark_filter(self, imgfn:str) -> str:
+    def install_filter(self, fn:str) -> str:
+        """
+        Install file to sphinx outdir, return the relative uri of current docname.
+        """
+
+        fn = self._ensure_rel(fn)
+        src = path.join(self._builder.srcdir, fn)
+        target = path.join(self._builder.outdir, ANYDIR, fn)
+
+        if not self._is_outdated(target, src):
+            # No need to install file
+            return relfn
+
+        ensuredir(path.dirname(target))
+        shutil.copy(src, target)
+        return self._relative_uri(ANYDIR, fn)
+
+
+    def watermark_filter(self, imgfn:str) -> str:
         # TODO
         # infn, outfn, relfn = self._get_in_out_rel(imgfn)
         # with Image(filename=infn) as img:
@@ -89,21 +113,6 @@ class Environment(jinja2.Environment):
         pass
 
 
-    def _copyfile_filter(self, fn:str) -> str:
-        """
-        Copy the file from sphinx srcdir to sphinx outdir, return the relative
-        uri of current docname.
-        """
-        if path.isabs(fn):
-            # Convert absoulte path to relative path
-            fn = path.relpath(fn, '/')
-        src = path.join(self._builder.srcdir, fn)
-        dst = path.join(self._builder.outdir, ANYDIR, fn)
-        ensuredir(path.dirname(dst))
-        shutil.copy(src, dst)
-        return self._relative_uri(ANYDIR, fn)
-
-
     def _relative_uri(self, *args):
         """Return a relative URL from current docname to ``*args``."""
         docname = self._builder.env.docname
@@ -112,9 +121,9 @@ class Environment(jinja2.Environment):
 
 
     def _get_in_out_rel(self, fn:str) -> Tuple[str,str,str]:
-        if path.isabs(fn):
-            # Convert absoulte path to relative path
-            fn = path.relpath(fn, '/')
+        # The pass-in filenames must be relative
+        assert not path.isabs(fn)
+
         infn = path.join(self._builder.srcdir, fn)
         if infn.startswith(self._srcdir):
             # fn is outputted by other filters
@@ -122,11 +131,39 @@ class Environment(jinja2.Environment):
         else:
             # fn is specified by user
             outfn = path.join(self._srcdir, fn)
-            if path.isfile(outfn):
-                # fn is already processed by other filters
-                infn = outfn
-            else:
-                # Make sure output dir exists
-                ensuredir(path.dirname(outfn))
+            # Make sure output dir exists
+            ensuredir(path.dirname(outfn))
         relfn = path.relpath(outfn, self._builder.srcdir)
         return (infn, outfn, relfn)
+
+
+    def _ensure_rel(self, fn: str) -> str:
+        """Convert site-wide absoulte path to relative path."""
+        return path.relpath(fn, '/') if path.isabs(fn) else fn
+
+
+    def _is_outdated(self, target:str, src: str) -> bool:
+        """
+        Return whether the target file is older than src file.
+        The given filenames must be absoulte paths.
+        """
+
+        assert path.isabs(target)
+        assert path.isabs(src)
+
+        # If target file not found, regard as outdated
+        if not path.exists(target):
+            logger.debug(f'[any] {target} is outdated: not found')
+            return True
+
+        # Compare mtime
+        try:
+            targetmtime = path.getmtime(target)
+            srcmtime = path.getmtime(src)
+            outdated = srcmtime > targetmtime
+            if outdated:
+                logger.debug(f'[any] {target} is outdated: {srcmtime} > {targetmtime}')
+        except Exception as e:
+            outdated = True
+            logger.debug(f'[any] {target} is outdated: {e}')
+        return outdated
