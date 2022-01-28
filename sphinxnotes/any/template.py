@@ -17,8 +17,6 @@ import posixpath
 import tempfile
 import shutil
 
-_ANYDIR = '_any'
-
 from sphinx.util import ensuredir, relative_uri
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -27,13 +25,15 @@ if TYPE_CHECKING:
 import jinja2
 from wand.image import Image
 
+ANYDIR = '_any'
 
 class Environment(jinja2.Environment):
     _builder:Builder
-    # Temp directory inside source dir
-    _tempdir:str
-    # Softlink link to tempdir that inside sphinx srcdir
-    _tempsym:str
+    # Exclusive outdir for template filters
+    _outdir:str
+    # Exclusive srcdir for template filters
+    # Actually it is a softlink link to _outdir.
+    _srcdir:str
 
 
     @classmethod
@@ -46,17 +46,17 @@ class Environment(jinja2.Environment):
     @classmethod
     def _on_builder_inited(cls, app:Sphinx):
         cls._builder = app.builder
-        cls._tempdir = tempfile.mkdtemp(prefix=_ANYDIR)
-        cls._tempsym = path.join(app.srcdir, _ANYDIR)
-        if path.islink(cls._tempsym):
-            os.unlink(cls._tempsym)
-        os.symlink(cls._tempdir, cls._tempsym)
+        cls._outdir = path.join(app.outdir, ANYDIR)
+        ensuredir(cls._outdir)
+        cls._srcdir = path.join(app.srcdir, ANYDIR)
+        if path.islink(cls._srcdir):
+            os.unlink(cls._srcdir)
+        os.symlink(cls._outdir, cls._srcdir)
 
 
     @classmethod
     def _on_build_finished(cls, app:Sphinx, exception):
-        shutil.rmtree(cls._tempdir)
-        os.unlink(cls._tempsym)
+        os.unlink(cls._srcdir)
 
 
     def __init__(self, *args, **kwargs):
@@ -98,10 +98,10 @@ class Environment(jinja2.Environment):
             # Convert absoulte path to relative path
             fn = path.relpath(fn, '/')
         src = path.join(self._builder.srcdir, fn)
-        dst = path.join(self._builder.outdir, _ANYDIR, fn)
+        dst = path.join(self._builder.outdir, ANYDIR, fn)
         ensuredir(path.dirname(dst))
         shutil.copy(src, dst)
-        return self._relative_uri(_ANYDIR, fn)
+        return self._relative_uri(ANYDIR, fn)
 
 
     def _relative_uri(self, *args):
@@ -116,12 +116,12 @@ class Environment(jinja2.Environment):
             # Convert absoulte path to relative path
             fn = path.relpath(fn, '/')
         infn = path.join(self._builder.srcdir, fn)
-        if infn.startswith(self._tempsym):
+        if infn.startswith(self._srcdir):
             # fn is outputted by other filters
             outfn = infn
         else:
             # fn is specified by user
-            outfn = path.join(self._tempsym, fn)
+            outfn = path.join(self._srcdir, fn)
             if path.isfile(outfn):
                 # fn is already processed by other filters
                 infn = outfn
