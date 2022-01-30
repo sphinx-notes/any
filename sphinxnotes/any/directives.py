@@ -133,8 +133,9 @@ class AnyDirective(SphinxDirective):
         titlenode = sectnode.next_node(nodes.title)
         if not titlenode or titlenode.parent != sectnode:
             # Title should be direct child of section
-            sm = nodes.system_message('Failed to get title of current section',
-                                      type='WARNING', level=2, backrefs=[])
+            msg = 'Failed to get title of current section'
+            logger.warning(msg, location=sectnode)
+            sm = nodes.system_message(msg, type='WARNING', level=2, backrefs=[], source='')
             sectnode += sm
             title = ''
         else:
