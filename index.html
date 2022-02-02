@@ -1,0 +1,816 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>sphinxnotes.any - Sphinx Domain for Descibing Anything &#8212; sphinxnotes-any 2.3a0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="canonical" href="https://sphinx-notes.github.io/any/index.html" />
+    <link rel="shortcut icon" href="_static/sphinx-notes.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="sphinxnotes-any-sphinx-domain-for-descibing-anything">
+<h1>sphinxnotes.any - Sphinx Domain for Descibing Anything<a class="headerlink" href="#sphinxnotes-any-sphinx-domain-for-descibing-anything" title="Permalink to this headline">¶</a></h1>
+<a class="reference external image-reference" href="https://github.com/sphinx-notes/any"><img alt="https://img.shields.io/github/stars/sphinx-notes/any.svg?style=social&amp;label=Star&amp;maxAge=2592000" src="https://img.shields.io/github/stars/sphinx-notes/any.svg?style=social&amp;label=Star&amp;maxAge=2592000" /></a>
+<dl class="field-list simple">
+<dt class="field-odd">version</dt>
+<dd class="field-odd"><p>2.3a0</p>
+</dd>
+<dt class="field-even">copyright</dt>
+<dd class="field-even"><p>Copyright ©2021 by Shengyu Zhang.</p>
+</dd>
+<dt class="field-odd">license</dt>
+<dd class="field-odd"><p>BSD, see LICENSE for details.</p>
+</dd>
+</dl>
+<p>The extension provides a domain which allows user creates directive and roles to descibe, reference and index arbitrary object in documentation by writing reStructuredText templates. It is a bit like <a class="reference external" href="https://www.sphinx-doc.org/en/master/extdev/appapi.html#sphinx.application.Sphinx.add_object_type" title="(in Sphinx v5.0.0+)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sphinx.application.Sphinx.add_object_type()</span></code></a>, but more powerful.</p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#installation" id="id18">Installation</a></p></li>
+<li><p><a class="reference internal" href="#configuration" id="id19">Configuration</a></p></li>
+<li><p><a class="reference internal" href="#functionalities" id="id20">Functionalities</a></p>
+<ul>
+<li><p><a class="reference internal" href="#defining-schema" id="id21">Defining Schema</a></p></li>
+<li><p><a class="reference internal" href="#documenting-object" id="id22">Documenting Object</a></p>
+<ul>
+<li><p><a class="reference internal" href="#directives" id="id23">Directives</a></p>
+<ul>
+<li><p><a class="reference internal" href="#object-description" id="id24">Object Description</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#roles" id="id25">Roles</a></p>
+<ul>
+<li><p><a class="reference internal" href="#general-reference" id="id26">General Reference</a></p></li>
+<li><p><a class="reference internal" href="#field-specific-reference" id="id27">Field-Specific Reference</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#indices" id="id28">Indices</a></p>
+<ul>
+<li><p><a class="reference internal" href="#general-index" id="id29">General Index</a></p></li>
+<li><p><a class="reference internal" href="#field-specific-index" id="id30">Field Specific Index</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#writing-template" id="id31">Writing Template</a></p>
+<ul>
+<li><p><a class="reference internal" href="#description-template" id="id32">Description Template</a></p></li>
+<li><p><a class="reference internal" href="#reference-template" id="id33">Reference Template</a></p></li>
+<li><p><a class="reference internal" href="#variables" id="id34">Variables</a></p></li>
+<li><p><a class="reference internal" href="#filters" id="id35">Filters</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#tips" id="id36">Tips</a></p>
+<ul>
+<li><p><a class="reference internal" href="#omit-domain-name" id="id37">Omit Domain Name</a></p></li>
+<li><p><a class="reference internal" href="#documenting-section-and-documentation" id="id38">Documenting Section and Documentation</a></p></li>
+<li><p><a class="reference internal" href="#enrich-object-description" id="id39">Enrich Object Description</a></p>
+<ul>
+<li><p><a class="reference internal" href="#categorizing-and-tagging" id="id40">Categorizing and Tagging</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#change-log" id="id41">Change Log</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id11" id="id42">2021-08-18 2.2</a></p></li>
+<li><p><a class="reference internal" href="#id12" id="id43">2021-06-26 2.1</a></p></li>
+<li><p><a class="reference internal" href="#id13" id="id44">2021-06-05 2.0</a></p></li>
+<li><p><a class="reference internal" href="#a3" id="id45">2021-06-03 2.0a3</a></p></li>
+<li><p><a class="reference internal" href="#id14" id="id46">2021-06-03 2.0a3</a></p></li>
+<li><p><a class="reference internal" href="#a2" id="id47">2021-05-23 2.0a2</a></p></li>
+<li><p><a class="reference internal" href="#a1" id="id48">2021-05-23 2.0a1</a></p></li>
+<li><p><a class="reference internal" href="#a0" id="id49">2021-05-22 2.0a0</a></p></li>
+<li><p><a class="reference internal" href="#id15" id="id50">2021-02-28 1.1</a></p></li>
+<li><p><a class="reference internal" href="#id16" id="id51">2021-02-23 1.0</a></p></li>
+<li><p><a class="reference internal" href="#b0" id="id52">2021-01-28 1.0b0</a></p></li>
+<li><p><a class="reference internal" href="#id17" id="id53">2020-12-20 1.0a1</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>Download it from official Python Package Index:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pip install sphinxnotes-any
+</pre></div>
+</div>
+<p>Add extension to <code class="file docutils literal notranslate"><span class="pre">conf.py</span></code> in your sphinx project:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">extensions</span> <span class="o">=</span> <span class="p">[</span>
+          <span class="c1"># …</span>
+          <span class="s1">&#39;sphinxnotes.any&#39;</span><span class="p">,</span>
+          <span class="c1"># …</span>
+          <span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="configuration">
+<span id="id1"></span><h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<p>The extension provides the following configuration:</p>
+<dl class="any">
+<dt class="sig sig-object any" id="confval-any_domain_name">
+<span class="sig-name descname"><span class="pre">any_domain_name</span></span><a class="headerlink" href="#confval-any_domain_name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+<dt class="field-even">Default</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">'any'</span></code></p>
+</dd>
+</dl>
+<p>Name of the domain.</p>
+</dd></dl>
+
+<dl class="any">
+<dt class="sig sig-object any" id="confval-any_schemas">
+<span class="sig-name descname"><span class="pre">any_schemas</span></span><a class="headerlink" href="#confval-any_schemas" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">List[sphinxnotes.any.Schema]</span></code></p>
+</dd>
+<dt class="field-even">Default</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+</dl>
+<p>List of <a class="reference internal" href="#schema"><span class="std std-ref">schema</span></a> instances. For the way of writing schema definition, please refer to <a class="reference internal" href="#writing-schema"><span class="std std-ref">Defining Schema</span></a>.</p>
+</dd></dl>
+
+</section>
+<section id="functionalities">
+<h2>Functionalities<a class="headerlink" href="#functionalities" title="Permalink to this headline">¶</a></h2>
+<section id="defining-schema">
+<span id="writing-schema"></span><h3>Defining Schema<a class="headerlink" href="#defining-schema" title="Permalink to this headline">¶</a></h3>
+<div class="topic" id="schema">
+<p class="topic-title">What is Schema?</p>
+<p>Before descibing any object, we need a “schema” to tell extension “how to descibe the object”. For extension user, “schema” is a <a class="reference internal" href="#any.Schema" title="any.Schema"><code class="xref py py-class docutils literal notranslate"><span class="pre">python</span> <span class="pre">object</span></code></a> that can specific in configuration value <a class="reference internal" href="#confval-any_schemas" title="confval any_schemas"><code class="xref any any-confval docutils literal notranslate"><span class="pre">⚙️any_schemas</span></code></a>.</p>
+</div>
+<p>The necessary python classes for writing schema are listed here:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="any.Schema">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">any.</span></span><span class="sig-name descname"><span class="pre">Schema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name=Field(form=&lt;Form.PLAIN:</span> <span class="pre">1&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">referenceable=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required=False)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs={}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content=Field(form=&lt;Form.PLAIN:</span> <span class="pre">1&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">referenceable=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required=False)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description_template='{{</span> <span class="pre">content</span> <span class="pre">}}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_template='{{</span> <span class="pre">title</span> <span class="pre">}}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">missing_reference_template='{{</span> <span class="pre">title</span> <span class="pre">}}</span> <span class="pre">(missing</span> <span class="pre">reference)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ambiguous_reference_template='{{</span> <span class="pre">title</span> <span class="pre">}}</span> <span class="pre">(disambiguation)'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#any.Schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a Schema instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>objtype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – The unique type name of object, it will be used as
+basename of corresponding <a class="reference internal" href="#directives"><span class="std std-ref">Directives</span></a>, <a class="reference internal" href="#roles"><span class="std std-ref">Roles</span></a> and
+<a class="reference internal" href="#indices"><span class="std std-ref">Indices</span></a></p></li>
+<li><p><strong>name</strong> (<a class="reference internal" href="#any.Field" title="any.schema.Field"><em>any.schema.Field</em></a>) – Constraints of optional object name</p></li>
+<li><p><strong>attrs</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><a class="reference internal" href="#any.Field" title="any.schema.Field"><em>any.schema.Field</em></a><em>]</em>) – Constraints of object attributes</p></li>
+<li><p><strong>content</strong> (<a class="reference internal" href="#any.Field" title="any.schema.Field"><em>any.schema.Field</em></a>) – Constraints of object content</p></li>
+<li><p><strong>description_template</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – See <a class="reference internal" href="#description-template"><span class="std std-ref">Description Template</span></a></p></li>
+<li><p><strong>reference_template</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – See <a class="reference internal" href="#reference-template"><span class="std std-ref">Reference Template</span></a></p></li>
+<li><p><strong>missing_reference_template</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – See <a class="reference internal" href="#reference-template"><span class="std std-ref">Reference Template</span></a></p></li>
+<li><p><strong>ambiguous_reference_template</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – See <a class="reference internal" href="#reference-template"><span class="std std-ref">Reference Template</span></a></p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p>Class-wide shared special keys used in template rendering context:</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="any.Schema.TYPE_KEY">
+<span class="sig-name descname"><span class="pre">TYPE_KEY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'type'</span></em><a class="headerlink" href="#any.Schema.TYPE_KEY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Template variable name of object type</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="any.Schema.NAME_KEY">
+<span class="sig-name descname"><span class="pre">NAME_KEY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'name'</span></em><a class="headerlink" href="#any.Schema.NAME_KEY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Template variable name of object name</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="any.Schema.CONTENT_KEY">
+<span class="sig-name descname"><span class="pre">CONTENT_KEY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'content'</span></em><a class="headerlink" href="#any.Schema.CONTENT_KEY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Template variable name of object content</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="any.Schema.TITLE_KEY">
+<span class="sig-name descname"><span class="pre">TITLE_KEY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'title'</span></em><a class="headerlink" href="#any.Schema.TITLE_KEY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Template variable name of object title</p>
+</dd></dl>
+
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="any.Field">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">any.</span></span><span class="sig-name descname"><span class="pre">Field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">form</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Form.PLAIN</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">referenceable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#any.Field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes value constraint of field of Object.</p>
+<p>The value of field can be single or mulitple string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>form</strong> (<a class="reference internal" href="#any.Field.Form" title="any.schema.Field.Form"><em>any.schema.Field.Form</em></a>) – The form of value.</p></li>
+<li><p><strong>unique</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – <p>Whether the field is unique.
+If true, the value of field must be unique within the scope of objects
+with same type. And it will be used as base string of object
+identifier.</p>
+<p>Only one unique field is allowed in one object type.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Duplicated value causes a warning when building documentation,
+and the corresponding object cannot be referenced correctly.</p>
+</div>
+</p></li>
+<li><p><strong>referenceable</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – Whether the field is referenceable.
+If ture, object can be referenced by field value.
+See <a class="reference internal" href="#roles"><span class="std std-ref">Roles</span></a> for more details.</p></li>
+<li><p><strong>required</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – Whether the field is required.
+If ture, <code class="xref py py-exc docutils literal notranslate"><span class="pre">ObjectError</span></code> will be raised when building documentation
+if the value is no given.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="any.Field.Form">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">any.Field.</span></span><span class="sig-name descname"><span class="pre">Form</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#any.Field.Form" title="Permalink to this definition">¶</a></dt>
+<dd><p>An enumeration represents various string forms.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="any.Field.Form.PLAIN">
+<span class="sig-name descname"><span class="pre">PLAIN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#any.Field.Form.PLAIN" title="Permalink to this definition">¶</a></dt>
+<dd><p>A single string</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="any.Field.Form.WORDS">
+<span class="sig-name descname"><span class="pre">WORDS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#any.Field.Form.WORDS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mulitple string separated by whitespace</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="any.Field.Form.LINES">
+<span class="sig-name descname"><span class="pre">LINES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#any.Field.Form.LINES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mulitple string separated by newline(<code class="docutils literal notranslate"><span class="pre">\n</span></code>)</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="documenting-object">
+<h3>Documenting Object<a class="headerlink" href="#documenting-object" title="Permalink to this headline">¶</a></h3>
+<p>Once a schema created, the corresponding <a class="reference internal" href="#directives"><span class="std std-ref">Directives</span></a>, <a class="reference internal" href="#roles"><span class="std std-ref">Roles</span></a> and <a class="reference internal" href="#indices"><span class="std std-ref">Indices</span></a> will be generated. You can use them to descibe, reference and index object in your documentation.</p>
+<p>For the convenience, we use default domain name “any”, and we assume that we have the following schema with in <a class="reference internal" href="#confval-any_schemas" title="confval any_schemas"><code class="xref any any-confval docutils literal notranslate"><span class="pre">⚙️any_schemas</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">textwrap</span> <span class="kn">import</span> <span class="n">dedent</span>
+<span class="kn">from</span> <span class="nn">any</span> <span class="kn">import</span> <span class="n">Schema</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="n">cat</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">(</span><span class="s1">&#39;cat&#39;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">referenceable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">Field</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">LINES</span><span class="p">),</span>
+    <span class="n">attrs</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">referenceable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+        <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">referenceable</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+        <span class="s1">&#39;picture&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(),</span>
+    <span class="p">},</span>
+    <span class="n">description_template</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        .. image:: {{ picture }}</span>
+<span class="s2">           :align: left</span>
+
+<span class="s2">        :Cat ID: {{ id }}</span>
+<span class="s2">        :Color: {{ color }}</span>
+
+<span class="s2">        {{ content }}&quot;&quot;&quot;</span><span class="p">),</span>
+    <span class="n">reference_template</span><span class="o">=</span><span class="s1">&#39;🐈{{ title }}&#39;</span><span class="p">,</span>
+    <span class="n">missing_reference_template</span><span class="o">=</span><span class="s1">&#39;😿{{ title }}&#39;</span><span class="p">,</span>
+    <span class="n">ambiguous_reference_template</span><span class="o">=</span><span class="s1">&#39;😼{{ title }}&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="directives">
+<span id="id2"></span><h4>Directives<a class="headerlink" href="#directives" title="Permalink to this headline">¶</a></h4>
+<section id="object-description">
+<span id="id3"></span><h5>Object Description<a class="headerlink" href="#object-description" title="Permalink to this headline">¶</a></h5>
+<p>The aboved schema created a <a class="reference external" href="https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#directives">Directive</a> named with “<code class="docutils literal notranslate"><span class="pre">domain</span></code>:<code class="docutils literal notranslate"><span class="pre">objtype</span></code>” (In this case, it is <code class="docutils literal notranslate"><span class="pre">any:cat</span></code>) for descibing object(INC, it is cat🐈).</p>
+<dl>
+<dt>Arguments</dt><dd><p>Arguments are used to specify the <a class="reference internal" href="#tmplvar-name" title="tmplvar name"><code class="xref any any-tmplvar docutils literal notranslate"><span class="pre">{{name}}</span></code></a> of the object. The number argument is depends on the name <a class="reference internal" href="#any.Field" title="any.Field"><code class="xref py py-class docutils literal notranslate"><span class="pre">any.Field</span></code></a> of Schema.</p>
+<ul class="simple">
+<li><p>A <code class="docutils literal notranslate"><span class="pre">None</span></code> field means no argument is required</p></li>
+<li><p>For a non-<code class="docutils literal notranslate"><span class="pre">None</span></code> Field, see <a class="reference internal" href="#any.Field" title="any.Field"><code class="xref py py-attr docutils literal notranslate"><span class="pre">any.Field</span></code></a> for more details</p></li>
+</ul>
+<p id="underscore-argument">Specially, If first argument is <code class="docutils literal notranslate"><span class="pre">_</span></code> (underscore), the directive must be located after a <a class="reference external" href="https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#sections">Section Title</a>, the text of section title is the real first argument.</p>
+<p>In this case, the <code class="docutils literal notranslate"><span class="pre">any:cat</span></code> directive accepts multiple argument split by newline.</p>
+</dd>
+<dt>Options</dt><dd><p>All attributes defined in schema are converted to options of directive. Further, they will available in various <a class="reference internal" href="#writing-template"><span class="std std-ref">Templates</span></a>.</p>
+<ul>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">None</span></code> field is no allowed for now means no argument is required</p>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>May be changed in the future vesrion.</p>
+</div>
+</li>
+<li><p>For a non-<code class="docutils literal notranslate"><span class="pre">None</span></code> Field, see <a class="reference internal" href="#any.Field" title="any.Field"><code class="xref py py-attr docutils literal notranslate"><span class="pre">any.Field</span></code></a> for more details</p></li>
+</ul>
+<p>In this case, the directive has three options: <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">color</span></code> and <code class="docutils literal notranslate"><span class="pre">picture</span></code>.</p>
+</dd>
+<dt>Content</dt><dd><p>Content is used to specify the <a class="reference internal" href="#tmplvar-content" title="tmplvar content"><code class="xref any any-tmplvar docutils literal notranslate"><span class="pre">{{content}}</span></code></a> of the object.</p>
+<ul class="simple">
+<li><p>A <code class="docutils literal notranslate"><span class="pre">None</span></code> field means no content is required</p></li>
+<li><p>For a non-<code class="docutils literal notranslate"><span class="pre">None</span></code> Field, see <a class="reference internal" href="#any.Field" title="any.Field"><code class="xref py py-attr docutils literal notranslate"><span class="pre">any.Field</span></code></a> for more details</p></li>
+</ul>
+<p>In this case, the directive accepts content.</p>
+</dd>
+</dl>
+<p>The directive will be rendered to a reStructuredText snippet, by <a class="reference internal" href="#description-template"><span class="std std-ref">Description Template</span></a>, then inserted to documentation.</p>
+<p>Let’s documenting such a cat:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="ow">any:cat</span><span class="p">::</span> Nyan Cat
+             Nyan_Cat
+   <span class="nc">:id:</span> <span class="nf">1</span>
+   <span class="nc">:color:</span> <span class="nf">pink gray</span>
+   <span class="nc">:picture:</span> <span class="nf">_images/nyan-cat.gif</span>
+
+   Nyan Cat is the name of a YouTube video uploaded in April 2011,
+   which became an internet meme. The video merged a Japanese pop song with
+   an animated cartoon cat with a Pop-Tart for a torso, flying through space,
+   and leaving a rainbow trail behind it. The video ranked at number 5 on
+   the list of most viewed YouTube videos in 2011. <span class="s">[#]_</span>
+
+<span class="p">   ..</span> <span class="nt">[#]</span> https://en.wikipedia.org/wiki/Nyan_Cat
+</pre></div>
+</div>
+<p>It will be rendered as:</p>
+<dl class="any">
+<dt class="sig sig-object any" id="cat-1">
+<span class="sig-name descname"><span class="pre">Nyan</span> <span class="pre">Cat</span></span><a class="headerlink" href="#cat-1" title="Permalink to this definition">¶</a></dt>
+<dd><img alt="_images/nyan-cat.gif" class="align-left" src="_images/nyan-cat.gif" />
+<dl class="field-list simple">
+<dt class="field-odd">Cat ID</dt>
+<dd class="field-odd"><p>1</p>
+</dd>
+<dt class="field-even">Color</dt>
+<dd class="field-even"><p>pink gray</p>
+</dd>
+</dl>
+<p>Nyan Cat is the name of a YouTube video uploaded in April 2011,
+which became an internet meme. The video merged a Japanese pop song with
+an animated cartoon cat with a Pop-Tart for a torso, flying through space,
+and leaving a rainbow trail behind it. The video ranked at number 5 on
+the list of most viewed YouTube videos in 2011. <a class="footnote-reference brackets" href="#id5" id="id4">1</a></p>
+<dl class="footnote brackets">
+<dt class="label" id="id5"><span class="brackets"><a class="fn-backref" href="#id4">1</a></span></dt>
+<dd><p><a class="reference external" href="https://en.wikipedia.org/wiki/Nyan_Cat">https://en.wikipedia.org/wiki/Nyan_Cat</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+<section id="roles">
+<span id="id6"></span><h4>Roles<a class="headerlink" href="#roles" title="Permalink to this headline">¶</a></h4>
+<p>Same to <a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html#xref-syntax" title="(in Sphinx v5.0.0+)"><span>Cross-referencing syntax</span></a>, explicit title <code class="docutils literal notranslate"><span class="pre">:role:`title</span> <span class="pre">&lt;target&gt;`</span></code> is supported by all the <a class="reference external" href="https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#interpreted-text">Role</a>s. If not explicit title specific, reference title will be rendered by one of <a class="reference internal" href="#reference-template"><span class="std std-ref">Reference Template</span></a>.</p>
+<section id="general-reference">
+<h5>General Reference<a class="headerlink" href="#general-reference" title="Permalink to this headline">¶</a></h5>
+<p>The aboved schema created a role named with “<code class="docutils literal notranslate"><span class="pre">domain</span></code>-<code class="docutils literal notranslate"><span class="pre">objtype</span></code>” (In this case, it is <code class="docutils literal notranslate"><span class="pre">any:cat</span></code>) for creating a reference to <a class="reference internal" href="#object-description"><span class="std std-ref">Object Description</span></a>. The interpreted text can be value of <em>any referenceable field</em>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 36%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>Reference by name</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">:any:cat:`Nyan</span> <span class="pre">Cat`</span></code></p></td>
+<td><p><a class="reference internal" href="#cat-1" title="cat Nyan Cat"><code class="xref any any-cat docutils literal notranslate"><span class="pre">🐈Nyan</span> <span class="pre">Cat</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p>By another name</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">:any:cat:`Nyan_Cat`</span></code></p></td>
+<td><p><a class="reference internal" href="#cat-1" title="cat Nyan_Cat"><code class="xref any any-cat docutils literal notranslate"><span class="pre">🐈Nyan</span> <span class="pre">Cat</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>By ID</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">:any:cat:`1`</span></code></p></td>
+<td><p><a class="reference internal" href="#cat-1" title="cat 1"><code class="xref any any-cat docutils literal notranslate"><span class="pre">🐈Nyan</span> <span class="pre">Cat</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p>Explicit title</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">:any:cat:`This</span> <span class="pre">cat</span> <span class="pre">&lt;Nyan</span> <span class="pre">Cat&gt;`</span></code></p></td>
+<td><p><a class="reference internal" href="#cat-1" title="cat Nyan Cat"><code class="xref any any-cat docutils literal notranslate"><span class="pre">This</span> <span class="pre">cat</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>A nonexistent cat</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">:any:cat:`mimi`</span></code></p></td>
+<td><p><code class="xref any any-cat docutils literal notranslate"><span class="pre">😿mimi</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="field-specific-reference">
+<h5>Field-Specific Reference<a class="headerlink" href="#field-specific-reference" title="Permalink to this headline">¶</a></h5>
+<p>Role “<code class="docutils literal notranslate"><span class="pre">domain</span></code>-<code class="docutils literal notranslate"><span class="pre">objtype</span></code>.<code class="docutils literal notranslate"><span class="pre">field</span></code>” will be created for all referenceable Fields (In this case, it is <code class="docutils literal notranslate"><span class="pre">any:cat.name</span></code>, <code class="docutils literal notranslate"><span class="pre">any:cat.id</span></code> and <code class="docutils literal notranslate"><span class="pre">any:cat.color</span></code>).</p>
+<p>These roles also create reference to <a class="reference internal" href="#object-description"><span class="std std-ref">Object Description</span></a>. But the interpreted text must be value of field in role’s name.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 24%" />
+<col style="width: 40%" />
+<col style="width: 36%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>Reference by name</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">:any:cat.name:`Nyan</span> <span class="pre">Cat`</span></code></p></td>
+<td><p><a class="reference internal" href="#cat-1" title="cat Nyan Cat"><code class="xref any any-cat.name docutils literal notranslate"><span class="pre">🐈Nyan</span> <span class="pre">Cat</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p>By ID</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">:any:cat.id:`1`</span></code></p></td>
+<td><p><a class="reference internal" href="#cat-1" title="cat 1"><code class="xref any any-cat.id docutils literal notranslate"><span class="pre">🐈Nyan</span> <span class="pre">Cat</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="indices">
+<span id="id7"></span><h4>Indices<a class="headerlink" href="#indices" title="Permalink to this headline">¶</a></h4>
+<p>According to sphinx documentation, we use <a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html#ref-role" title="(in Sphinx v5.0.0+)"><span>Cross-referencing arbitrary locations</span></a> to create reference to object indices, and the index name should prefixed with domain name.</p>
+<section id="general-index">
+<h5>General Index<a class="headerlink" href="#general-index" title="Permalink to this headline">¶</a></h5>
+<p>Index “<code class="docutils literal notranslate"><span class="pre">domain</span></code>-<code class="docutils literal notranslate"><span class="pre">objtype</span></code>” (In this case, it is <code class="docutils literal notranslate"><span class="pre">any-cat</span></code>) creates reference to object index which grouped by all referenceable field values.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 56%" />
+<col style="width: 44%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:ref:`any-cat`</span></code></p></td>
+<td><p><a class="reference internal" href="any-cat.html"><span class="std std-ref">Cat Reference Index</span></a></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="field-specific-index">
+<h5>Field Specific Index<a class="headerlink" href="#field-specific-index" title="Permalink to this headline">¶</a></h5>
+<p>Index “<code class="docutils literal notranslate"><span class="pre">domain</span></code>-<code class="docutils literal notranslate"><span class="pre">objtype</span></code>.<code class="docutils literal notranslate"><span class="pre">field</span></code>” will be created for all reference Fields (In this case, it is <code class="docutils literal notranslate"><span class="pre">any-cat.name</span></code>, <code class="docutils literal notranslate"><span class="pre">any-cat.id</span></code> and <code class="docutils literal notranslate"><span class="pre">any-cat.color</span></code>).</p>
+<p>These indices create reference to object index which grouped by specific field values.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 55%" />
+<col style="width: 45%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:ref:`any-cat.name`</span></code></p></td>
+<td><p><a class="reference internal" href="any-cat.name.html"><span class="std std-ref">Cat Name Reference Index</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:ref:`any-cat.id`</span></code></p></td>
+<td><p><a class="reference internal" href="any-cat.id.html"><span class="std std-ref">Cat Id Reference Index</span></a></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+<section id="writing-template">
+<span id="id8"></span><h3>Writing Template<a class="headerlink" href="#writing-template" title="Permalink to this headline">¶</a></h3>
+<p>We use <a class="reference external" href="https://jinja.palletsprojects.com/">Jinja</a> as our templating engine.</p>
+<p>Currently we need two kinds of template to let .</p>
+<section id="description-template">
+<span id="id9"></span><h4>Description Template<a class="headerlink" href="#description-template" title="Permalink to this headline">¶</a></h4>
+<p>Used to generate object description. Can be written in reStructuredText.</p>
+</section>
+<section id="reference-template">
+<span id="id10"></span><h4>Reference Template<a class="headerlink" href="#reference-template" title="Permalink to this headline">¶</a></h4>
+<p>Used to generate object reference. Only plain text is allowed for now.</p>
+<p>Reference Template has two various variants:</p>
+<dl>
+<dt>Missing Reference Template</dt><dd><p>Applied when the reference is missing.</p>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>In this template, only variables <a class="reference internal" href="#tmplvar-objtype" title="tmplvar objtype"><code class="xref any any-tmplvar docutils literal notranslate"><span class="pre">{{objtype}}</span></code></a> and <a class="reference internal" href="#tmplvar-title" title="tmplvar title"><code class="xref any any-tmplvar docutils literal notranslate"><span class="pre">{{title}}</span></code></a>  are available.</p>
+</div>
+</dd>
+<dt>Ambiguous Reference Template</dt><dd><p>Applied when the reference is ambiguous.</p>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>In this template, only variables <a class="reference internal" href="#tmplvar-objtype" title="tmplvar objtype"><code class="xref any any-tmplvar docutils literal notranslate"><span class="pre">{{objtype}}</span></code></a> and <a class="reference internal" href="#tmplvar-title" title="tmplvar title"><code class="xref any any-tmplvar docutils literal notranslate"><span class="pre">{{title}}</span></code></a>  are available.</p>
+</div>
+</dd>
+</dl>
+</section>
+<section id="variables">
+<h4>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h4>
+<p>For the usage of Jinja’s variable, please refer to <a class="reference external" href="&lt;https://jinja.palletsprojects.com/en/2.11.x/templates/#variables">Jinja’s Variables</a>.</p>
+<p>All attributes defined in schema are available as variables in template. Note the value of variable might be <em>string or string list</em> (depends on value of <code class="xref py py-class docutils literal notranslate"><span class="pre">any.Schema.Field.Form</span></code>).</p>
+<p>Beside, there are some special variable:</p>
+<dl class="any">
+<dt class="sig sig-object any" id="tmplvar-objtype">
+<span class="sig-name descname"><span class="pre">objtype</span></span><a class="headerlink" href="#tmplvar-objtype" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+</dl>
+<p>Type of object.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Name of variables(“objtype”) can be changed by setting
+<a class="reference internal" href="#any.Schema.TYPE_KEY" title="any.Schema.TYPE_KEY"><code class="xref py py-attr docutils literal notranslate"><span class="pre">TYPE_KEY</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="any">
+<dt class="sig sig-object any" id="tmplvar-name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#tmplvar-name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">Union[None,str,List[str]]</span></code></p>
+</dd>
+</dl>
+<p>Name of object.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Name of variables(“name”) can be changed by setting
+<a class="reference internal" href="#any.Schema.NAME_KEY" title="any.Schema.NAME_KEY"><code class="xref py py-attr docutils literal notranslate"><span class="pre">NAME_KEY</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="any">
+<dt class="sig sig-object any" id="tmplvar-content">
+<span class="sig-name descname"><span class="pre">content</span></span><a class="headerlink" href="#tmplvar-content" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">Union[None,str,List[str]]</span></code></p>
+</dd>
+</dl>
+<p>Content of object.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Name of variables(“content”) can be changed by setting
+<a class="reference internal" href="#any.Schema.CONTENT_KEY" title="any.Schema.CONTENT_KEY"><code class="xref py py-attr docutils literal notranslate"><span class="pre">CONTENT_KEY</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="any">
+<dt class="sig sig-object any" id="tmplvar-title">
+<span class="sig-name descname"><span class="pre">title</span></span><a class="headerlink" href="#tmplvar-title" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+</dl>
+<p>Title of object.</p>
+<p>In <a class="reference internal" href="#reference-template"><span class="std std-ref">Reference Template</span></a>, its value might be overwritten by explicit title.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Name of variables(“title”) can be changed by setting
+<a class="reference internal" href="#any.Schema.TITLE_KEY" title="any.Schema.TITLE_KEY"><code class="xref py py-attr docutils literal notranslate"><span class="pre">TITLE_KEY</span></code></a></p>
+</div>
+</dd></dl>
+
+</section>
+<section id="filters">
+<h4>Filters<a class="headerlink" href="#filters" title="Permalink to this headline">¶</a></h4>
+<p>For the usage of Jinja’s filter, please refer to <a class="reference external" href="https://jinja.palletsprojects.com/en/2.11.x/templates/#filters&gt;">Jinja’s Filters</a>.</p>
+<p>All <a class="reference external" href="https://jinja.palletsprojects.com/en/2.11.x/templates/#builtin-filters">Jinja’s Builtin Filters</a> are available.
+In additional, we provide the following custom filters to enhance the template:</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">copyfile(fn)</span></code></dt><dd><p>Copy a file in Sphinx srcdir to outdir, return the URI of file which relative
+to current documentation.</p>
+<p>The relative path to srcdir will be preserved, for example,
+<code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">fn</span> <span class="pre">|</span> <span class="pre">copyfile</span> <span class="pre">}}</span></code> while <code class="docutils literal notranslate"><span class="pre">fn</span></code> is <code class="file docutils literal notranslate"><span class="pre">_images/foo.jpg</span></code>,
+the file will copied to <code class="file docutils literal notranslate"><span class="pre">&lt;OUTDIR&gt;/_any/_images/foo.jpg</span></code>, and returns
+a POSIX path of <code class="docutils literal notranslate"><span class="pre">fn</span></code> which relative to current documentation.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">thumbnail(img,</span> <span class="pre">width,</span> <span class="pre">height)</span></code></dt><dd><blockquote>
+<div><p>Changes the size of an image to the given dimensions and removes any
+associated profiles, returns a a POSIX path of thumbnail which relative to
+current documentation.</p>
+<p>This filter always keep the origin aspect ratio of image.
+The width and height are optional, By default are 1280 and 720 respectively.</p>
+</div></blockquote>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 1.0.</span></p>
+</div>
+</dd>
+</dl>
+</section>
+</section>
+</section>
+<section id="tips">
+<h2>Tips<a class="headerlink" href="#tips" title="Permalink to this headline">¶</a></h2>
+<section id="omit-domain-name">
+<h3>Omit Domain Name<a class="headerlink" href="#omit-domain-name" title="Permalink to this headline">¶</a></h3>
+<p>You can omit the prefixed domain name in directives and roles by setting the <code class="docutils literal notranslate"><span class="pre">primary_domain</span></code> to your <a class="reference internal" href="#confval-any_domain_name" title="confval any_domain_name"><code class="xref any any-confval docutils literal notranslate"><span class="pre">⚙️any_domain_name</span></code></a> in <code class="file docutils literal notranslate"><span class="pre">conf.py</span></code>. For example, you can use <code class="docutils literal notranslate"><span class="pre">..</span> <span class="pre">cat::</span></code> rather than <code class="docutils literal notranslate"><span class="pre">..</span> <span class="pre">any:cat::</span></code>.</p>
+</section>
+<section id="documenting-section-and-documentation">
+<h3>Documenting Section and Documentation<a class="headerlink" href="#documenting-section-and-documentation" title="Permalink to this headline">¶</a></h3>
+<p>By using the <a class="reference internal" href="#underscore-argument"><span class="std std-ref">Underscore Argument</span></a>, you can
+document a section and reference to it. For example:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="gh">================</span>
+<span class="gh">The Story of Art</span>
+<span class="gh">================</span>
+
+<span class="p">..</span> <span class="ow">book</span><span class="p">::</span> _
+   <span class="nc">:publisher:</span> <span class="nf">Phaidon Press; 16th edition (April 9, 1995)</span>
+   <span class="nc">:isbn:</span> <span class="nf">0714832472</span>
+   <span class="nc">:language:</span> <span class="nf">English</span>
+</pre></div>
+</div>
+<p>You not need to create a reST label by yourself, just use role like <code class="docutils literal notranslate"><span class="pre">:book:`The</span> <span class="pre">Story</span> <span class="pre">of</span> <span class="pre">Art`</span></code>. Beside, it is also a better replacement of  <a class="reference external" href="https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#bibliographic-fields">Bibliographic Fields</a>.</p>
+</section>
+<section id="enrich-object-description">
+<h3>Enrich Object Description<a class="headerlink" href="#enrich-object-description" title="Permalink to this headline">¶</a></h3>
+<p>As the <a class="reference internal" href="#description-template"><span class="std std-ref">Description Template</span></a> supports reStructuredText, We have a lot of room to play.</p>
+<section id="categorizing-and-tagging">
+<h4>Categorizing and Tagging<a class="headerlink" href="#categorizing-and-tagging" title="Permalink to this headline">¶</a></h4>
+<p>When we descibing a object, usually we are categorizing and tagging them.
+For dog, we may define such a Schema:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">textwrap</span> <span class="kn">import</span> <span class="n">dedent</span>
+<span class="kn">from</span> <span class="nn">any</span> <span class="kn">import</span> <span class="n">Schema</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="n">dog</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">(</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span>
+    <span class="n">attrs</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;breed&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">referenceable</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+        <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">referenceable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">Field</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">WORDS</span><span class="p">),</span>
+    <span class="p">},</span>
+    <span class="n">description_template</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        :Breed: {{ breed }}</span>
+<span class="s2">        :Colors: {{ colors }}&quot;&quot;&quot;</span><span class="p">),</span>
+    <span class="n">reference_template</span><span class="o">=</span><span class="s1">&#39;🐕{{ title }}&#39;</span><span class="p">,</span>
+    <span class="n">ambiguous_reference_template</span><span class="o">=</span><span class="s1">&#39;{{ title }}&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The field <code class="docutils literal notranslate"><span class="pre">breed</span></code> is a category and <code class="docutils literal notranslate"><span class="pre">colors</span></code> is a serial of tags.  We are really categorizing and tagging dogs but, it is a quite boring.  Considering the following object description:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="ow">any:dog</span><span class="p">::</span> Indiana
+   <span class="nc">:breed:</span> <span class="nf">Husky</span>
+   <span class="nc">:color:</span> <span class="nf">Black White</span>
+</pre></div>
+</div>
+<p>When we see the breed of Indiana is “Husky”, we may want to see what other huskies. When we see the colors of Indiana is “Black” and “White”, We will have the same idea. So, let’s create references for these values:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">textwrap</span> <span class="kn">import</span> <span class="n">dedent</span>
+<span class="kn">from</span> <span class="nn">any</span> <span class="kn">import</span> <span class="n">Schema</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="n">dog</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">(</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span>
+    <span class="n">attrs</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;breed&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">referenceable</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+        <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">referenceable</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">Field</span><span class="o">.</span><span class="n">Form</span><span class="o">.</span><span class="n">WORDS</span><span class="p">),</span>
+    <span class="p">},</span>
+    <span class="n">description_template</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        :Breed: :any:dog.breed:`{{ breed }}`</span>
+<span class="s2">        :Colors: {</span><span class="si">% f</span><span class="s2">or c in color %}:any:dog.color:`{{ c }}` {</span><span class="si">% e</span><span class="s2">ndfor %}&quot;&quot;&quot;</span><span class="p">),</span>
+    <span class="n">reference_template</span><span class="o">=</span><span class="s1">&#39;🐕{{ title }}&#39;</span><span class="p">,</span>
+    <span class="n">ambiguous_reference_template</span><span class="o">=</span><span class="s1">&#39;{{ title }}&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For field breed, its value is a string, so we simpily wrap value in to a <code class="docutils literal notranslate"><span class="pre">any:dog.breed</span></code> role, In this case it create a reference to all Husky dog.</p>
+<p>For field color, its value is a string list, we have to iterate it and wrap element to to a <code class="docutils literal notranslate"><span class="pre">any:dog.color</span></code> role, In this case it create a reference to all Black dog and White dog.</p>
+<p>The rendered reStructuredText looks like this:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="nc">:Breed:</span> <span class="nf">:any:dog.breed:`Husky`</span>
+<span class="nc">:Colors:</span> <span class="nf">:any:dog.color:`Black` any:dog.color:`White`</span>
+</pre></div>
+</div>
+<p>The rendered object description:</p>
+<dl class="any">
+<dt class="sig sig-object any" id="dog-Indiana">
+<span class="sig-name descname"><span class="pre">Indiana</span></span><a class="headerlink" href="#dog-Indiana" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Breed</dt>
+<dd class="field-odd"><p><a class="reference internal" href="any-dog.breed.html#cap-Husky" title="dog Husky"><code class="xref any any-dog.breed docutils literal notranslate"><span class="pre">Husky</span></code></a></p>
+</dd>
+<dt class="field-even">Colors</dt>
+<dd class="field-even"><p><a class="reference internal" href="any-dog.color.html#cap-Black" title="dog Black"><code class="xref any any-dog.color docutils literal notranslate"><span class="pre">Black</span></code></a> <a class="reference internal" href="any-dog.color.html#cap-White" title="dog White"><code class="xref any any-dog.color docutils literal notranslate"><span class="pre">White</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+</section>
+<section id="change-log">
+<h2>Change Log<a class="headerlink" href="#change-log" title="Permalink to this headline">¶</a></h2>
+<section id="id11">
+<h3>2021-08-18 2.2<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Use the Object ID as index name when no object title available</p></li>
+</ul>
+</section>
+<section id="id12">
+<h3>2021-06-26 2.1<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Report ambiguous object via debug log</p></li>
+<li><p>Some doc fixes</p></li>
+<li><p>Remove unused import</p></li>
+</ul>
+</section>
+<section id="id13">
+<h3>2021-06-05 2.0<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Update documentation, add some tips</p></li>
+</ul>
+</section>
+<section id="a3">
+<h3>2021-06-03 2.0a3<a class="headerlink" href="#a3" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Simplify index name (e4d9207)</p></li>
+</ul>
+</section>
+<section id="id14">
+<h3>2021-06-03 2.0a3<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Simplify index name (e4d9207)</p></li>
+</ul>
+</section>
+<section id="a2">
+<h3>2021-05-23 2.0a2<a class="headerlink" href="#a2" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Fix none object signture (6a5f75f)</p></li>
+<li><p>Prevent sphinx config changed everytime (f7b316b)</p></li>
+</ul>
+</section>
+<section id="a1">
+<h3>2021-05-23 2.0a1<a class="headerlink" href="#a1" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Template variable must be non None (fb9678e)</p></li>
+<li><p>Template will not apply on role with explicit title (5bdaad1)</p></li>
+</ul>
+</section>
+<section id="a0">
+<h3>2021-05-22 2.0a0<a class="headerlink" href="#a0" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Descibing schema with python object instead of dict</p></li>
+<li><p>Support index</p></li>
+<li><p>Refactor</p></li>
+</ul>
+</section>
+<section id="id15">
+<h3>2021-02-28 1.1<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Remove symbol link if exists</p></li>
+</ul>
+</section>
+<section id="id16">
+<h3>2021-02-23 1.0<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Move preset schemas to standalone package</p></li>
+<li><p>Add custom filter support to template</p></li>
+<li><p>Combine <code class="docutils literal notranslate"><span class="pre">any_predefined_schemas</span></code> and <code class="docutils literal notranslate"><span class="pre">any_custom_schemas</span></code> to <code class="docutils literal notranslate"><span class="pre">any_schemas</span></code></p></li>
+</ul>
+</section>
+<section id="b0">
+<h3>2021-01-28 1.0b0<a class="headerlink" href="#b0" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Fix the missing Jinja dependency</p></li>
+<li><p>Use section title as object name when directive argument is omitted</p></li>
+<li><p>Some code cleanups</p></li>
+<li><p>Rename schema field “role” to “reference”</p></li>
+<li><p>Rename schema field “directive” to “content”</p></li>
+</ul>
+</section>
+<section id="id17">
+<h3>2020-12-20 1.0a1<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h3>
+<p>The alpha version is out, enjoy~</p>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Shengyu Zhang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
