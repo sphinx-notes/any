@@ -11,13 +11,14 @@
 from __future__ import annotations
 from typing import Tuple, Dict, Any, Iterator, Type, Set, List, TYPE_CHECKING
 
-from docutils import nodes
+from docutils.nodes import Element
 
-from sphinx import addnodes
+from sphinx.addnodes import pending_xref
 from sphinx.domains import Domain, ObjType
 from sphinx.util import logging
 from sphinx.util.nodes import make_refnode
 if TYPE_CHECKING:
+    from sphinx.application import Sphinx
     from sphinx.builders import Builder
     from sphinx.environment import BuildEnvironment
     from sphinx.util.typing import RoleFunction
@@ -100,7 +101,8 @@ class AnyDomain(Domain):
     # Override parent method
     def resolve_xref(self, env:BuildEnvironment, fromdocname:str,
                      builder:Builder, typ:str, target:str,
-                     node:addnodes.pending_xref, contnode:nodes.Element) -> nodes.Element:
+                     node:pending_xref, contnode:Element,
+                     ) -> Optional[Element]:
         logger.debug('[any] resolveing xref of %s', (typ, target))
         objtype, objfield = reftype_to_objtype_and_objfield(typ)
         objids = set()
@@ -115,7 +117,8 @@ class AnyDomain(Domain):
                     objids.update(ids)
 
         if not objids:
-            logger.warning(f'no such {objtype} {target} in {self}')
+            # Do not emit warning here,
+            # the pending_xref may be resloved by intersphinx.
             return None
         elif len(objids) == 1:
             todocname, anchor, _ = self.objects[objtype, objids.pop()]
@@ -149,8 +152,10 @@ class AnyDomain(Domain):
         for r in reftypes:
             # Create role for referencing object (by various fields)
             _, field = reftype_to_objtype_and_objfield(r)
-
-            cls.roles[r] = AnyRole.derive(schema, field)()
+            cls.roles[r] = AnyRole.derive(schema, field)(
+                # Emit warning when missing reference (node['refwarn'] = True)
+                warn_dangling=True,
+            )
 
             index = AnyIndex.derive(schema, field)
             cls.indices.append(index)
@@ -166,3 +171,16 @@ class AnyDomain(Domain):
         domain = self.name
         index = self._indices_for_reftype[reftype].name
         return f'{domain}-{index}', f'cap-{refval}'
+
+
+def warn_missing_reference(app: Sphinx, domain: Domain, node: pending_xref
+                           ) -> Optional[bool]:
+    if domain and domain.name != AnyDomain.name:
+        return None
+
+    objtype = node['reftype']
+    target = node['reftarget']
+    msg = f'undefined {objtype}: {target}'
+
+    logger.warning(msg, location=node, type='ref', subtype=objtype)
+    return True
