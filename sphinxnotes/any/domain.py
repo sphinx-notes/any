@@ -11,7 +11,7 @@
 from __future__ import annotations
 from typing import Tuple, Dict, Any, Iterator, Type, Set, List, TYPE_CHECKING
 
-from docutils.nodes import Element
+from docutils.nodes import Element, literal, Text
 
 from sphinx.addnodes import pending_xref
 from sphinx.domains import Domain, ObjType
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 from .schema import Schema, Object
 from .directives import AnyDirective
-from .roles import AnyRole, objtype_and_objfield_to_reftype, reftype_to_objtype_and_objfield
+from .roles import AnyRole
 from .indices import AnyIndex
 
 logger = logging.getLogger(__name__)
@@ -50,6 +50,8 @@ class AnyDomain(Domain):
     indices:List[Type[AnyIndex]] = []
     #: AnyDomain specific: Type -> index class
     _indices_for_reftype:Dict[str,Type[AnyIndex]] = {}
+    #: AnyDomain specific: Type -> Schema instance
+    _schemas:Dict[str,Schema] = {}
 
     initial_data:Dict[str,Any] = {
         # See property object
@@ -103,6 +105,8 @@ class AnyDomain(Domain):
                      builder:Builder, typ:str, target:str,
                      node:pending_xref, contnode:Element,
                      ) -> Optional[Element]:
+        assert isinstance(contnode, literal)
+
         logger.debug('[any] resolveing xref of %s', (typ, target))
         objtype, objfield = reftype_to_objtype_and_objfield(typ)
         objids = set()
@@ -116,20 +120,32 @@ class AnyDomain(Domain):
                 if t == objtype and r == target:
                     objids.update(ids)
 
+        schema = self._schemas[objtype]
+        title = contnode[0].astext()
+        has_explicit_title = node['refexplicit']
+        newtitle = None
+
         if not objids:
-            # Do not emit warning here,
-            # the pending_xref may be resloved by intersphinx.
+            # The pending_xref node may be resolved by intersphinx,
+            # so not emit warning here, see also warn_missing_reference.
             return None
         elif len(objids) == 1:
-            todocname, anchor, _ = self.objects[objtype, objids.pop()]
-            return make_refnode(builder, fromdocname, todocname, anchor,
-                                contnode, objtype + ' ' + target)
+            todocname, anchor, obj = self.objects[objtype, objids.pop()]
+            if not has_explicit_title:
+                newtitle = schema.render_reference(obj)
         else:
             todocname, anchor, = self._get_index_anchor(typ, target)
+            if not has_explicit_title:
+                newtitle = schema.render_ambiguous_reference(title)
             logger.debug(f'ambiguous {objtype} {target} in {self}, ' +
                         f'ids: {objids} index: {todocname}#{anchor}')
-            return make_refnode(builder, fromdocname, todocname, anchor,
-                                contnode, objtype + ' ' + target)
+
+        if newtitle:
+            logger.debug(f'[any] rewrite title from {title} to {newtitle}')
+            contnode.replace(contnode[0], Text(newtitle))
+
+        return make_refnode(builder, fromdocname, todocname, anchor,
+                            contnode, objtype + ' ' + target)
 
 
     # Override parent method
@@ -140,6 +156,9 @@ class AnyDomain(Domain):
 
     @classmethod
     def add_schema(cls, schema:Schema) -> None:
+        # Add to schemas dict
+        cls._schemas[schema.objtype] = schema
+
         # Generates reftypes(role names) for all referenceable fields
         reftypes = [schema.objtype]
         for name, field, _ in schema.fields_of(None):
@@ -155,6 +174,9 @@ class AnyDomain(Domain):
             cls.roles[r] = AnyRole.derive(schema, field)(
                 # Emit warning when missing reference (node['refwarn'] = True)
                 warn_dangling=True,
+                # Inner node (contnode) would be replaced in resolve_xref method,
+                # so fix its class.
+                innernodeclass=literal,
             )
 
             index = AnyIndex.derive(schema, field)
@@ -178,9 +200,20 @@ def warn_missing_reference(app: Sphinx, domain: Domain, node: pending_xref
     if domain and domain.name != AnyDomain.name:
         return None
 
-    objtype = node['reftype']
+    objtype, _ = reftype_to_objtype_and_objfield(node['reftype'])
     target = node['reftarget']
-    msg = f'undefined {objtype}: {target}'
 
+    msg = f'undefined {objtype}: {target}'
     logger.warning(msg, location=node, type='ref', subtype=objtype)
     return True
+
+
+def reftype_to_objtype_and_objfield(reftype:str) -> Tuple[str,Optional[str]]:
+    """Helper function for converting reftype(role name) to object infos."""
+    reftype = reftype.split('.', maxsplit=1)
+    return reftype[0], reftype[1] if len(reftype) == 2 else None
+
+
+def objtype_and_objfield_to_reftype(objtype:str, objfield:str) -> str:
+    """Helper function for converting object infos to reftype(role name)."""
+    return objtype + '.' + objfield
