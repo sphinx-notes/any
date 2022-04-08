@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from sphinx.config import Config
 
 from .template import Environment as TemplateEnvironment
-from .domain import AnyDomain
+from .domain import AnyDomain, warn_missing_reference
 from .schema import Schema, Field
 
 __title__= 'sphinxnotes-any'
@@ -45,7 +45,7 @@ def _config_inited(app:Sphinx, config:Config) -> None:
     app.add_domain(AnyDomain)
 
 
-def setup(app:Sphinx) -> None:
+def setup(app:Sphinx):
     """Sphinx extension entrypoint."""
 
     # Init template environment
@@ -54,5 +54,6 @@ def setup(app:Sphinx) -> None:
     app.add_config_value('any_domain_name', 'any', 'env', types=str)
     app.add_config_value('any_schemas', [], 'env', types=List[Schema])
     app.connect('config-inited', _config_inited)
+    app.connect('warn-missing-reference', warn_missing_reference)
 
     return {'version': __version__}
