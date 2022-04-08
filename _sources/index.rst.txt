@@ -302,24 +302,31 @@ For the usage of Jinja's filter, please refer to `Jinja's Filters`_.
 All `Jinja's Builtin Filters`_ are available.
 In additional, we provide the following custom filters to enhance the template:
 
-``copyfile(fn)``
+``install(fn)``
     Copy a file in Sphinx srcdir to outdir, return the URI of file which relative
     to current documentation.
 
     The relative path to srcdir will be preserved, for example,
-    ``{{ fn | copyfile }}`` while ``fn`` is :file:`_images/foo.jpg`,
+    ``{{ fn | install }}`` while ``fn`` is :file:`_images/foo.jpg`,
     the file will copied to :file:`<OUTDIR>/_any/_images/foo.jpg`, and returns
     a POSIX path of ``fn`` which relative to current documentation.
 
-``thumbnail(img, width, height)``
+   .. versionadded:: 1.0
+   .. versionchanged:: 3.0
+
+      Renamed from ``copyfile`` to ``install``
+
+``thumbnail(imgfn)``
     Changes the size of an image to the given dimensions and removes any
     associated profiles, returns a a POSIX path of thumbnail which relative to
     current documentation.
 
     This filter always keep the origin aspect ratio of image.
-    The width and height are optional, By default are 1280 and 720 respectively.
 
    .. versionadded:: 1.0
+   .. versionchanged:: 3.0
+
+      Width and height arguments are not accepted for now.
 
 .. _Jinja's Filters: https://jinja.palletsprojects.com/en/2.11.x/templates/#filters>
 .. _Jinja's Builtin Filters: https://jinja.palletsprojects.com/en/2.11.x/templates/#builtin-filters
@@ -394,6 +401,13 @@ The rendered object description:
 
 Change Log
 ==========
+
+2022-XX-XX 3.0
+--------------
+
+- Prevent crash when failed to get section title
+- Return hexdigest rather than UUID as object ID
+- Make all filters works again
 
 2021-08-18 2.2
 --------------
