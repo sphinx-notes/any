@@ -312,7 +312,7 @@ In additional, we provide the following custom filters to enhance the template:
     a POSIX path of ``fn`` which relative to current documentation.
 
    .. versionadded:: 1.0
-   .. versionchanged:: 3.0
+   .. versionchanged:: 2.3
 
       Renamed from ``copyfile`` to ``install``
 
@@ -324,7 +324,7 @@ In additional, we provide the following custom filters to enhance the template:
     This filter always keep the origin aspect ratio of image.
 
    .. versionadded:: 1.0
-   .. versionchanged:: 3.0
+   .. versionchanged:: 2.3
 
       Width and height arguments are not accepted for now.
 
@@ -402,12 +402,13 @@ The rendered object description:
 Change Log
 ==========
 
-2022-XX-XX 3.0
+2022-04-09 2.3
 --------------
 
-- Prevent crash when failed to get section title
-- Return hexdigest rather than UUID as object ID
-- Make all filters works again
+- Prevent crash when failed to get section title (72250de)
+- Return hexdigest rather than UUID as object ID (#7)
+- Make all filters works again (#8)
+- Correctly rendering title of cross reference (#12)
 
 2021-08-18 2.2
 --------------
