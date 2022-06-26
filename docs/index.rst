@@ -402,6 +402,11 @@ The rendered object description:
 Change Log
 ==========
 
+2022-06-26 2.3.1
+----------------
+
+- Fix crash when noting object with duplicate reference (#18)
+
 2022-04-09 2.3
 --------------
 
