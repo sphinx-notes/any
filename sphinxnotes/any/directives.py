@@ -86,7 +86,7 @@ class AnyDirective(SphinxDirective):
                    ahrnode:nodes.Node,
                    contnode:nodes.Node) -> None:
         """
-        Attach necessary informations to nodes.
+        Attach necessary informations to nodes and note them.
 
         The necessary information contains: domain info, basic attributes for nodes
         (ids, names, classes...), name of anchor, description content and so on.
@@ -144,7 +144,14 @@ class AnyDirective(SphinxDirective):
         name = title + obj.name[1:]
         # Object is immutable, so create a new one
         obj = self.schema.object(name=name, attrs=obj.attrs, content=obj.content)
-        self._setup_nodes(obj, sectnode, sectnode, sectnode)
+        # NOTE: In _setup_nodes, the anchor node(ahrnode) will be noted by
+        # `note_explicit_target` for ahrnode, while `sectnode` is already noted
+        # by `note_implicit_target`.
+        # Multiple `note_xxx_target` calls to same node causes undefined behavior,
+        # so we use `titlenode` as anchor node
+        #
+        # See https://github.com/sphinx-notes/any/issues/18
+        self._setup_nodes(obj, sectnode, titlenode, sectnode)
         # Add all content to existed section, so return nothing
         return []
 
