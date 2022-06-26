@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>sphinxnotes.any - Sphinx Domain for Descibing Anything &#8212; sphinxnotes-any 2.3 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="canonical" href="https://sphinx-notes.github.io/any/index.html" />
     <link rel="shortcut icon" href="_static/sphinx-notes.png"/>
@@ -33,21 +34,21 @@
           <div class="body" role="main">
             
   <section id="sphinxnotes-any-sphinx-domain-for-descibing-anything">
-<h1>sphinxnotes.any - Sphinx Domain for Descibing Anything<a class="headerlink" href="#sphinxnotes-any-sphinx-domain-for-descibing-anything" title="Permalink to this headline">¶</a></h1>
+<h1>sphinxnotes.any - Sphinx Domain for Descibing Anything<a class="headerlink" href="#sphinxnotes-any-sphinx-domain-for-descibing-anything" title="Permalink to this heading">¶</a></h1>
 <a class="reference external image-reference" href="https://github.com/sphinx-notes/any"><img alt="https://img.shields.io/github/stars/sphinx-notes/any.svg?style=social&amp;label=Star&amp;maxAge=2592000" src="https://img.shields.io/github/stars/sphinx-notes/any.svg?style=social&amp;label=Star&amp;maxAge=2592000" /></a>
 <dl class="field-list simple">
-<dt class="field-odd">version</dt>
+<dt class="field-odd">version<span class="colon">:</span></dt>
 <dd class="field-odd"><p>2.3</p>
 </dd>
-<dt class="field-even">copyright</dt>
+<dt class="field-even">copyright<span class="colon">:</span></dt>
 <dd class="field-even"><p>Copyright ©2021 by Shengyu Zhang.</p>
 </dd>
-<dt class="field-odd">license</dt>
+<dt class="field-odd">license<span class="colon">:</span></dt>
 <dd class="field-odd"><p>BSD, see LICENSE for details.</p>
 </dd>
 </dl>
 <p>The extension provides a domain which allows user creates directive and roles to descibe, reference and index arbitrary object in documentation by writing reStructuredText templates. It is a bit like <a class="reference external" href="https://www.sphinx-doc.org/en/master/extdev/appapi.html#sphinx.application.Sphinx.add_object_type" title="(in Sphinx v6.0.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sphinx.application.Sphinx.add_object_type()</span></code></a>, but more powerful.</p>
-<div class="contents local topic" id="contents">
+<nav class="contents local" id="contents">
 <ul class="simple">
 <li><p><a class="reference internal" href="#installation" id="id19">Installation</a></p></li>
 <li><p><a class="reference internal" href="#configuration" id="id20">Configuration</a></p></li>
@@ -114,9 +115,9 @@
 </ul>
 </li>
 </ul>
-</div>
+</nav>
 <section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h2>
 <p>Download it from official Python Package Index:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pip install sphinxnotes-any
 </pre></div>
@@ -131,16 +132,16 @@
 </div>
 </section>
 <section id="configuration">
-<span id="id1"></span><h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this heading">¶</a></h2>
 <p>The extension provides the following configuration:</p>
 <dl class="any">
 <dt class="sig sig-object any" id="confval-any_domain_name">
 <span class="sig-name descname"><span class="pre">any_domain_name</span></span><a class="headerlink" href="#confval-any_domain_name" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p>
 </dd>
-<dt class="field-even">Default</dt>
+<dt class="field-even">Default<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">'any'</span></code></p>
 </dd>
 </dl>
@@ -151,10 +152,10 @@
 <dt class="sig sig-object any" id="confval-any_schemas">
 <span class="sig-name descname"><span class="pre">any_schemas</span></span><a class="headerlink" href="#confval-any_schemas" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">List[sphinxnotes.any.Schema]</span></code></p>
 </dd>
-<dt class="field-even">Default</dt>
+<dt class="field-even">Default<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
 </dd>
 </dl>
@@ -163,35 +164,32 @@
 
 </section>
 <section id="functionalities">
-<h2>Functionalities<a class="headerlink" href="#functionalities" title="Permalink to this headline">¶</a></h2>
+<h2>Functionalities<a class="headerlink" href="#functionalities" title="Permalink to this heading">¶</a></h2>
 <section id="defining-schema">
-<span id="writing-schema"></span><h3>Defining Schema<a class="headerlink" href="#defining-schema" title="Permalink to this headline">¶</a></h3>
-<div class="topic" id="schema">
+<span id="writing-schema"></span><h3>Defining Schema<a class="headerlink" href="#defining-schema" title="Permalink to this heading">¶</a></h3>
+<aside class="topic" id="schema">
 <p class="topic-title">What is Schema?</p>
 <p>Before descibing any object, we need a “schema” to tell extension “how to descibe the object”. For extension user, “schema” is a <a class="reference internal" href="#any.Schema" title="any.Schema"><code class="xref py py-class docutils literal notranslate"><span class="pre">python</span> <span class="pre">object</span></code></a> that can specific in configuration value <a class="reference internal" href="#confval-any_schemas" title="confval any_schemas"><code class="xref any any-confval docutils literal notranslate"><span class="pre">⚙️any_schemas</span></code></a>.</p>
-</div>
+</aside>
 <p>The necessary python classes for writing schema are listed here:</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="any.Schema">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">any.</span></span><span class="sig-name descname"><span class="pre">Schema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name=Field(form=&lt;Form.PLAIN:</span> <span class="pre">1&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">referenceable=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required=False)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs={}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content=Field(form=&lt;Form.PLAIN:</span> <span class="pre">1&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">referenceable=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required=False)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description_template='{{</span> <span class="pre">content</span> <span class="pre">}}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_template='{{</span> <span class="pre">title</span> <span class="pre">}}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">missing_reference_template='{{</span> <span class="pre">title</span> <span class="pre">}}</span> <span class="pre">(missing</span> <span class="pre">reference)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ambiguous_reference_template='{{</span> <span class="pre">title</span> <span class="pre">}}</span> <span class="pre">(disambiguation)'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#any.Schema" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Schema instance.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>objtype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – The unique type name of object, it will be used as
 basename of corresponding <a class="reference internal" href="#directives"><span class="std std-ref">Directives</span></a>, <a class="reference internal" href="#roles"><span class="std std-ref">Roles</span></a> and
 <a class="reference internal" href="#indices"><span class="std std-ref">Indices</span></a></p></li>
-<li><p><strong>name</strong> (<a class="reference internal" href="#any.Field" title="any.schema.Field"><em>any.schema.Field</em></a>) – Constraints of optional object name</p></li>
-<li><p><strong>attrs</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><a class="reference internal" href="#any.Field" title="any.schema.Field"><em>any.schema.Field</em></a><em>]</em>) – Constraints of object attributes</p></li>
-<li><p><strong>content</strong> (<a class="reference internal" href="#any.Field" title="any.schema.Field"><em>any.schema.Field</em></a>) – Constraints of object content</p></li>
+<li><p><strong>name</strong> (<a class="reference internal" href="#any.Field" title="any.schema.Field"><em>Field</em></a>) – Constraints of optional object name</p></li>
+<li><p><strong>attrs</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><a class="reference internal" href="#any.Field" title="any.schema.Field"><em>Field</em></a><em>]</em>) – Constraints of object attributes</p></li>
+<li><p><strong>content</strong> (<a class="reference internal" href="#any.Field" title="any.schema.Field"><em>Field</em></a>) – Constraints of object content</p></li>
 <li><p><strong>description_template</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – See <a class="reference internal" href="#description-template"><span class="std std-ref">Description Template</span></a></p></li>
 <li><p><strong>reference_template</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – See <a class="reference internal" href="#reference-template"><span class="std std-ref">Reference Template</span></a></p></li>
 <li><p><strong>missing_reference_template</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – See <a class="reference internal" href="#reference-template"><span class="std std-ref">Reference Template</span></a></p></li>
 <li><p><strong>ambiguous_reference_template</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – See <a class="reference internal" href="#reference-template"><span class="std std-ref">Reference Template</span></a></p></li>
 </ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 <p>Class-wide shared special keys used in template rendering context:</p>
@@ -230,9 +228,9 @@ basename of corresponding <a class="reference internal" href="#directives"><span
 <dd><p>Describes value constraint of field of Object.</p>
 <p>The value of field can be single or mulitple string.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>form</strong> (<a class="reference internal" href="#any.Field.Form" title="any.schema.Field.Form"><em>any.schema.Field.Form</em></a>) – The form of value.</p></li>
+<li><p><strong>form</strong> (<a class="reference internal" href="#any.Field.Form" title="any.schema.Field.Form"><em>Form</em></a>) – The form of value.</p></li>
 <li><p><strong>unique</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – <p>Whether the field is unique.
 If true, the value of field must be unique within the scope of objects
 with same type. And it will be used as base string of object
@@ -251,9 +249,6 @@ See <a class="reference internal" href="#roles"><span class="std std-ref">Roles<
 If ture, <code class="xref py py-exc docutils literal notranslate"><span class="pre">ObjectError</span></code> will be raised when building documentation
 if the value is no given.</p></li>
 </ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 <div class="line-block">
@@ -287,7 +282,7 @@ if the value is no given.</p></li>
 
 </section>
 <section id="documenting-object">
-<h3>Documenting Object<a class="headerlink" href="#documenting-object" title="Permalink to this headline">¶</a></h3>
+<h3>Documenting Object<a class="headerlink" href="#documenting-object" title="Permalink to this heading">¶</a></h3>
 <p>Once a schema created, the corresponding <a class="reference internal" href="#directives"><span class="std std-ref">Directives</span></a>, <a class="reference internal" href="#roles"><span class="std std-ref">Roles</span></a> and <a class="reference internal" href="#indices"><span class="std std-ref">Indices</span></a> will be generated. You can use them to descibe, reference and index object in your documentation.</p>
 <p>For the convenience, we use default domain name “any”, and we assume that we have the following schema with in <a class="reference internal" href="#confval-any_schemas" title="confval any_schemas"><code class="xref any any-confval docutils literal notranslate"><span class="pre">⚙️any_schemas</span></code></a>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">textwrap</span> <span class="kn">import</span> <span class="n">dedent</span>
@@ -314,9 +309,9 @@ if the value is no given.</p></li>
 </pre></div>
 </div>
 <section id="directives">
-<span id="id2"></span><h4>Directives<a class="headerlink" href="#directives" title="Permalink to this headline">¶</a></h4>
+<span id="id2"></span><h4>Directives<a class="headerlink" href="#directives" title="Permalink to this heading">¶</a></h4>
 <section id="object-description">
-<span id="id3"></span><h5>Object Description<a class="headerlink" href="#object-description" title="Permalink to this headline">¶</a></h5>
+<span id="id3"></span><h5>Object Description<a class="headerlink" href="#object-description" title="Permalink to this heading">¶</a></h5>
 <p>The aboved schema created a <a class="reference external" href="https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#directives">Directive</a> named with “<code class="docutils literal notranslate"><span class="pre">domain</span></code>:<code class="docutils literal notranslate"><span class="pre">objtype</span></code>” (In this case, it is <code class="docutils literal notranslate"><span class="pre">any:cat</span></code>) for descibing object(INC, it is cat🐈).</p>
 <dl>
 <dt>Arguments</dt><dd><p>Arguments are used to specify the <a class="reference internal" href="#tmplvar-name" title="tmplvar name"><code class="xref any any-tmplvar docutils literal notranslate"><span class="pre">{{name}}</span></code></a> of the object. The number argument is depends on the name <a class="reference internal" href="#any.Field" title="any.Field"><code class="xref py py-class docutils literal notranslate"><span class="pre">any.Field</span></code></a> of Schema.</p>
@@ -370,10 +365,10 @@ if the value is no given.</p></li>
 <span class="sig-name descname"><span class="pre">Nyan</span> <span class="pre">Cat</span></span><a class="headerlink" href="#cat-1" title="Permalink to this definition">¶</a></dt>
 <dd><img alt="_images/nyan-cat.gif" class="align-left" src="_images/nyan-cat.gif" />
 <dl class="field-list simple">
-<dt class="field-odd">Cat ID</dt>
+<dt class="field-odd">Cat ID<span class="colon">:</span></dt>
 <dd class="field-odd"><p>1</p>
 </dd>
-<dt class="field-even">Color</dt>
+<dt class="field-even">Color<span class="colon">:</span></dt>
 <dd class="field-even"><p>pink gray</p>
 </dd>
 </dl>
@@ -381,28 +376,22 @@ if the value is no given.</p></li>
 which became an internet meme. The video merged a Japanese pop song with
 an animated cartoon cat with a Pop-Tart for a torso, flying through space,
 and leaving a rainbow trail behind it. The video ranked at number 5 on
-the list of most viewed YouTube videos in 2011. <a class="footnote-reference brackets" href="#id5" id="id4">1</a></p>
-<dl class="footnote brackets">
-<dt class="label" id="id5"><span class="brackets"><a class="fn-backref" href="#id4">1</a></span></dt>
-<dd><p><a class="reference external" href="https://en.wikipedia.org/wiki/Nyan_Cat">https://en.wikipedia.org/wiki/Nyan_Cat</a></p>
-</dd>
-</dl>
+the list of most viewed YouTube videos in 2011. <a class="footnote-reference brackets" href="#id5" id="id4" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a></p>
+<aside class="footnote brackets" id="id5" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">1</a><span class="fn-bracket">]</span></span>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Nyan_Cat">https://en.wikipedia.org/wiki/Nyan_Cat</a></p>
+</aside>
 </dd></dl>
 
 </section>
 </section>
 <section id="roles">
-<span id="id6"></span><h4>Roles<a class="headerlink" href="#roles" title="Permalink to this headline">¶</a></h4>
+<span id="id6"></span><h4>Roles<a class="headerlink" href="#roles" title="Permalink to this heading">¶</a></h4>
 <p>Same to <a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html#xref-syntax" title="(in Sphinx v6.0.0)"><span>Cross-referencing syntax</span></a>, explicit title <code class="docutils literal notranslate"><span class="pre">:role:`title</span> <span class="pre">&lt;target&gt;`</span></code> is supported by all the <a class="reference external" href="https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#interpreted-text">Role</a>s. If not explicit title specific, reference title will be rendered by one of <a class="reference internal" href="#reference-template"><span class="std std-ref">Reference Template</span></a>.</p>
 <section id="general-reference">
-<h5>General Reference<a class="headerlink" href="#general-reference" title="Permalink to this headline">¶</a></h5>
+<h5>General Reference<a class="headerlink" href="#general-reference" title="Permalink to this heading">¶</a></h5>
 <p>The aboved schema created a role named with “<code class="docutils literal notranslate"><span class="pre">domain</span></code>-<code class="docutils literal notranslate"><span class="pre">objtype</span></code>” (In this case, it is <code class="docutils literal notranslate"><span class="pre">any:cat</span></code>) for creating a reference to <a class="reference internal" href="#object-description"><span class="std std-ref">Object Description</span></a>. The interpreted text can be value of <em>any referenceable field</em>.</p>
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 23%" />
-<col style="width: 42%" />
-<col style="width: 36%" />
-</colgroup>
 <tbody>
 <tr class="row-odd"><td><p>Reference by name</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">:any:cat:`Nyan</span> <span class="pre">Cat`</span></code></p></td>
@@ -428,15 +417,10 @@ the list of most viewed YouTube videos in 2011. <a class="footnote-reference bra
 </table>
 </section>
 <section id="field-specific-reference">
-<h5>Field-Specific Reference<a class="headerlink" href="#field-specific-reference" title="Permalink to this headline">¶</a></h5>
+<h5>Field-Specific Reference<a class="headerlink" href="#field-specific-reference" title="Permalink to this heading">¶</a></h5>
 <p>Role “<code class="docutils literal notranslate"><span class="pre">domain</span></code>-<code class="docutils literal notranslate"><span class="pre">objtype</span></code>.<code class="docutils literal notranslate"><span class="pre">field</span></code>” will be created for all referenceable Fields (In this case, it is <code class="docutils literal notranslate"><span class="pre">any:cat.name</span></code>, <code class="docutils literal notranslate"><span class="pre">any:cat.id</span></code> and <code class="docutils literal notranslate"><span class="pre">any:cat.color</span></code>).</p>
 <p>These roles also create reference to <a class="reference internal" href="#object-description"><span class="std std-ref">Object Description</span></a>. But the interpreted text must be value of field in role’s name.</p>
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 24%" />
-<col style="width: 40%" />
-<col style="width: 36%" />
-</colgroup>
 <tbody>
 <tr class="row-odd"><td><p>Reference by name</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">:any:cat.name:`Nyan</span> <span class="pre">Cat`</span></code></p></td>
@@ -451,16 +435,12 @@ the list of most viewed YouTube videos in 2011. <a class="footnote-reference bra
 </section>
 </section>
 <section id="indices">
-<span id="id7"></span><h4>Indices<a class="headerlink" href="#indices" title="Permalink to this headline">¶</a></h4>
+<span id="id7"></span><h4>Indices<a class="headerlink" href="#indices" title="Permalink to this heading">¶</a></h4>
 <p>According to sphinx documentation, we use <a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html#ref-role" title="(in Sphinx v6.0.0)"><span>Cross-referencing arbitrary locations</span></a> to create reference to object indices, and the index name should prefixed with domain name.</p>
 <section id="general-index">
-<h5>General Index<a class="headerlink" href="#general-index" title="Permalink to this headline">¶</a></h5>
+<h5>General Index<a class="headerlink" href="#general-index" title="Permalink to this heading">¶</a></h5>
 <p>Index “<code class="docutils literal notranslate"><span class="pre">domain</span></code>-<code class="docutils literal notranslate"><span class="pre">objtype</span></code>” (In this case, it is <code class="docutils literal notranslate"><span class="pre">any-cat</span></code>) creates reference to object index which grouped by all referenceable field values.</p>
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 56%" />
-<col style="width: 44%" />
-</colgroup>
 <tbody>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:ref:`any-cat`</span></code></p></td>
 <td><p><a class="reference internal" href="any-cat.html"><span class="std std-ref">Cat Reference Index</span></a></p></td>
@@ -469,14 +449,10 @@ the list of most viewed YouTube videos in 2011. <a class="footnote-reference bra
 </table>
 </section>
 <section id="field-specific-index">
-<h5>Field Specific Index<a class="headerlink" href="#field-specific-index" title="Permalink to this headline">¶</a></h5>
+<h5>Field Specific Index<a class="headerlink" href="#field-specific-index" title="Permalink to this heading">¶</a></h5>
 <p>Index “<code class="docutils literal notranslate"><span class="pre">domain</span></code>-<code class="docutils literal notranslate"><span class="pre">objtype</span></code>.<code class="docutils literal notranslate"><span class="pre">field</span></code>” will be created for all reference Fields (In this case, it is <code class="docutils literal notranslate"><span class="pre">any-cat.name</span></code>, <code class="docutils literal notranslate"><span class="pre">any-cat.id</span></code> and <code class="docutils literal notranslate"><span class="pre">any-cat.color</span></code>).</p>
 <p>These indices create reference to object index which grouped by specific field values.</p>
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 55%" />
-<col style="width: 45%" />
-</colgroup>
 <tbody>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:ref:`any-cat.name`</span></code></p></td>
 <td><p><a class="reference internal" href="any-cat.name.html"><span class="std std-ref">Cat Name Reference Index</span></a></p></td>
@@ -490,15 +466,15 @@ the list of most viewed YouTube videos in 2011. <a class="footnote-reference bra
 </section>
 </section>
 <section id="writing-template">
-<span id="id8"></span><h3>Writing Template<a class="headerlink" href="#writing-template" title="Permalink to this headline">¶</a></h3>
+<span id="id8"></span><h3>Writing Template<a class="headerlink" href="#writing-template" title="Permalink to this heading">¶</a></h3>
 <p>We use <a class="reference external" href="https://jinja.palletsprojects.com/">Jinja</a> as our templating engine.</p>
 <p>Currently we need two kinds of template to let .</p>
 <section id="description-template">
-<span id="id9"></span><h4>Description Template<a class="headerlink" href="#description-template" title="Permalink to this headline">¶</a></h4>
+<span id="id9"></span><h4>Description Template<a class="headerlink" href="#description-template" title="Permalink to this heading">¶</a></h4>
 <p>Used to generate object description. Can be written in reStructuredText.</p>
 </section>
 <section id="reference-template">
-<span id="id10"></span><h4>Reference Template<a class="headerlink" href="#reference-template" title="Permalink to this headline">¶</a></h4>
+<span id="id10"></span><h4>Reference Template<a class="headerlink" href="#reference-template" title="Permalink to this heading">¶</a></h4>
 <p>Used to generate object reference. Only plain text is allowed for now.</p>
 <p>Reference Template has two various variants:</p>
 <dl>
@@ -517,7 +493,7 @@ the list of most viewed YouTube videos in 2011. <a class="footnote-reference bra
 </dl>
 </section>
 <section id="variables">
-<h4>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h4>
+<h4>Variables<a class="headerlink" href="#variables" title="Permalink to this heading">¶</a></h4>
 <p>For the usage of Jinja’s variable, please refer to <a class="reference external" href="&lt;https://jinja.palletsprojects.com/en/2.11.x/templates/#variables">Jinja’s Variables</a>.</p>
 <p>All attributes defined in schema are available as variables in template. Note the value of variable might be <em>string or string list</em> (depends on value of <code class="xref py py-class docutils literal notranslate"><span class="pre">any.Schema.Field.Form</span></code>).</p>
 <p>Beside, there are some special variable:</p>
@@ -525,7 +501,7 @@ the list of most viewed YouTube videos in 2011. <a class="footnote-reference bra
 <dt class="sig sig-object any" id="tmplvar-objtype">
 <span class="sig-name descname"><span class="pre">objtype</span></span><a class="headerlink" href="#tmplvar-objtype" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p>
 </dd>
 </dl>
@@ -541,7 +517,7 @@ the list of most viewed YouTube videos in 2011. <a class="footnote-reference bra
 <dt class="sig sig-object any" id="tmplvar-name">
 <span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#tmplvar-name" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">Union[None,str,List[str]]</span></code></p>
 </dd>
 </dl>
@@ -557,7 +533,7 @@ the list of most viewed YouTube videos in 2011. <a class="footnote-reference bra
 <dt class="sig sig-object any" id="tmplvar-content">
 <span class="sig-name descname"><span class="pre">content</span></span><a class="headerlink" href="#tmplvar-content" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">Union[None,str,List[str]]</span></code></p>
 </dd>
 </dl>
@@ -573,7 +549,7 @@ the list of most viewed YouTube videos in 2011. <a class="footnote-reference bra
 <dt class="sig sig-object any" id="tmplvar-title">
 <span class="sig-name descname"><span class="pre">title</span></span><a class="headerlink" href="#tmplvar-title" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">str</span></code></p>
 </dd>
 </dl>
@@ -588,7 +564,7 @@ the list of most viewed YouTube videos in 2011. <a class="footnote-reference bra
 
 </section>
 <section id="filters">
-<h4>Filters<a class="headerlink" href="#filters" title="Permalink to this headline">¶</a></h4>
+<h4>Filters<a class="headerlink" href="#filters" title="Permalink to this heading">¶</a></h4>
 <p>For the usage of Jinja’s filter, please refer to <a class="reference external" href="https://jinja.palletsprojects.com/en/2.11.x/templates/#filters&gt;">Jinja’s Filters</a>.</p>
 <p>All <a class="reference external" href="https://jinja.palletsprojects.com/en/2.11.x/templates/#builtin-filters">Jinja’s Builtin Filters</a> are available.
 In additional, we provide the following custom filters to enhance the template:</p>
@@ -626,13 +602,13 @@ current documentation.</p>
 </section>
 </section>
 <section id="tips">
-<h2>Tips<a class="headerlink" href="#tips" title="Permalink to this headline">¶</a></h2>
+<h2>Tips<a class="headerlink" href="#tips" title="Permalink to this heading">¶</a></h2>
 <section id="omit-domain-name">
-<h3>Omit Domain Name<a class="headerlink" href="#omit-domain-name" title="Permalink to this headline">¶</a></h3>
+<h3>Omit Domain Name<a class="headerlink" href="#omit-domain-name" title="Permalink to this heading">¶</a></h3>
 <p>You can omit the prefixed domain name in directives and roles by setting the <code class="docutils literal notranslate"><span class="pre">primary_domain</span></code> to your <a class="reference internal" href="#confval-any_domain_name" title="confval any_domain_name"><code class="xref any any-confval docutils literal notranslate"><span class="pre">⚙️any_domain_name</span></code></a> in <code class="file docutils literal notranslate"><span class="pre">conf.py</span></code>. For example, you can use <code class="docutils literal notranslate"><span class="pre">..</span> <span class="pre">cat::</span></code> rather than <code class="docutils literal notranslate"><span class="pre">..</span> <span class="pre">any:cat::</span></code>.</p>
 </section>
 <section id="documenting-section-and-documentation">
-<h3>Documenting Section and Documentation<a class="headerlink" href="#documenting-section-and-documentation" title="Permalink to this headline">¶</a></h3>
+<h3>Documenting Section and Documentation<a class="headerlink" href="#documenting-section-and-documentation" title="Permalink to this heading">¶</a></h3>
 <p>By using the <a class="reference internal" href="#underscore-argument"><span class="std std-ref">Underscore Argument</span></a>, you can
 document a section and reference to it. For example:</p>
 <div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="gh">================</span>
@@ -648,10 +624,10 @@ document a section and reference to it. For example:</p>
 <p>You not need to create a reST label by yourself, just use role like <code class="docutils literal notranslate"><span class="pre">:book:`The</span> <span class="pre">Story</span> <span class="pre">of</span> <span class="pre">Art`</span></code>. Beside, it is also a better replacement of  <a class="reference external" href="https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#bibliographic-fields">Bibliographic Fields</a>.</p>
 </section>
 <section id="enrich-object-description">
-<h3>Enrich Object Description<a class="headerlink" href="#enrich-object-description" title="Permalink to this headline">¶</a></h3>
+<h3>Enrich Object Description<a class="headerlink" href="#enrich-object-description" title="Permalink to this heading">¶</a></h3>
 <p>As the <a class="reference internal" href="#description-template"><span class="std std-ref">Description Template</span></a> supports reStructuredText, We have a lot of room to play.</p>
 <section id="categorizing-and-tagging">
-<h4>Categorizing and Tagging<a class="headerlink" href="#categorizing-and-tagging" title="Permalink to this headline">¶</a></h4>
+<h4>Categorizing and Tagging<a class="headerlink" href="#categorizing-and-tagging" title="Permalink to this heading">¶</a></h4>
 <p>When we descibing a object, usually we are categorizing and tagging them.
 For dog, we may define such a Schema:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">textwrap</span> <span class="kn">import</span> <span class="n">dedent</span>
@@ -703,10 +679,10 @@ For dog, we may define such a Schema:</p>
 <dt class="sig sig-object any" id="dog-Indiana">
 <span class="sig-name descname"><span class="pre">Indiana</span></span><a class="headerlink" href="#dog-Indiana" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Breed</dt>
+<dt class="field-odd">Breed<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="any-dog.breed.html#cap-Husky" title="dog Husky"><code class="xref any any-dog.breed docutils literal notranslate"><span class="pre">Husky</span></code></a></p>
 </dd>
-<dt class="field-even">Colors</dt>
+<dt class="field-even">Colors<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="any-dog.color.html#cap-Black" title="dog Black"><code class="xref any any-dog.color docutils literal notranslate"><span class="pre">Black</span></code></a> <a class="reference internal" href="any-dog.color.html#cap-White" title="dog White"><code class="xref any any-dog.color docutils literal notranslate"><span class="pre">White</span></code></a></p>
 </dd>
 </dl>
@@ -716,9 +692,9 @@ For dog, we may define such a Schema:</p>
 </section>
 </section>
 <section id="change-log">
-<h2>Change Log<a class="headerlink" href="#change-log" title="Permalink to this headline">¶</a></h2>
+<h2>Change Log<a class="headerlink" href="#change-log" title="Permalink to this heading">¶</a></h2>
 <section id="id11">
-<h3>2022-04-09 2.3<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
+<h3>2022-04-09 2.3<a class="headerlink" href="#id11" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Prevent crash when failed to get section title (72250de)</p></li>
 <li><p>Return hexdigest rather than UUID as object ID (#7)</p></li>
@@ -727,13 +703,13 @@ For dog, we may define such a Schema:</p>
 </ul>
 </section>
 <section id="id12">
-<h3>2021-08-18 2.2<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
+<h3>2021-08-18 2.2<a class="headerlink" href="#id12" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Use the Object ID as index name when no object title available</p></li>
 </ul>
 </section>
 <section id="id13">
-<h3>2021-06-26 2.1<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h3>
+<h3>2021-06-26 2.1<a class="headerlink" href="#id13" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Report ambiguous object via debug log</p></li>
 <li><p>Some doc fixes</p></li>
@@ -741,39 +717,39 @@ For dog, we may define such a Schema:</p>
 </ul>
 </section>
 <section id="id14">
-<h3>2021-06-05 2.0<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h3>
+<h3>2021-06-05 2.0<a class="headerlink" href="#id14" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Update documentation, add some tips</p></li>
 </ul>
 </section>
 <section id="a3">
-<h3>2021-06-03 2.0a3<a class="headerlink" href="#a3" title="Permalink to this headline">¶</a></h3>
+<h3>2021-06-03 2.0a3<a class="headerlink" href="#a3" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Simplify index name (e4d9207)</p></li>
 </ul>
 </section>
 <section id="id15">
-<h3>2021-06-03 2.0a3<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h3>
+<h3>2021-06-03 2.0a3<a class="headerlink" href="#id15" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Simplify index name (e4d9207)</p></li>
 </ul>
 </section>
 <section id="a2">
-<h3>2021-05-23 2.0a2<a class="headerlink" href="#a2" title="Permalink to this headline">¶</a></h3>
+<h3>2021-05-23 2.0a2<a class="headerlink" href="#a2" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Fix none object signture (6a5f75f)</p></li>
 <li><p>Prevent sphinx config changed everytime (f7b316b)</p></li>
 </ul>
 </section>
 <section id="a1">
-<h3>2021-05-23 2.0a1<a class="headerlink" href="#a1" title="Permalink to this headline">¶</a></h3>
+<h3>2021-05-23 2.0a1<a class="headerlink" href="#a1" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Template variable must be non None (fb9678e)</p></li>
 <li><p>Template will not apply on role with explicit title (5bdaad1)</p></li>
 </ul>
 </section>
 <section id="a0">
-<h3>2021-05-22 2.0a0<a class="headerlink" href="#a0" title="Permalink to this headline">¶</a></h3>
+<h3>2021-05-22 2.0a0<a class="headerlink" href="#a0" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Descibing schema with python object instead of dict</p></li>
 <li><p>Support index</p></li>
@@ -781,13 +757,13 @@ For dog, we may define such a Schema:</p>
 </ul>
 </section>
 <section id="id16">
-<h3>2021-02-28 1.1<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h3>
+<h3>2021-02-28 1.1<a class="headerlink" href="#id16" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Remove symbol link if exists</p></li>
 </ul>
 </section>
 <section id="id17">
-<h3>2021-02-23 1.0<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h3>
+<h3>2021-02-23 1.0<a class="headerlink" href="#id17" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Move preset schemas to standalone package</p></li>
 <li><p>Add custom filter support to template</p></li>
@@ -795,7 +771,7 @@ For dog, we may define such a Schema:</p>
 </ul>
 </section>
 <section id="b0">
-<h3>2021-01-28 1.0b0<a class="headerlink" href="#b0" title="Permalink to this headline">¶</a></h3>
+<h3>2021-01-28 1.0b0<a class="headerlink" href="#b0" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>Fix the missing Jinja dependency</p></li>
 <li><p>Use section title as object name when directive argument is omitted</p></li>
@@ -805,7 +781,7 @@ For dog, we may define such a Schema:</p>
 </ul>
 </section>
 <section id="id18">
-<h3>2020-12-20 1.0a1<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h3>
+<h3>2020-12-20 1.0a1<a class="headerlink" href="#id18" title="Permalink to this heading">¶</a></h3>
 <p>The alpha version is out, enjoy~</p>
 </section>
 </section>
@@ -821,7 +797,7 @@ For dog, we may define such a Schema:</p>
       &copy;2022, Shengyu Zhang.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
