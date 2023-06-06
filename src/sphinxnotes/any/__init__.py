@@ -20,13 +20,7 @@ from .template import Environment as TemplateEnvironment
 from .domain import AnyDomain, warn_missing_reference
 from .schema import Schema, Field
 
-__title__= 'sphinxnotes-any'
-__license__ = 'BSD'
 __version__ = '2.3.1'
-__author__ = 'Shengyu Zhang'
-__url__ = 'https://sphinx-notes.github.io/any'
-__description__ = 'Sphinx Domain for describing Anything'
-__keywords__ = 'documentation, sphinx, extension'
 
 logger = logging.getLogger(__name__)
 
