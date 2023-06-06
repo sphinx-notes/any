@@ -121,6 +121,7 @@ extensions.append('any')
 # Override
 extensions.remove('sphinxnotes.any')
 from any import Schema, Field as F
+sys.path.insert(0, os.path.abspath('.'))
 any_schemas = [
     Schema('version',
            name=F(unique=True, referenceable=True, required=True, form=F.Form.LINES),
