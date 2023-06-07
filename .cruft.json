@@ -1,0 +1,25 @@
+{
+  "template": "https://github.com/sphinx-notes/template",
+  "commit": "202f9756fdd661ab195d20bb6926a9481ee1d78a",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "namespace": "sphinxnotes",
+      "name": "any",
+      "full_name": "sphinxnotes-any",
+      "author": "Shengyu Zhang",
+      "description": "Sphinx domain for documenting anything",
+      "version": "2.3.1",
+      "github_owner": "sphinx-notes",
+      "github_repo": "any",
+      "pypi_name": "sphinxnotes-any",
+      "pypi_owner": "SilverRainZ",
+      "dependencies": [
+        "Sphinx >= 4"
+      ],
+      "additional_docs": [],
+      "_template": "https://github.com/sphinx-notes/template"
+    }
+  },
+  "directory": null
+}
