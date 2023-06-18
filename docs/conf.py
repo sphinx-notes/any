@@ -97,6 +97,9 @@ extlinks = {
     'tag': ('https://github.com/{{ cookiecutter.github_owner }}/{{ cookiecutter.github_repo }}/releases/tag/%s', '🏷️ %s'),
 }
 
+extensions.append('sphinxcontrib.gtagjs')
+gtagjs_ids = ['G-E4SNX0WZYV']
+
 extensions.append('sphinx.ext.autodoc')
 autoclass_content = 'init'
 autodoc_typehints = 'description'
