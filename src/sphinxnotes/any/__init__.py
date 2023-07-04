@@ -9,16 +9,16 @@
 """
 
 from __future__ import annotations
-from typing import List, TYPE_CHECKING
-
+from typing import TYPE_CHECKING
 from sphinx.util import logging
-if TYPE_CHECKING:
-    from sphinx.application import Sphinx
-    from sphinx.config import Config
 
 from .template import Environment as TemplateEnvironment
 from .domain import AnyDomain, warn_missing_reference
 from .schema import Schema, Field
+
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.config import Config
 
 __version__ = '2.3.1'
 
@@ -46,7 +46,7 @@ def setup(app:Sphinx):
     TemplateEnvironment.setup(app)
 
     app.add_config_value('any_domain_name', 'any', 'env', types=str)
-    app.add_config_value('any_schemas', [], 'env', types=List[Schema])
+    app.add_config_value('any_schemas', [], 'env', types=list[Schema])
     app.connect('config-inited', _config_inited)
     app.connect('warn-missing-reference', warn_missing_reference)
 

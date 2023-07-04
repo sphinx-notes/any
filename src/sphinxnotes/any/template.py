@@ -13,10 +13,10 @@ from typing import Tuple
 import os
 from os import path
 import posixpath
-import tempfile
 import shutil
 
-from sphinx.util import ensuredir, relative_uri, logging
+from sphinx.util import logging
+from sphinx.util.osutil import ensuredir, relative_uri
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 

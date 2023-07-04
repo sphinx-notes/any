@@ -8,7 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 from __future__ import annotations
-from typing import Dict, List, Type
+from typing import Type
 
 from docutils import nodes
 from docutils.statemachine import StringList
@@ -32,14 +32,14 @@ class AnyDirective(SphinxDirective):
     The class is modified from sphinx.directives.ObjectDescription
     """
 
-    schema:Schema = None
+    schema:Schema
 
     # Member of parent
     has_content:bool = True
     required_arguments:int = 0
     optional_arguments:int = 0
     final_argument_whitespace:bool = True
-    option_spec:Dict[str,callable] = {}
+    option_spec:dict[str,callable] = {}
 
     @classmethod
     def derive(cls, schema:Schema) -> Type["AnyDirective"]:
@@ -82,9 +82,9 @@ class AnyDirective(SphinxDirective):
 
 
     def _setup_nodes(self, obj:Object,
-                   sectnode:nodes.Node,
-                   ahrnode:nodes.Node,
-                   contnode:nodes.Node) -> None:
+                   sectnode:nodes.Element,
+                   ahrnode:nodes.Element,
+                   contnode:nodes.Element) -> None:
         """
         Attach necessary informations to nodes and note them.
 
@@ -118,8 +118,7 @@ class AnyDirective(SphinxDirective):
             ahrnode['names'].extend([fully_normalize_name(x) for x in name])
         self.state.document.note_explicit_target(ahrnode)
         # Note object by docu fields
-        # FIXME: Cast to AnyDomain
-        domain.note_object(self.env.docname, ahrid, self.schema, obj)
+        domain.note_object(self.env.docname, ahrid, self.schema, obj) # FIXME: Cast to AnyDomain
 
         # Parse description
         nested_parse_with_titles(self.state,
@@ -127,7 +126,7 @@ class AnyDirective(SphinxDirective):
                                  contnode)
 
 
-    def _run_section(self, obj:Object) -> List[nodes.Node]:
+    def _run_section(self, obj:Object) -> list[nodes.Node]:
         # Get the title of the "section" where the directive is located
         sectnode = self.state.parent
         titlenode = sectnode.next_node(nodes.title)
@@ -156,7 +155,7 @@ class AnyDirective(SphinxDirective):
         return []
 
 
-    def _run_objdesc(self, obj:Object) -> List[nodes.Node]:
+    def _run_objdesc(self, obj:Object) -> list[nodes.Node]:
         descnode = addnodes.desc()
         # Generate signature node
         title = self.schema.title_of(obj)
@@ -179,7 +178,7 @@ class AnyDirective(SphinxDirective):
         return [descnode]
 
 
-    def run(self) -> List[nodes.Node]:
+    def run(self) -> list[nodes.Node]:
         obj = self._build_object()
         if self.schema.title_of(obj) == '_':
             # If no argument is given, or the first argument is '_',

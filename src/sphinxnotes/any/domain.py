@@ -9,7 +9,7 @@
 """
 
 from __future__ import annotations
-from typing import Tuple, Dict, Any, Iterator, Type, Set, List, TYPE_CHECKING
+from typing import Tuple, Any, Iterator, Type, Set, Optional, TYPE_CHECKING
 
 from docutils.nodes import Element, literal, Text
 
@@ -17,16 +17,17 @@ from sphinx.addnodes import pending_xref
 from sphinx.domains import Domain, ObjType
 from sphinx.util import logging
 from sphinx.util.nodes import make_refnode
-if TYPE_CHECKING:
-    from sphinx.application import Sphinx
-    from sphinx.builders import Builder
-    from sphinx.environment import BuildEnvironment
-    from sphinx.util.typing import RoleFunction
 
 from .schema import Schema, Object
 from .directives import AnyDirective
 from .roles import AnyRole
 from .indices import AnyIndex
+
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.builders import Builder
+    from sphinx.environment import BuildEnvironment
+    from sphinx.util.typing import RoleFunction
 
 logger = logging.getLogger(__name__)
 
@@ -41,19 +42,19 @@ class AnyDomain(Domain):
     #: Domain label: longer, more descriptive (used in messages)
     label = 'Any'
     #: Type (usually directive) name -> ObjType instance
-    object_types:Dict[str,ObjType]= {}
+    object_types:dict[str,ObjType]= {}
     #: Directive name -> directive class
-    directives:Dict[str,Type[AnyDirective]] = {}
+    directives:dict[str,Type[AnyDirective]] = {}
     #: Role name -> role callable
-    roles:Dict[str,RoleFunction] = {}
+    roles:dict[str,RoleFunction] = {}
     #: A list of Index subclasses
-    indices:List[Type[AnyIndex]] = []
+    indices:list[Type[AnyIndex]] = []
     #: AnyDomain specific: Type -> index class
-    _indices_for_reftype:Dict[str,Type[AnyIndex]] = {}
+    _indices_for_reftype:dict[str,Type[AnyIndex]] = {}
     #: AnyDomain specific: Type -> Schema instance
-    _schemas:Dict[str,Schema] = {}
+    _schemas:dict[str,Schema] = {}
 
-    initial_data:Dict[str,Any] = {
+    initial_data:dict[str,Any] = {
         # See property object
         'objects': {},
         # See property references
@@ -61,12 +62,12 @@ class AnyDomain(Domain):
     }
 
     @property
-    def objects(self) -> Dict[Tuple[str,str], Tuple[str,str,Object]]:
+    def objects(self) -> dict[Tuple[str,str], Tuple[str,str,Object]]:
         """(objtype, objid) -> (docname, anchor, obj)"""
         return self.data.setdefault('objects', {})
 
     @property
-    def references(self) -> Dict[Tuple[str,str,str],Set[str]]:
+    def references(self) -> dict[Tuple[str,str,str],Set[str]]:
         """(objtype, objfield, objref) -> set(objid)"""
         return self.data.setdefault('references', {})
 
@@ -210,8 +211,8 @@ def warn_missing_reference(app: Sphinx, domain: Domain, node: pending_xref
 
 def reftype_to_objtype_and_objfield(reftype:str) -> Tuple[str,Optional[str]]:
     """Helper function for converting reftype(role name) to object infos."""
-    reftype = reftype.split('.', maxsplit=1)
-    return reftype[0], reftype[1] if len(reftype) == 2 else None
+    v = reftype.split('.', maxsplit=1)
+    return v[0], v[1] if len(v) == 2 else None
 
 
 def objtype_and_objfield_to_reftype(objtype:str, objfield:str) -> str:

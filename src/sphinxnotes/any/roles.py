@@ -8,7 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 from __future__ import annotations
-from typing import Tuple, Type, Optional
+from typing import Type
 
 from sphinx.util import logging
 from sphinx.roles import XRefRole
@@ -29,7 +29,7 @@ class AnyRole(XRefRole):
     schema:Schema
 
     @classmethod
-    def derive(cls, schema:Schema, field:str=None) -> Type["AnyRole"]:
+    def derive(cls, schema:Schema, field:str|None=None) -> Type["AnyRole"]:
         """Generate an AnyRole child class for referencing object."""
         return type('Any%s%sRole' % (schema.objtype.title(), field.title() if field else ''),
                     (cls,),

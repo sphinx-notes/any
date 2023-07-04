@@ -26,7 +26,7 @@ class AnyIndex(Index):
     shortname:str
 
     @classmethod
-    def derive(cls, schema:Schema, field:str=None) -> Type["AnyIndex"]:
+    def derive(cls, schema:Schema, field:str|None=None) -> Type["AnyIndex"]:
         """Generate an AnyIndex child class for indexing object."""
         if field:
             typ = f'Any{schema.objtype.title()}{field.title()}Index'
@@ -44,7 +44,7 @@ class AnyIndex(Index):
                      'shortname': 'references',})
 
 
-    def generate(self, docnames:Iterable[str] = None
+    def generate(self, docnames:Iterable[str]|None = None
                  ) -> Tuple[List[Tuple[str,List[IndexEntry]]], bool]:
         """Override parent method."""
         content = {}  # type: Dict[str, List[IndexEntry]]
