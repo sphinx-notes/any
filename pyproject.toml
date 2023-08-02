@@ -30,7 +30,7 @@ requires-python = ">=3.8"
 dependencies = [
     "Sphinx >= 4",
     "Jinja2",
-    "wand",
+    "wand >= 0.6.11", # https://github.com/emcconville/wand/issues/587
 ]
 
 dynamic = ["version"] # required by setuptools_scm, see section [build-system]
