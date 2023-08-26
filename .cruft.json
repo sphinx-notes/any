@@ -9,7 +9,7 @@
       "full_name": "sphinxnotes-any",
       "author": "Shengyu Zhang",
       "description": "Sphinx domain for documenting anything",
-      "version": "2.3.1",
+      "version": "2.4.0",
       "github_owner": "sphinx-notes",
       "github_repo": "any",
       "pypi_name": "sphinxnotes-any",
