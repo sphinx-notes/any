@@ -18,6 +18,12 @@ Change Log
 Version 2.x
 ===========
 
+.. version:: 2.4.0
+   :date: 2023-08-26
+
+   - Re-org project with sphinx-notes/template (:pull:`20`)
+   - Require wand>0.6.11 to prevent crash on macOS (fa716d3)
+
 .. version:: 2.3.1
    :date: 2022-06-26 
 
