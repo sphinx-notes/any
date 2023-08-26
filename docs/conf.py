@@ -92,9 +92,9 @@ primary_domain = 'any'
 
 extensions.append('sphinx.ext.extlinks')
 extlinks = {
-    'issue': ('https://github.com/{{ cookiecutter.github_owner }}/{{ cookiecutter.github_repo }}/issues/%s', '💬 %s'),
-    'pull': ('https://github.com/{{ cookiecutter.github_owner }}/{{ cookiecutter.github_repo }}/pull/%s', '🚀 %s'),
-    'tag': ('https://github.com/{{ cookiecutter.github_owner }}/{{ cookiecutter.github_repo }}/releases/tag/%s', '🏷️ %s'),
+    'issue': ('https://github.com/sphinx-notes/any/issues/%s', '💬 %s'),
+    'pull': ('https://github.com/sphinx-notes/any/pull/%s', '🚀 %s'),
+    'tag': ('https://github.com/sphinx-notes/any/releases/tag/%s', '🏷️ %s'),
 }
 
 extensions.append('sphinxcontrib.gtagjs')
