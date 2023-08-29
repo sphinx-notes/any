@@ -1,7 +1,7 @@
 {
   "template": "https://github.com/sphinx-notes/template",
-  "commit": "c781308dbd84e739727ce09aaf798444ced1e7e4",
-  "checkout": null,
+  "commit": "b5c09eed87ca2af4de47c15755f32c3224bffbc5",
+  "checkout": "docs/any-dog-food",
   "context": {
     "cookiecutter": {
       "namespace": "sphinxnotes",

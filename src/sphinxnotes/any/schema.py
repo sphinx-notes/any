@@ -99,7 +99,8 @@ class Field(object):
     def _as_lines(self, rawval:str) -> List[str]:
         assert self.form == self.Form.LINES
         assert rawval is not None
-        return [x.strip() for x in rawval.split('\n') if x.strip() != '']
+        return rawval.split('\n')
+
 
 
     def value_of(self, rawval:Optional[str]) -> Union[None,str,List[str]]:

@@ -74,21 +74,7 @@ html_logo = html_favicon = '_images/sphinx-notes.png'
 
 # -- Extensions -------------------------------------------------------------
 
-extensions.append('sphinxnotes.any')
-from sphinxnotes.any import Schema, Field as F
-any_schemas = [
-    #
-    Schema('version',
-           name=F(unique=True, referenceable=True, required=True, form=F.Form.LINES),
-           attrs={'date': F(referenceable=True)},
-           content=F(form=F.Form.LINES),
-           description_template=open('_templates/version.rst', 'r').read(),
-           reference_template='💽 {{ title }}',
-           missing_reference_template='💽 {{ title }}',
-           ambiguous_reference_template='💽 {{ title }}'),
-    #
-]
-primary_domain = 'any'
+# 
 
 extensions.append('sphinx.ext.extlinks')
 extlinks = {
@@ -120,11 +106,9 @@ sys.path.insert(0, os.path.abspath('../src/sphinxnotes'))
 extensions.append('any')
 
 # DOG FOOD CONFIGURATION START
-
-# Override
-extensions.remove('sphinxnotes.any')
 from any import Schema, Field as F
 sys.path.insert(0, os.path.abspath('.'))
+
 any_schemas = [
     Schema('version',
            name=F(unique=True, referenceable=True, required=True, form=F.Form.LINES),
@@ -141,4 +125,5 @@ any_schemas = [
     __import__("_schemas.tmplvar").tmplvar.tmplvar,
 ]
 
+primary_domain = 'any'
 # DOG FOOD CONFIGURATION END
