@@ -1,7 +1,7 @@
 {
   "template": "https://github.com/sphinx-notes/template",
-  "commit": "b5c09eed87ca2af4de47c15755f32c3224bffbc5",
-  "checkout": "docs/any-dog-food",
+  "commit": "cbf447e57f35a62a097cf0f8b740e047a3827e08",
+  "checkout": null,
   "context": {
     "cookiecutter": {
       "namespace": "sphinxnotes",
@@ -9,7 +9,7 @@
       "full_name": "sphinxnotes-any",
       "author": "Shengyu Zhang",
       "description": "Sphinx domain for documenting anything",
-      "version": "2.4.0",
+      "version": "2.4.1",
       "github_owner": "sphinx-notes",
       "github_repo": "any",
       "pypi_name": "sphinxnotes-any",
