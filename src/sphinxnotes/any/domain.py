@@ -135,6 +135,7 @@ class AnyDomain(Domain):
             if not has_explicit_title:
                 newtitle = schema.render_reference(obj)
         else:
+            # Mulitple objects found, we should create link to indices page.
             todocname, anchor, = self._get_index_anchor(typ, target)
             if not has_explicit_title:
                 newtitle = schema.render_ambiguous_reference(title)
