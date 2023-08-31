@@ -83,7 +83,7 @@ class AnyDirective(SphinxDirective):
 
     def _setup_nodes(self, obj:Object,
                    sectnode:nodes.Element,
-                   ahrnode:nodes.Element,
+                   ahrnode:nodes.Element|None,
                    contnode:nodes.Element) -> None:
         """
         Attach necessary informations to nodes and note them.
@@ -105,20 +105,21 @@ class AnyDirective(SphinxDirective):
         sectnode['classes'].append(domain.name)
 
         # Setup anchor
-        _, objid = self.schema.identifier_of(obj)
-        ahrid = make_id(self.env, self.state.document, prefix=objtype, term=objid)
-        ahrnode['ids'].append(ahrid)
-        # Add object name to node's names attribute.
-        # 'names' is space-separated list containing normalized reference
-        # names of an element.
-        name = self.schema.name_of(obj)
-        if isinstance(name, str):
-            ahrnode['names'].append(fully_normalize_name(name))
-        elif isinstance(name, list):
-            ahrnode['names'].extend([fully_normalize_name(x) for x in name])
-        self.state.document.note_explicit_target(ahrnode)
-        # Note object by docu fields
-        domain.note_object(self.env.docname, ahrid, self.schema, obj) # FIXME: Cast to AnyDomain
+        if ahrnode is not None:
+            _, objid = self.schema.identifier_of(obj)
+            ahrid = make_id(self.env, self.state.document, prefix=objtype, term=objid)
+            ahrnode['ids'].append(ahrid)
+            # Add object name to node's names attribute.
+            # 'names' is space-separated list containing normalized reference
+            # names of an element.
+            name = self.schema.name_of(obj)
+            if isinstance(name, str):
+                ahrnode['names'].append(fully_normalize_name(name))
+            elif isinstance(name, list):
+                ahrnode['names'].extend([fully_normalize_name(x) for x in name])
+            self.state.document.note_explicit_target(ahrnode)
+            # Note object by docu fields
+            domain.note_object(self.env.docname, ahrid, self.schema, obj) # FIXME: Cast to AnyDomain
 
         # Parse description
         nested_parse_with_titles(self.state,
@@ -157,20 +158,20 @@ class AnyDirective(SphinxDirective):
 
     def _run_objdesc(self, obj:Object) -> list[nodes.Node]:
         descnode = addnodes.desc()
+
         # Generate signature node
         title = self.schema.title_of(obj)
         if title is None:
             # Use non-generated object ID as replacement of title
             idfield, objid = self.schema.identifier_of(obj)
-            if idfield is not None:
-                # ID is not generated
-                title = objid
-            else:
-                # ID is auto-generated, Use '' is better than None
-                title = ''
-        signode = addnodes.desc_signature(title, '')
-        signode += addnodes.desc_name(title, title)
-        descnode.append(signode)
+            title = objid if idfield is not None else None
+        if title is not None:
+            signode = addnodes.desc_signature(title, '')
+            signode += addnodes.desc_name(title, title)
+            descnode.append(signode)
+        else:
+            signode = None
+
         # Generate content node
         contnode = addnodes.desc_content()
         descnode.append(contnode)
