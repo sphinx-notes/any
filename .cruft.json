@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/sphinx-notes/template",
-  "commit": "cbf447e57f35a62a097cf0f8b740e047a3827e08",
+  "commit": "93c85ed7fe6dc87e11ffd024b762a3c8c9a83a1b",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -14,10 +14,6 @@
       "github_repo": "any",
       "pypi_name": "sphinxnotes-any",
       "pypi_owner": "SilverRainZ",
-      "dependencies": [
-        "Sphinx >= 4"
-      ],
-      "additional_docs": [],
       "_template": "https://github.com/sphinx-notes/template"
     }
   },
