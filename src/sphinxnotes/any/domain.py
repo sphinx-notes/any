@@ -9,7 +9,7 @@
 """
 
 from __future__ import annotations
-from typing import Tuple, Any, Iterator, Type, Set, Optional, TYPE_CHECKING
+from typing import Any, Iterator, TYPE_CHECKING
 
 from docutils.nodes import Element, literal, Text
 
@@ -44,14 +44,14 @@ class AnyDomain(Domain):
     #: Type (usually directive) name -> ObjType instance
     object_types:dict[str,ObjType]= {}
     #: Directive name -> directive class
-    directives:dict[str,Type[AnyDirective]] = {}
+    directives:dict[str,type[AnyDirective]] = {}
     #: Role name -> role callable
     roles:dict[str,RoleFunction] = {}
     #: A list of Index subclasses
-    indices:list[Type[AnyIndex]] = []
-    #: AnyDomain specific: Type -> index class
-    _indices_for_reftype:dict[str,Type[AnyIndex]] = {}
-    #: AnyDomain specific: Type -> Schema instance
+    indices:list[type[AnyIndex]] = []
+    #: AnyDomain specific: type -> index class
+    _indices_for_reftype:dict[str,type[AnyIndex]] = {}
+    #: AnyDomain specific: type -> Schema instance
     _schemas:dict[str,Schema] = {}
 
     initial_data:dict[str,Any] = {
@@ -62,12 +62,12 @@ class AnyDomain(Domain):
     }
 
     @property
-    def objects(self) -> dict[Tuple[str,str], Tuple[str,str,Object]]:
+    def objects(self) -> dict[tuple[str,str], tuple[str,str,Object]]:
         """(objtype, objid) -> (docname, anchor, obj)"""
         return self.data.setdefault('objects', {})
 
     @property
-    def references(self) -> dict[Tuple[str,str,str],Set[str]]:
+    def references(self) -> dict[tuple[str,str,str],set[str]]:
         """(objtype, objfield, objref) -> set(objid)"""
         return self.data.setdefault('references', {})
 
@@ -105,7 +105,7 @@ class AnyDomain(Domain):
     def resolve_xref(self, env:BuildEnvironment, fromdocname:str,
                      builder:Builder, typ:str, target:str,
                      node:pending_xref, contnode:Element,
-                     ) -> Optional[Element]:
+                     ) -> Element|None:
         assert isinstance(contnode, literal)
 
         logger.debug('[any] resolveing xref of %s', (typ, target))
@@ -151,7 +151,7 @@ class AnyDomain(Domain):
 
 
     # Override parent method
-    def get_objects(self) -> Iterator[Tuple[str, str, str, str, str, int]]:
+    def get_objects(self) -> Iterator[tuple[str, str, str, str, str, int]]:
         for (objtype, objid), (docname, anchor, _) in self.data['objects'].items():
             yield objid, objid, objtype, docname, anchor, 1
 
@@ -186,7 +186,7 @@ class AnyDomain(Domain):
             cls._indices_for_reftype[r] = index
 
 
-    def _get_index_anchor(self, reftype:str, refval:str) -> Tuple[str,str]:
+    def _get_index_anchor(self, reftype:str, refval:str) -> tuple[str,str]:
         """
         Return the docname and anchor name of index page. Can be used for ``make_refnode()``.
 
@@ -198,7 +198,7 @@ class AnyDomain(Domain):
 
 
 def warn_missing_reference(app: Sphinx, domain: Domain, node: pending_xref
-                           ) -> Optional[bool]:
+                           ) -> bool|None:
     if domain and domain.name != AnyDomain.name:
         return None
 
@@ -210,7 +210,7 @@ def warn_missing_reference(app: Sphinx, domain: Domain, node: pending_xref
     return True
 
 
-def reftype_to_objtype_and_objfield(reftype:str) -> Tuple[str,Optional[str]]:
+def reftype_to_objtype_and_objfield(reftype:str) -> tuple[str,str|None]:
     """Helper function for converting reftype(role name) to object infos."""
     v = reftype.split('.', maxsplit=1)
     return v[0], v[1] if len(v) == 2 else None

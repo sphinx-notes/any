@@ -7,7 +7,7 @@
     :copyright: Copyright 2021 Shengyu Zhang
     :license: BSD, see LICENSE for details.
 """
-from typing import Iterable, List, Tuple, Dict, Set, Optional, Type
+from typing import Iterable
 from sphinx.domains import Index, IndexEntry
 
 from .schema import Schema
@@ -19,14 +19,14 @@ class AnyIndex(Index):
 
     schema:Schema
     # TODO: document
-    field:Optional[str] = None
+    field:str|None = None
 
     name:str
     localname:str
     shortname:str
 
     @classmethod
-    def derive(cls, schema:Schema, field:str|None=None) -> Type["AnyIndex"]:
+    def derive(cls, schema:Schema, field:str|None=None) -> type["AnyIndex"]:
         """Generate an AnyIndex child class for indexing object."""
         if field:
             typ = f'Any{schema.objtype.title()}{field.title()}Index'
@@ -45,14 +45,14 @@ class AnyIndex(Index):
 
 
     def generate(self, docnames:Iterable[str]|None = None
-                 ) -> Tuple[List[Tuple[str,List[IndexEntry]]], bool]:
+                 ) -> tuple[list[tuple[str,list[IndexEntry]]], bool]:
         """Override parent method."""
-        content = {}  # type: Dict[str, List[IndexEntry]]
-        # List of all references
+        content = {}  # type: dict[str, list[IndexEntry]]
+        # list of all references
         objrefs = sorted(self.domain.data['references'].items())
 
         # Reference value -> object IDs
-        objs_with_same_ref:Dict[str,Set[str]] = {}
+        objs_with_same_ref:dict[str,set[str]] = {}
 
         for (objtype, objfield, objref), objids in objrefs:
             if objtype != self.schema.objtype:

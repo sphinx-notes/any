@@ -9,7 +9,6 @@
 """
 
 from __future__ import annotations
-from typing import Tuple
 import os
 from os import path
 import posixpath
@@ -120,7 +119,7 @@ class Environment(jinja2.Environment):
         return relative_uri(base, posixpath.join(*args))
 
 
-    def _get_in_out_rel(self, fn:str) -> Tuple[str,str,str]:
+    def _get_in_out_rel(self, fn:str) -> tuple[str,str,str]:
         # The pass-in filenames must be relative
         assert not path.isabs(fn)
 

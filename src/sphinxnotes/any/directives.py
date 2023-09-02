@@ -11,9 +11,9 @@ from __future__ import annotations
 from typing import Type
 
 from docutils import nodes
+from docutils.nodes import Node, Element, fully_normalize_name
 from docutils.statemachine import StringList
 from docutils.parsers.rst import directives
-from docutils.nodes import fully_normalize_name
 
 from sphinx import addnodes
 from sphinx.util.docutils import SphinxDirective
@@ -81,10 +81,7 @@ class AnyDirective(SphinxDirective):
                                   content='\n'.join(list(self.content.data)))
 
 
-    def _setup_nodes(self, obj:Object,
-                   sectnode:nodes.Element,
-                   ahrnode:nodes.Element|None,
-                   contnode:nodes.Element) -> None:
+    def _setup_nodes(self, obj:Object, sectnode:Element, ahrnode:Element|None, contnode:Element) -> None:
         """
         Attach necessary informations to nodes and note them.
 
@@ -127,7 +124,7 @@ class AnyDirective(SphinxDirective):
                                  contnode)
 
 
-    def _run_section(self, obj:Object) -> list[nodes.Node]:
+    def _run_section(self, obj:Object) -> list[Node]:
         # Get the title of the "section" where the directive is located
         sectnode = self.state.parent
         titlenode = sectnode.next_node(nodes.title)
@@ -156,7 +153,7 @@ class AnyDirective(SphinxDirective):
         return []
 
 
-    def _run_objdesc(self, obj:Object) -> list[nodes.Node]:
+    def _run_objdesc(self, obj:Object) -> list[Node]:
         descnode = addnodes.desc()
 
         # Generate signature node
@@ -179,7 +176,7 @@ class AnyDirective(SphinxDirective):
         return [descnode]
 
 
-    def run(self) -> list[nodes.Node]:
+    def run(self) -> list[Node]:
         obj = self._build_object()
         if self.schema.title_of(obj) == '_':
             # If no argument is given, or the first argument is '_',

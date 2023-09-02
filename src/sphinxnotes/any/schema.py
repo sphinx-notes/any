@@ -7,7 +7,7 @@
     :copyright: Copyright 2021 Shengyu Zhang
     :license: BSD, see LICENSE for details.
 """
-from typing import Tuple, Dict, Iterator, List, Set, Optional, Union, Any
+from typing import Iterator, Any
 from enum import Enum, auto
 from dataclasses import dataclass
 import pickle
@@ -32,7 +32,7 @@ class SchemaError(AnyExtensionError):
 class Object(object):
     objtype:str
     name:str
-    attrs:Dict[str,str]
+    attrs:dict[str,str]
     content:str
 
     def hexdigest(self) -> str:
@@ -90,20 +90,20 @@ class Field(object):
         return rawval
 
 
-    def _as_words(self, rawval:str) -> List[str]:
+    def _as_words(self, rawval:str) -> list[str]:
         assert self.form == self.Form.WORDS
         assert rawval is not None
         return [x.strip() for x in rawval.split(' ') if x.strip() != '']
 
 
-    def _as_lines(self, rawval:str) -> List[str]:
+    def _as_lines(self, rawval:str) -> list[str]:
         assert self.form == self.Form.LINES
         assert rawval is not None
         return rawval.split('\n')
 
 
 
-    def value_of(self, rawval:Optional[str]) -> Union[None,str,List[str]]:
+    def value_of(self, rawval:str|None) -> None|str|list[str]:
         if rawval is None:
             assert not self.required
             return None
@@ -139,7 +139,7 @@ class Schema(object):
 
     # Object fields
     name:Field
-    attrs:Dict[str,Field]
+    attrs:dict[str,Field]
     content:Field
 
     # Class-wide shared template environment
@@ -160,9 +160,9 @@ class Schema(object):
     ambiguous_reference_template:str
 
     def __init__(self, objtype:str,
-                 name:Optional[Field]=Field(unique=True, referenceable=True),
-                 attrs:Dict[str,Field]={},
-                 content:Optional[Field]=Field(),
+                 name:Field|None=Field(unique=True, referenceable=True),
+                 attrs:dict[str,Field]={},
+                 content:Field|None=Field(),
                  description_template:str='{{ content }}',
                  reference_template:str='{{ title }}',
                  missing_reference_template:str='{{ title }} (missing reference)',
@@ -199,7 +199,7 @@ class Schema(object):
                 has_unique = field.unique
 
 
-    def object(self, name:Optional[str], attrs:Dict[str,str], content:Optional[str]) -> Object:
+    def object(self, name:str|None, attrs:dict[str,str], content:str|None) -> Object:
         """Generate a object"""
         obj = Object(objtype=self.objtype,
                      name=name,
@@ -211,11 +211,11 @@ class Schema(object):
         return obj
 
 
-    def fields_of(self, obj:Object) -> Iterator[Tuple[str,Field,Union[None,str,List[str]]]]:
+    def fields_of(self, obj:Object) -> Iterator[tuple[str,Field,None|str|list[str]]]:
         """
         Helper method for returning all fields of object and its raw values.
         -> Iterator[field_name, field_instance, field_value],
-        while the field_value is Union[string_value, string_list_value].
+        while the field_value is string_value|string_list_value.
         """
         if self.name:
             yield (self.NAME_KEY, self.name, self.name.value_of(obj.name) if obj else None)
@@ -225,22 +225,22 @@ class Schema(object):
             yield (self.CONTENT_KEY, self.content, self.content.value_of(obj.content) if obj else None)
 
 
-    def name_of(self, obj:Object) -> Union[None,str,List[str]]:
+    def name_of(self, obj:Object) -> None|str|list[str]:
         assert obj
         return self.content.value_of(obj.name)
 
 
-    def attrs_of(self, obj:Object) -> Dict[str,Union[None,str,List[str]]]:
+    def attrs_of(self, obj:Object) -> dict[str,None|str|list[str]]:
         assert obj
         return {k: f.value_of(obj.attrs.get(k)) for k, f in self.attrs.items()}
 
 
-    def content_of(self, obj:Object) -> Union[None,str,List[str]]:
+    def content_of(self, obj:Object) -> None|str|list[str]:
         assert obj
         return self.content.value_of(obj.content)
 
 
-    def identifier_of(self, obj:Object) -> Tuple[Optional[str],str]:
+    def identifier_of(self, obj:Object) -> tuple[str|None,str]:
         """
         Return unique identifier of object.
         If there is not any unique field, return (None, obj.hexdigest()) instead.
@@ -259,7 +259,7 @@ class Schema(object):
         return None, obj.hexdigest()
 
 
-    def title_of(self, obj:Object) -> Optional[str]:
+    def title_of(self, obj:Object) -> str|None:
         """Return title (display name) of object."""
         assert obj
         name = self.name.value_of(obj.name)
@@ -271,7 +271,7 @@ class Schema(object):
             return None
 
 
-    def references_of(self, obj:Object) -> Set[Tuple[str,str]]:
+    def references_of(self, obj:Object) -> set[tuple[str,str]]:
         """Return all references (referenceable fields) of object"""
         assert obj
         refs = []
@@ -287,16 +287,16 @@ class Schema(object):
         return set(refs)
 
 
-    def _context_without_object(self) -> Dict[str,Union[str,List[str]]]:
+    def _context_without_object(self) -> dict[str,str|list[str]]:
         return  {
             self.TYPE_KEY: self.objtype,
         }
 
 
-    def _context_of(self, obj:Object) -> Dict[str,Union[str,List[str]]]:
+    def _context_of(self, obj:Object) -> dict[str,str|list[str]]:
         context = self._context_without_object()
 
-        def set_if_not_none(key:str, val:Union[str,List[str]]) -> None:
+        def set_if_not_none(key, val) -> None:
             if val is not None:
                 context[key] = val
         set_if_not_none(self.NAME_KEY, self.name_of(obj))
@@ -308,7 +308,7 @@ class Schema(object):
         return context
 
 
-    def render_description(self, obj:Object) -> List[str]:
+    def render_description(self, obj:Object) -> list[str]:
         assert obj
         tmpl = TemplateEnvironment().from_string(self.description_template)
         description = tmpl.render(self._context_of(obj))
