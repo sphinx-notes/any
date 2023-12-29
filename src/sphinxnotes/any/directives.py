@@ -186,3 +186,77 @@ class AnyDirective(SphinxDirective):
         else:
             # Else, create Sphinx ObjectDescription(sphinx.addnodes.dsec_*)
             return self._run_objdesc(obj)
+
+
+class ObjEmbedDirective(SphinxDirective):
+    """
+    """
+    schema: Schema
+
+    # Member of parent
+    has_content:bool = False
+    required_arguments:int = 1
+    optional_arguments:int = 0
+    final_argument_whitespace:bool = True
+    option_spec:dict[str,callable] = {
+        'type' : directives.unchanged,
+    }
+
+    def run(self) -> list[Node]:
+        domainname, _ = self.name.split(':', 1)
+        domain = self.env.get_domain(domainname)
+        objid = self.arguments[0]
+        objtype = self.options['type']
+        logger.warning('keys: %s' % domain.data['objects'].keys())
+        self.schema = domain._schemas[objtype]
+        _, _, obj = domain.data['objects'][objtype, objid]
+
+        return self._run_objdesc(obj)
+
+    def _run_objdesc(self, obj:Object) -> list[Node]:
+        descnode = addnodes.desc()
+
+        # Generate signature node
+        title = self.schema.title_of(obj)
+        if title is None:
+            # Use non-generated object ID as replacement of title
+            idfield, objid = self.schema.identifier_of(obj)
+            title = objid if idfield is not None else None
+        if title is not None:
+            signode = addnodes.desc_signature(title, '')
+            signode += addnodes.desc_name(title, title)
+            descnode.append(signode)
+        else:
+            signode = None
+
+        # Generate content node
+        contnode = addnodes.desc_content()
+        descnode.append(contnode)
+        self._setup_nodes(obj, descnode, signode, contnode)
+        return [descnode]
+
+    def _setup_nodes(self, obj:Object, sectnode:Element, _:Element|None, contnode:Element) -> None:
+        """
+        Attach necessary informations to nodes and note them.
+
+        The necessary information contains: domain info, basic attributes for nodes
+        (ids, names, classes...), name of anchor, description content and so on.
+
+        :param sectnode: Section node, used as container of the whole object description
+        :param ahrnode: Anchor node, used to mark the location of object description
+        :param contnode: Content node, which contains the description content
+        """
+        domainname, objtype = self.name.split(':', 1)
+        domain = self.env.get_domain(domainname)
+
+        # Attach domain related info to section node
+        sectnode['domain'] = domain.name
+        # 'desctype' is a backwards compatible attribute
+        sectnode['objtype'] = sectnode['desctype'] = objtype
+        sectnode['classes'].append(domain.name)
+
+        # Parse description
+        nested_parse_with_titles(self.state,
+                                 StringList(self.schema.render_description(obj)),
+                                 contnode)
+
