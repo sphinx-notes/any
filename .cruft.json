@@ -1,5 +1,5 @@
 {
-  "template": "https://github.com/sphinx-notes/template",
+  "template": "https://github.com/sphinx-notes/cookiecutter",
   "commit": "93c85ed7fe6dc87e11ffd024b762a3c8c9a83a1b",
   "checkout": null,
   "context": {
@@ -14,7 +14,7 @@
       "github_repo": "any",
       "pypi_name": "sphinxnotes-any",
       "pypi_owner": "SilverRainZ",
-      "_template": "https://github.com/sphinx-notes/template"
+      "_template": "https://github.com/sphinx-notes/cookiecutter"
     }
   },
   "directory": null
