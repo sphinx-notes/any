@@ -146,8 +146,10 @@ class AnyDomain(Domain):
             logger.debug(f'[any] rewrite title from {title} to {newtitle}')
             contnode.replace(contnode[0], Text(newtitle))
 
-        return make_refnode(builder, fromdocname, todocname, anchor,
+        refnode = make_refnode(builder, fromdocname, todocname, anchor,
                             contnode, objtype + ' ' + target)
+        refnode['classes'] += [self.name, self.name + '-' + objtype]
+        return refnode
 
 
     # Override parent method
