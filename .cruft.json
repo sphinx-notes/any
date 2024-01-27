@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/sphinx-notes/cookiecutter",
-  "commit": "93c85ed7fe6dc87e11ffd024b762a3c8c9a83a1b",
+  "commit": "0b7d8aa478b37114cef369a217bd1d463e369d37",
   "checkout": null,
   "context": {
     "cookiecutter": {

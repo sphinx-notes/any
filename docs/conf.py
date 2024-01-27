@@ -1,4 +1,4 @@
-# This file is generated from sphinx-notes/template.
+# This file is generated from sphinx-notes/cookiecutter.
 # You need to consider modifying the TEMPLATE or modifying THIS FILE.
 
 # Configuration file for the Sphinx documentation builder.
@@ -70,7 +70,7 @@ html_theme_options = {
 # It is used to indicate the location of document like canonical_url
 html_baseurl = 'https://sphinx.silverrainz.me/any'
 
-html_logo = html_favicon = '_images/sphinx-notes.png'
+html_logo = html_favicon = '_static/sphinx-notes.png'
 
 # -- Extensions -------------------------------------------------------------
 
@@ -78,9 +78,9 @@ html_logo = html_favicon = '_images/sphinx-notes.png'
 
 extensions.append('sphinx.ext.extlinks')
 extlinks = {
-    'issue': ('https://github.com/sphinx-notes/any/issues/%s', '💬 %s'),
-    'pull': ('https://github.com/sphinx-notes/any/pull/%s', '🚀 %s'),
-    'tag': ('https://github.com/sphinx-notes/any/releases/tag/%s', '🏷️ %s'),
+    'issue': ('https://github.com/sphinx-notes/any/issues/%s', '💬%s'),
+    'pull': ('https://github.com/sphinx-notes/any/pull/%s', '🚀%s'),
+    'tag': ('https://github.com/sphinx-notes/any/releases/tag/%s', '🏷️%s'),
 }
 
 extensions.append('sphinxcontrib.gtagjs')
@@ -105,25 +105,52 @@ intersphinx_mapping = {
 sys.path.insert(0, os.path.abspath('../src/sphinxnotes'))
 extensions.append('any')
 
+# 
 # DOG FOOD CONFIGURATION START
 from any import Schema, Field as F
 sys.path.insert(0, os.path.abspath('.'))
 
+version_schema = Schema('version',
+                        name=F(unique=True, referenceable=True, required=True, form=F.Form.LINES),
+                        attrs={'date': F(referenceable=True)},
+                        content=F(form=F.Form.LINES),
+                        description_template=open('_templates/version.rst', 'r').read(),
+                        reference_template='🏷️{{ title }}',
+                        missing_reference_template='🏷️{{ title }}',
+                        ambiguous_reference_template='🏷️{{ title }}')
+confval_schema = Schema('confval',
+                        name=F(unique=True, referenceable=True, required=True, form=F.Form.LINES),
+                        attrs={
+                            'type': F(),
+                            'default': F(),
+                            'choice': F(form=F.Form.WORDS),
+                            'versionadded': F(),
+                            'versionchanged': F(form=F.Form.LINES),
+                        },
+                        content=F(),
+                        description_template=open('_templates/confval.rst', 'r').read(),
+                        reference_template='⚙️{{ title }}',
+                        missing_reference_template='⚙️{{ title }}',
+                        ambiguous_reference_template='⚙️{{ title }}')
+example_schema = Schema('example',
+                        name=F(referenceable=True),
+                        attrs={'style': F()},
+                        content=F(form=F.Form.LINES),
+                        description_template=open('_templates/example.rst', 'r').read(),
+                        reference_template='📝{{ title }}',
+                        missing_reference_template='📝{{ title }}',
+                        ambiguous_reference_template='📝{{ title }}')
+
 any_schemas = [
-    Schema('version',
-           name=F(unique=True, referenceable=True, required=True, form=F.Form.LINES),
-           attrs={'date': F(referenceable=True)},
-           content=F(form=F.Form.LINES),
-           description_template=open('_templates/version.rst', 'r').read(),
-           reference_template='💽 {{ title }}',
-           missing_reference_template='💽 {{ title }}',
-           ambiguous_reference_template='💽 {{ title }}'),
+    version_schema,
+    confval_schema,
+    example_schema,
 
     __import__("_schemas.cat").cat.cat,
     __import__("_schemas.dog2").dog2.dog,
-    __import__("_schemas.confval").confval.confval,
     __import__("_schemas.tmplvar").tmplvar.tmplvar,
 ]
 
 primary_domain = 'any'
 # DOG FOOD CONFIGURATION END
+# 
