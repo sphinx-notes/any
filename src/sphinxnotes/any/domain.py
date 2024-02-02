@@ -21,13 +21,12 @@ from sphinx.util.nodes import make_refnode
 from .schema import Schema, Object
 from .directives import AnyDirective
 from .roles import AnyRole
-from .indices import AnyIndex
+from .indices import AnyIndex, AnyDomainIndex
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.builders import Builder
     from sphinx.environment import BuildEnvironment
-    from sphinx.util.typing import RoleFunction
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +40,6 @@ class AnyDomain(Domain):
     name:str = 'any'
     #: Domain label: longer, more descriptive (used in messages)
     label = 'Any'
-    #: Type (usually directive) name -> ObjType instance
-    object_types:dict[str,ObjType]= {}
-    #: Directive name -> directive class
-    directives:dict[str,type[AnyDirective]] = {}
-    #: Role name -> role callable
-    roles:dict[str,RoleFunction] = {}
-    #: A list of Index subclasses
-    indices:list[type[AnyIndex]] = []
     #: AnyDomain specific: type -> index class
     _indices_for_reftype:dict[str,type[AnyIndex]] = {}
     #: AnyDomain specific: type -> Schema instance
@@ -162,6 +153,9 @@ class AnyDomain(Domain):
     def add_schema(cls, schema:Schema) -> None:
         # Add to schemas dict
         cls._schemas[schema.objtype] = schema
+
+        if len(cls.indices) == 0:
+            cls.indices.append(AnyDomainIndex)
 
         # Generates reftypes(role names) for all referenceable fields
         reftypes = [schema.objtype]
