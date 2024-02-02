@@ -81,3 +81,23 @@ class AnyIndex(Index):
         sorted_content = sorted(content.items())
 
         return sorted_content, False
+
+
+class AnyDomainIndex(Index):
+    name = 'any'
+    localname = 'Any Reference Index'
+    shortname = 'reference'
+
+    def generate(self, docnames:Iterable[str]|None = None
+                 ) -> tuple[list[tuple[str,list[IndexEntry]]], bool]:
+        """Override parent method."""
+        content = {}  # type: dict[str, list[IndexEntry]]
+        objtypes = sorted(self.domain.object_types.keys())
+        for objtype in objtypes:
+            entries = content.setdefault(objtype, [])
+            entries.append(IndexEntry(objtype, 0, 'any-'+objtype, '', '', '', ''))
+
+        # sort by first letter
+        sorted_content = sorted(content.items())
+
+        return sorted_content, False
