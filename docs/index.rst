@@ -8,6 +8,9 @@ Introduction
 
 .. ADDITIONAL CONTENT START
 
+.. obj.embed:: Arthur
+   :type: dog
+
 The extension provides a domain which allows user creates directive and roles 
 to descibe, reference and index arbitrary object in documentation.
 It is a bit like :py:meth:`sphinx.application.Sphinx.add_object_type`,
