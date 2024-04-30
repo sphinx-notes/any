@@ -14,14 +14,14 @@ from typing import Any, Iterator, TYPE_CHECKING
 from docutils.nodes import Element, literal, Text
 
 from sphinx.addnodes import pending_xref
-from sphinx.domains import Domain, ObjType
+from sphinx.domains import Domain, ObjType, Index
 from sphinx.util import logging
 from sphinx.util.nodes import make_refnode
 
 from .schema import Schema, Object
 from .directives import AnyDirective
 from .roles import AnyRole
-from .indices import AnyIndex, AnyDomainIndex
+from .indices import AnyIndex, AnyTypeIndex
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -40,6 +40,10 @@ class AnyDomain(Domain):
     name:str = 'any'
     #: Domain label: longer, more descriptive (used in messages)
     label = 'Any'
+    #: A list of Index subclasses
+    indices: list[type[Index]] = [AnyTypeIndex]
+
+    # TODO: move to data?
     #: AnyDomain specific: type -> index class
     _indices_for_reftype:dict[str,type[AnyIndex]] = {}
     #: AnyDomain specific: type -> Schema instance
@@ -153,9 +157,6 @@ class AnyDomain(Domain):
     def add_schema(cls, schema:Schema) -> None:
         # Add to schemas dict
         cls._schemas[schema.objtype] = schema
-
-        if len(cls.indices) == 0:
-            cls.indices.append(AnyDomainIndex)
 
         # Generates reftypes(role names) for all referenceable fields
         reftypes = [schema.objtype]

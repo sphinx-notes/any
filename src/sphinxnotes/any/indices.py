@@ -83,9 +83,9 @@ class AnyIndex(Index):
         return sorted_content, False
 
 
-class AnyDomainIndex(Index):
-    name = 'any'
-    localname = 'Any Reference Index'
+class AnyTypeIndex(Index):
+    name = 'type'
+    localname = 'Any Type Reference Index'
     shortname = 'reference'
 
     def generate(self, docnames:Iterable[str]|None = None
