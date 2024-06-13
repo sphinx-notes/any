@@ -14,12 +14,12 @@ from typing import Any, Iterator, TYPE_CHECKING
 from docutils.nodes import Element, literal, Text
 
 from sphinx.addnodes import pending_xref
-from sphinx.domains import Domain, ObjType
+from sphinx.domains import Domain, ObjType, Index
 from sphinx.util import logging
 from sphinx.util.nodes import make_refnode
 
 from .schema import Schema, Object
-from .directives import AnyDirective
+from .directives import AnyDirective, ObjEmbedDirective
 from .roles import AnyRole
 from .indices import AnyIndex
 
@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from sphinx.builders import Builder
     from sphinx.environment import BuildEnvironment
     from sphinx.util.typing import RoleFunction
+    from docutils.parsers.rst import Directive
 
 logger = logging.getLogger(__name__)
 
@@ -44,11 +45,13 @@ class AnyDomain(Domain):
     #: Type (usually directive) name -> ObjType instance
     object_types:dict[str,ObjType]= {}
     #: Directive name -> directive class
-    directives:dict[str,type[AnyDirective]] = {}
+    directives:dict[str,type[Directive]] = {
+        'obj.embed': ObjEmbedDirective,
+    }
     #: Role name -> role callable
     roles:dict[str,RoleFunction] = {}
     #: A list of Index subclasses
-    indices:list[type[AnyIndex]] = []
+    indices:list[type[Index]] = []
     #: AnyDomain specific: type -> index class
     _indices_for_reftype:dict[str,type[AnyIndex]] = {}
     #: AnyDomain specific: type -> Schema instance
