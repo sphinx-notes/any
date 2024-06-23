@@ -22,16 +22,18 @@ from sphinx.builders import Builder
 import jinja2
 from wand.image import Image
 
-ANYDIR = '_any'
 logger = logging.getLogger(__name__)
 
 class Environment(jinja2.Environment):
+
     _builder:Builder
     # Exclusive outdir for template filters
     _outdir:str
     # Exclusive srcdir for template filters
     # Actually it is a softlink link to _outdir.
     _srcdir:str
+    # Same to _srcdir, but relative to Sphinx's srcdir.
+    _reldir: str
 
 
     @classmethod
@@ -44,15 +46,36 @@ class Environment(jinja2.Environment):
     @classmethod
     def _on_builder_inited(cls, app:Sphinx):
         cls._builder = app.builder
-        cls._outdir = path.join(app.outdir, ANYDIR)
-        ensuredir(cls._outdir)
-        cls._srcdir = path.join(app.srcdir, ANYDIR)
+
+        # Template filters (like thumbnail_filter) may produces and new files, 
+        # they will be referenced in documents. While usually directive
+        # (like ..image::) can only access file inside sphinx's srcdir(source/).
+        # 
+        # So we create a dir in sphinx's outdir(_build/), and link it from srcdir,
+        # then files can be referenced, then we won't messup the srcdir
+        # (usually it is trakced by git), and our files can be cleaned up by
+        # removing outdir.
+        #
+        # NOTE: we use builder name as suffix to avoid conflicts between multiple
+        # builders.
+        ANYDIR = ".any"
+        reldir = ANYDIR + '_' + app.builder.name
+        cls._outdir = path.join(app.outdir, reldir)
+        cls._srcdir = path.join(app.srcdir, reldir)
+        cls._reldir = path.join('/', reldir) # abspath relatived to srcdir
+
+        # Cleanup possible residual symlink.
         if path.islink(cls._srcdir):
             os.unlink(cls._srcdir)
+        if path.exists(cls._srcdir):
+            os.remove(cls._srcdir)
+        # Link them.
+        ensuredir(cls._outdir)
         os.symlink(cls._outdir, cls._srcdir)
 
-        logger.info(f'[any] exclusive srcdir: {cls._srcdir}')
-        logger.info(f'[any] exclusive outdir: {cls._outdir}')
+        logger.debug(f'[any] srcdir: {cls._srcdir}')
+        logger.debug(f'[any] outdir: {cls._outdir}')
+
 
     @classmethod
     def _on_build_finished(cls, app:Sphinx, exception):
@@ -67,19 +90,18 @@ class Environment(jinja2.Environment):
 
 
     def thumbnail_filter(self, imgfn:str) -> str:
-        imgfn = self._ensure_rel(imgfn)
-        infn, outfn, relfn = self._get_in_out_rel(imgfn)
-
-        if not self._is_outdated(outfn, infn):
-            # No need to make thumbnail
-            return relfn
-
-        with Image(filename=infn) as img:
-            # Remove any associated profiles
-            img.thumbnail()
-            # If larger than 640x480, fit within box, preserving aspect ratio
-            img.transform(resize='640x480>')
-            img.save(filename=outfn)
+        srcfn, outfn, relfn = self._get_src_out_rel(imgfn)
+        if not self._is_outdated(outfn, srcfn):
+            return relfn # no need to make thumbnail
+        try:
+            with Image(filename=srcfn) as img:
+                # Remove any associated profiles
+                img.thumbnail()
+                # If larger than 640x480, fit within box, preserving aspect ratio
+                img.transform(resize='640x480>')
+                img.save(filename=outfn)
+        except Exception as e:
+            logger.warning('failed to create thumbnail for %s: %s', imgfn, e)
         return relfn
 
 
@@ -87,18 +109,14 @@ class Environment(jinja2.Environment):
         """
         Install file to sphinx outdir, return the relative uri of current docname.
         """
-
-        fn = self._ensure_rel(fn)
-        src = path.join(self._builder.srcdir, fn)
-        target = path.join(self._builder.outdir, ANYDIR, fn)
-
-        if not self._is_outdated(target, src):
-            # No need to install file
-            return relfn
-
-        ensuredir(path.dirname(target))
-        shutil.copy(src, target)
-        return self._relative_uri(ANYDIR, fn)
+        srcfn, outfn, relfn = self._get_src_out_rel(fn)
+        if not self._is_outdated(outfn, srcfn):
+            return relfn # no need to install file
+        try:
+            shutil.copy(srcfn, outfn)
+        except Exception as e:
+            logger.warning('failed to install %s: %s', fn, e)
+        return relfn
 
 
     def watermark_filter(self, imgfn:str) -> str:
@@ -119,26 +137,31 @@ class Environment(jinja2.Environment):
         return relative_uri(base, posixpath.join(*args))
 
 
-    def _get_in_out_rel(self, fn:str) -> tuple[str,str,str]:
-        # The pass-in filenames must be relative
-        assert not path.isabs(fn)
-
-        infn = path.join(self._builder.srcdir, fn)
-        if infn.startswith(self._srcdir):
-            # fn is outputted by other filters
-            outfn = infn
+    def _get_src_out_rel(self, fn:str) -> tuple[str,str,str]:
+        """Return three paths (srcfn, outfn, relfn).
+        :srcfn: abs path of fn, must inside sphinx's srcdir
+        :outfn: abs path to motified file, must inside self._srcdir
+        :relfn: path to outfn relatived to sphinx's srcdir
+        """
+        isabs = path.isabs(fn)
+        if isabs:
+            fn = fn[1:] # skip os.sep so that it can be join
         else:
-            # fn is specified by user
-            outfn = path.join(self._srcdir, fn)
-            # Make sure output dir exists
-            ensuredir(path.dirname(outfn))
-        relfn = self._relative_uri(ANYDIR, fn)
-        return (infn, outfn, relfn)
+            docname = self._builder.env.docname
+            a, b = self._builder.env.relfn2path(fn, docname)
+            fn = a
 
-
-    def _ensure_rel(self, fn: str) -> str:
-        """Convert site-wide absoulte path to relative path."""
-        return path.relpath(fn, '/') if path.isabs(fn) else fn
+        srcfn = path.join(self._builder.srcdir, fn)
+        if srcfn.startswith(self._srcdir):
+            # fn is outputted by other filters
+            outfn = srcfn
+            relfn = path.join('/', fn)
+        else:
+            outfn = path.join(self._srcdir, fn) # fn is specified by user
+            relfn = path.join(self._reldir, fn)
+            ensuredir(path.dirname(outfn)) # make sure output dir exists
+        logger.debug('[any] srcfn: %s, outfn: %s, relfn: %s', srcfn, outfn, relfn)
+        return (srcfn, outfn, relfn)
 
 
     def _is_outdated(self, target:str, src: str) -> bool:
