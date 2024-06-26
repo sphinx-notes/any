@@ -64,14 +64,13 @@ class Environment(jinja2.Environment):
         cls._srcdir = path.join(app.srcdir, reldir)
         cls._reldir = path.join('/', reldir) # abspath relatived to srcdir
 
-        # Cleanup possible residual symlink.
-        if path.islink(cls._srcdir):
-            os.unlink(cls._srcdir)
-        if path.exists(cls._srcdir):
-            os.remove(cls._srcdir)
-        # Link them.
         ensuredir(cls._outdir)
-        os.symlink(cls._outdir, cls._srcdir)
+        # Link srcdir -> outdir when needed. 
+        if not path.exists(cls._srcdir):
+            os.symlink(cls._outdir, cls._srcdir)
+        elif not path.islink(cls._srcdir):
+            os.remove(cls._srcdir)
+            os.symlink(cls._outdir, cls._srcdir)
 
         logger.debug(f'[any] srcdir: {cls._srcdir}')
         logger.debug(f'[any] outdir: {cls._outdir}')
@@ -79,7 +78,13 @@ class Environment(jinja2.Environment):
 
     @classmethod
     def _on_build_finished(cls, app:Sphinx, exception):
-        os.unlink(cls._srcdir)
+        # NOTE: no need to clean up the symlink, it will cause unnecessary
+        # rebuild because file is mssiing from Sphinx's srcdir. Logs like:
+        #
+        #   [build target] changed 'docname' missing dependency 'xxx.jpg'
+        #
+        # os.unlink(cls._srcdir)
+        pass
 
 
     def __init__(self, *args, **kwargs):
