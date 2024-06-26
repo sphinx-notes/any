@@ -5,21 +5,24 @@
 sphinxnotes-any
 ===============
 
-.. image:: https://img.shields.io/github/actions/workflow/status/sphinx-notes/any/pages.yml
+
+.. |docs| image:: https://img.shields.io/github/deployments/sphinx-notes/any/github-pages
    :target: https://sphinx.silverrainz.me/any
    :alt: Documentation Status
 
-.. image:: https://img.shields.io/github/license/sphinx-notes/any
-   :target: https://github.com/sphinx-notes/any/LICENSE
+.. |license| image:: https://img.shields.io/github/license/sphinx-notes/any
+   :target: https://github.com/sphinx-notes/any/blob/master/LICENSE
    :alt: Open Source License
 
-.. image:: https://img.shields.io/pypi/v/sphinxnotes-any.svg
+.. |pypi| image:: https://img.shields.io/pypi/v/sphinxnotes-any.svg
    :target: https://pypi.python.org/pypi/sphinxnotes-any
    :alt: PyPI Package
 
-.. image:: https://img.shields.io/pypi/dm/sphinxnotes-any
+.. |download| image:: https://img.shields.io/pypi/dm/sphinxnotes-any
    :target: https://pypi.python.org/pypi/sphinxnotes-any
    :alt: PyPI Package Downloads
+
+|docs| |license| |pypi| |download|
 
 Sphinx domain for documenting anything.
 
