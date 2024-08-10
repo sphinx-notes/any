@@ -102,7 +102,6 @@ class Field(object):
         return rawval.split('\n')
 
 
-
     def value_of(self, rawval:str|None) -> None|str|list[str]:
         if rawval is None:
             assert not self.required
@@ -283,7 +282,7 @@ class Schema(object):
             elif isinstance(val, str):
                 refs.append((name, val))
             elif isinstance(val, list):
-                refs += [(name, x) for x in val]
+                refs += [(name, x.strip()) for x in val if x.strip() != '']
         return set(refs)
 
 

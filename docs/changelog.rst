@@ -18,6 +18,14 @@ Change Log
 Version 2.x
 ===========
 
+..
+   .. version:: 2.5
+
+      - Add new Sphinx Domain classifier (:pull:`27`)
+      - Strip rST markups in index description (:pull:`32`)
+      - refactor: Combing and document srcdir, outdir, reldir
+      - Fix referenceable field with multiple lines form (:issue:`34`)
+
 .. version:: 2.4.0
    :date: 2023-08-26
 
