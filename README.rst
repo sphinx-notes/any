@@ -5,7 +5,6 @@
 sphinxnotes-any
 ===============
 
-
 .. |docs| image:: https://img.shields.io/github/deployments/sphinx-notes/any/github-pages
    :target: https://sphinx.silverrainz.me/any
    :alt: Documentation Status
@@ -26,8 +25,11 @@ sphinxnotes-any
 
 Sphinx domain for documenting anything.
 
-* Documentation: https://sphinx.silverrainz.me/any
-* Source: https://github.com/sphinx-notes/any
-* Changelog: https://sphinx.silverrainz.me/any/changelog.html
-* Tracker: https://github.com/sphinx-notes/any/issues
-* Download: https://pypi.org/project/sphinxnotes-any/#files
+.. INTRODUCTION START 
+   (MUST written in standard reStructuredText, without Sphinx stuff)
+
+.. INTRODUCTION END
+
+Please refer to Documentation_ for more details.
+
+.. _Documentation: https://sphinx.silverrainz.me/any

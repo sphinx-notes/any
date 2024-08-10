@@ -1,19 +1,39 @@
 .. This file is generated from sphinx-notes/cookiecutter.
    You need to consider modifying the TEMPLATE or modifying THIS FILE.
 
-.. include:: ../README.rst
+===============
+sphinxnotes-any
+===============
 
+.. |docs| image:: https://img.shields.io/github/deployments/sphinx-notes/any/github-pages
+   :target: https://sphinx.silverrainz.me/any
+   :alt: Documentation Status
+
+.. |license| image:: https://img.shields.io/github/license/sphinx-notes/any
+   :target: https://github.com/sphinx-notes/any/blob/master/LICENSE
+   :alt: Open Source License
+
+.. |pypi| image:: https://img.shields.io/pypi/v/sphinxnotes-any.svg
+   :target: https://pypi.python.org/pypi/sphinxnotes-any
+   :alt: PyPI Package
+
+.. |download| image:: https://img.shields.io/pypi/dm/sphinxnotes-any
+   :target: https://pypi.python.org/pypi/sphinxnotes-any
+   :alt: PyPI Package Downloads
+
+|docs| |license| |pypi| |download|
+ 
 Introduction
 ============
 
-.. ADDITIONAL CONTENT START
+.. INTRODUCTION START
 
 The extension provides a domain which allows user creates directive and roles 
 to descibe, reference and index arbitrary object in documentation.
 It is a bit like :py:meth:`sphinx.application.Sphinx.add_object_type`,
 but more powerful.
 
-.. ADDITIONAL CONTENT END
+.. INTRODUCTION END
 
 Getting Started
 ===============
@@ -29,7 +49,8 @@ First, downloading extension from PyPI:
 
    $ pip install sphinxnotes-any
 
-Then, add the extension name to ``extensions`` configuration item in your conf.py_:
+Then, add the extension name to ``extensions`` configuration item in your
+:parsed_literal:`conf.py_`:
 
 .. code-block:: python
 

@@ -6,6 +6,7 @@ LANG = en_US.UTF-8
 MAKE  = make
 PY    = python3
 RM    = rm -rf
+GIT   = git
 
 # Build sphinx documentation.
 .PHONY: docs
@@ -50,6 +51,10 @@ upload-test: dist
 .PHONY: update-template
 update-template:
 	$(PY) -m cruft update
+
+.PHONY: update-template-done
+update-template-done:
+	$(GIT) commit -m "chore: Update project template to sphinx-notes/cookiecutter@$(shell jq -r '.commit' .cruft.json | head -c8)"
 
 # Update project version.
 .PHONY: bump-version

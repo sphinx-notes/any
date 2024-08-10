@@ -51,6 +51,7 @@ docs = [
     "sphinx_design",
     "sphinx_copybutton",
     "sphinxcontrib-gtagjs",
+    "sphinxnotes-comboroles",
 ]
 
 [project.urls]
