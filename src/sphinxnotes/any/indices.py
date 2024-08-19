@@ -1,12 +1,13 @@
 """
-    sphinxnotes.any.indices
-    ~~~~~~~~~~~~~~~~~~~~~~~
+sphinxnotes.any.indices
+~~~~~~~~~~~~~~~~~~~~~~~
 
-    Object index implementations
+Object index implementations
 
-    :copyright: Copyright 2021 Shengyu Zhang
-    :license: BSD, see LICENSE for details.
+:copyright: Copyright 2021 Shengyu Zhang
+:license: BSD, see LICENSE for details.
 """
+
 from typing import Iterable
 import re
 
@@ -19,21 +20,22 @@ from .schema import Schema
 
 logger = logging.getLogger(__name__)
 
+
 class AnyIndex(Index):
     """
     Index subclass to provide the object reference index.
     """
 
-    schema:Schema
+    schema: Schema
     # TODO: document
-    field:str|None = None
+    field: str | None = None
 
-    name:str
-    localname:str
-    shortname:str
+    name: str
+    localname: str
+    shortname: str
 
     @classmethod
-    def derive(cls, schema:Schema, field:str|None=None) -> type["AnyIndex"]:
+    def derive(cls, schema: Schema, field: str | None = None) -> type['AnyIndex']:
         """Generate an AnyIndex child class for indexing object."""
         if field:
             typ = f'Any{schema.objtype.title()}{field.title()}Index'
@@ -43,23 +45,28 @@ class AnyIndex(Index):
             typ = f'Any{schema.objtype.title()}Index'
             name = schema.objtype
             localname = f'{schema.objtype.title()} Reference Index'
-        return type(typ, (cls,),
-                    { 'schema': schema,
-                     'field': field,
-                     'name': name,
-                     'localname': localname,
-                     'shortname': 'references',})
+        return type(
+            typ,
+            (cls,),
+            {
+                'schema': schema,
+                'field': field,
+                'name': name,
+                'localname': localname,
+                'shortname': 'references',
+            },
+        )
 
-
-    def generate(self, docnames:Iterable[str]|None = None
-                 ) -> tuple[list[tuple[str,list[IndexEntry]]], bool]:
+    def generate(
+        self, docnames: Iterable[str] | None = None
+    ) -> tuple[list[tuple[str, list[IndexEntry]]], bool]:
         """Override parent method."""
         content = {}  # type: dict[str, list[IndexEntry]]
         # list of all references
         objrefs = sorted(self.domain.data['references'].items())
 
         # Reference value -> object IDs
-        objs_with_same_ref:dict[str,set[str]] = {}
+        objs_with_same_ref: dict[str, set[str]] = {}
 
         for (objtype, objfield, objref), objids in objrefs:
             if objtype != self.schema.objtype:
@@ -74,7 +81,9 @@ class AnyIndex(Index):
             # 1: Entry with sub-entries.
             entries = content.setdefault(objref, [])
             for objid in sorted(objids):
-                docname, anchor, obj = self.domain.data['objects'][self.schema.objtype, objid]
+                docname, anchor, obj = self.domain.data['objects'][
+                    self.schema.objtype, objid
+                ]
                 if docnames and docname not in docnames:
                     continue
                 name = self.schema.title_of(obj) or objid
@@ -86,9 +95,11 @@ class AnyIndex(Index):
                     desc = '\n'.join(objcont)
                 else:
                     desc = ''
-                desc = strip_rst_markups(desc) # strip rst markups
-                desc = ''.join([ l for l in desc.split('\n') if l.strip()]) # strip NEWLINE
-                desc = desc[:50] + '…' if len(desc) > 50 else desc # shorten
+                desc = strip_rst_markups(desc)  # strip rst markups
+                desc = ''.join(
+                    [ln for ln in desc.split('\n') if ln.strip()]
+                )  # strip NEWLINE
+                desc = desc[:50] + '…' if len(desc) > 50 else desc  # shorten
                 # 0: Normal entry
                 entries.append(IndexEntry(name, 0, docname, anchor, extra, '', desc))
 
@@ -110,7 +121,6 @@ def strip_rst_markups(rst: str) -> str:
 
     ..warning:: This function is not parallel-safe."""
 
-
     # Save and erase local roles.
     #
     # FIXME: sphinx.util.docutils.docutils_namespace() is a good utils to erase
@@ -118,11 +128,11 @@ def strip_rst_markups(rst: str) -> str:
     # https://github.com/sphinx-doc/sphinx/issues/8978
     #
     # TODO: deal with directive.
-    _roles, roles._roles = roles._roles, {} # type: ignore[attr-defined]
+    _roles, roles._roles = roles._roles, {}  # type: ignore[attr-defined]
     try:
         # https://docutils.sourceforge.io/docs/user/config.html
         settings = {
-            'report_level': 4, #  suppress error log
+            'report_level': 4,  #  suppress error log
         }
         doctree = core.publish_doctree(rst, settings_overrides=settings)
         for n in doctree.findall(nodes.system_message):
@@ -144,6 +154,6 @@ def strip_rst_markups(rst: str) -> str:
         txt = rst
     finally:
         # Recover local roles.
-        roles._roles = _roles # type: ignore[attr-defined]
+        roles._roles = _roles  # type: ignore[attr-defined]
 
     return txt

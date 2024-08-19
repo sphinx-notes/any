@@ -1,12 +1,13 @@
 """
-    sphinxnotes.any.schema
-    ~~~~~~~~~~~~~~~~~~~~~~
+sphinxnotes.any.schema
+~~~~~~~~~~~~~~~~~~~~~~
 
-    Schema and object implementations.
+Schema and object implementations.
 
-    :copyright: Copyright 2021 Shengyu Zhang
-    :license: BSD, see LICENSE for details.
+:copyright: Copyright 2021 Shengyu Zhang
+:license: BSD, see LICENSE for details.
 """
+
 from typing import Iterator, Any
 from enum import Enum, auto
 from dataclasses import dataclass
@@ -21,8 +22,10 @@ from .template import Environment as TemplateEnvironment
 
 logger = logging.getLogger(__name__)
 
+
 class ObjectError(AnyExtensionError):
     pass
+
 
 class SchemaError(AnyExtensionError):
     pass
@@ -30,10 +33,10 @@ class SchemaError(AnyExtensionError):
 
 @dataclass(frozen=True)
 class Object(object):
-    objtype:str
-    name:str
-    attrs:dict[str,str]
-    content:str
+    objtype: str
+    name: str
+    attrs: dict[str, str]
+    content: str
 
     def hexdigest(self) -> str:
         return hashlib.sha1(pickle.dumps(self)).hexdigest()[:7]
@@ -79,30 +82,27 @@ class Field(object):
         #: Mulitple string separated by newline(``\n``)
         LINES = auto()
 
-    form:Form=Form.PLAIN
-    unique:bool=False
-    referenceable:bool=False
-    required:bool=False
+    form: Form = Form.PLAIN
+    unique: bool = False
+    referenceable: bool = False
+    required: bool = False
 
-    def _as_plain(self, rawval:str) -> str:
+    def _as_plain(self, rawval: str) -> str:
         assert self.form == self.Form.PLAIN
         assert rawval is not None
         return rawval
 
-
-    def _as_words(self, rawval:str) -> list[str]:
+    def _as_words(self, rawval: str) -> list[str]:
         assert self.form == self.Form.WORDS
         assert rawval is not None
         return [x.strip() for x in rawval.split(' ') if x.strip() != '']
 
-
-    def _as_lines(self, rawval:str) -> list[str]:
+    def _as_lines(self, rawval: str) -> list[str]:
         assert self.form == self.Form.LINES
         assert rawval is not None
         return rawval.split('\n')
 
-
-    def value_of(self, rawval:str|None) -> None|str|list[str]:
+    def value_of(self, rawval: str | None) -> None | str | list[str]:
         if rawval is None:
             assert not self.required
             return None
@@ -134,12 +134,12 @@ class Schema(object):
     TITLE_KEY = 'title'
 
     # Object type
-    objtype:str
+    objtype: str
 
     # Object fields
-    name:Field
-    attrs:dict[str,Field]
-    content:Field
+    name: Field
+    attrs: dict[str, Field]
+    content: Field
 
     # Class-wide shared template environment
     # FIXME: can not save jinja template environment because the following error::
@@ -153,19 +153,22 @@ class Schema(object):
     #     File "/usr/lib/python3.9/site-packages/sphinx/builders/__init__.py", line 323, in build
     #       pickle.dump(self.env, f, pickle.HIGHEST_PROTOCOL)
     #   _pickle.PicklingError: Can't pickle <function sync_do_first at 0x7f839bc9d790>: it's not the same object as jinja2.filters.sync_do_first
-    description_template:str
-    reference_template:str
-    missing_reference_template:str
-    ambiguous_reference_template:str
+    description_template: str
+    reference_template: str
+    missing_reference_template: str
+    ambiguous_reference_template: str
 
-    def __init__(self, objtype:str,
-                 name:Field|None=Field(unique=True, referenceable=True),
-                 attrs:dict[str,Field]={},
-                 content:Field|None=Field(),
-                 description_template:str='{{ content }}',
-                 reference_template:str='{{ title }}',
-                 missing_reference_template:str='{{ title }} (missing reference)',
-                 ambiguous_reference_template:str='{{ title }} (disambiguation)') -> None:
+    def __init__(
+        self,
+        objtype: str,
+        name: Field | None = Field(unique=True, referenceable=True),
+        attrs: dict[str, Field] = {},
+        content: Field | None = Field(),
+        description_template: str = '{{ content }}',
+        reference_template: str = '{{ title }}',
+        missing_reference_template: str = '{{ title }} (missing reference)',
+        ambiguous_reference_template: str = '{{ title }} (disambiguation)',
+    ) -> None:
         """Create a Schema instance.
 
         :param objtype: The unique type name of object, it will be used as
@@ -197,49 +200,52 @@ class Schema(object):
             else:
                 has_unique = field.unique
 
-
-    def object(self, name:str|None, attrs:dict[str,str], content:str|None) -> Object:
+    def object(
+        self, name: str | None, attrs: dict[str, str], content: str | None
+    ) -> Object:
         """Generate a object"""
-        obj = Object(objtype=self.objtype,
-                     name=name,
-                     attrs=attrs,
-                     content=content)
+        obj = Object(objtype=self.objtype, name=name, attrs=attrs, content=content)
         for name, field, val in self.fields_of(obj):
             if field.required and val is None:
                 raise ObjectError(f'value of field {name} is none while it is required')
         return obj
 
-
-    def fields_of(self, obj:Object) -> Iterator[tuple[str,Field,None|str|list[str]]]:
+    def fields_of(
+        self, obj: Object
+    ) -> Iterator[tuple[str, Field, None | str | list[str]]]:
         """
         Helper method for returning all fields of object and its raw values.
         -> Iterator[field_name, field_instance, field_value],
         while the field_value is string_value|string_list_value.
         """
         if self.name:
-            yield (self.NAME_KEY, self.name, self.name.value_of(obj.name) if obj else None)
+            yield (
+                self.NAME_KEY,
+                self.name,
+                self.name.value_of(obj.name) if obj else None,
+            )
         for name, field in self.attrs.items():
             yield (name, field, field.value_of(obj.attrs.get(name)) if obj else None)
         if self.content:
-            yield (self.CONTENT_KEY, self.content, self.content.value_of(obj.content) if obj else None)
+            yield (
+                self.CONTENT_KEY,
+                self.content,
+                self.content.value_of(obj.content) if obj else None,
+            )
 
-
-    def name_of(self, obj:Object) -> None|str|list[str]:
+    def name_of(self, obj: Object) -> None | str | list[str]:
         assert obj
         return self.content.value_of(obj.name)
 
-
-    def attrs_of(self, obj:Object) -> dict[str,None|str|list[str]]:
+    def attrs_of(self, obj: Object) -> dict[str, None | str | list[str]]:
         assert obj
         return {k: f.value_of(obj.attrs.get(k)) for k, f in self.attrs.items()}
 
-
-    def content_of(self, obj:Object) -> None|str|list[str]:
+    def content_of(self, obj: Object) -> None | str | list[str]:
         assert obj
         return self.content.value_of(obj.content)
 
-
-    def identifier_of(self, obj:Object) -> tuple[str|None,str]:
+    def identifier_of(self, obj: Object) -> tuple[str | None, str]:
         """
         Return unique identifier of object.
         If there is not any unique field, return (None, obj.hexdigest()) instead.
@@ -257,8 +263,7 @@ class Schema(object):
             return name, val
         return None, obj.hexdigest()
 
-
-    def title_of(self, obj:Object) -> str|None:
+    def title_of(self, obj: Object) -> str | None:
         """Return title (display name) of object."""
         assert obj
         name = self.name.value_of(obj.name)
@@ -269,8 +274,7 @@ class Schema(object):
         else:
             return None
 
-
-    def references_of(self, obj:Object) -> set[tuple[str,str]]:
+    def references_of(self, obj: Object) -> set[tuple[str, str]]:
         """Return all references (referenceable fields) of object"""
         assert obj
         refs = []
@@ -285,19 +289,18 @@ class Schema(object):
                 refs += [(name, x.strip()) for x in val if x.strip() != '']
         return set(refs)
 
-
-    def _context_without_object(self) -> dict[str,str|list[str]]:
-        return  {
+    def _context_without_object(self) -> dict[str, str | list[str]]:
+        return {
             self.TYPE_KEY: self.objtype,
         }
 
-
-    def _context_of(self, obj:Object) -> dict[str,str|list[str]]:
+    def _context_of(self, obj: Object) -> dict[str, str | list[str]]:
         context = self._context_without_object()
 
         def set_if_not_none(key, val) -> None:
             if val is not None:
                 context[key] = val
+
         set_if_not_none(self.NAME_KEY, self.name_of(obj))
         set_if_not_none(self.TITLE_KEY, self.title_of(obj))
         set_if_not_none(self.CONTENT_KEY, self.content_of(obj))
@@ -306,49 +309,54 @@ class Schema(object):
 
         return context
 
-
-    def render_description(self, obj:Object) -> list[str]:
+    def render_description(self, obj: Object) -> list[str]:
         assert obj
         tmpl = TemplateEnvironment().from_string(self.description_template)
         description = tmpl.render(self._context_of(obj))
-        logger.debug('[any] render description template %s: %s' %
-                    (self.description_template, description))
+        logger.debug(
+            '[any] render description template %s: %s'
+            % (self.description_template, description)
+        )
         return description.split('\n')
 
-
-    def render_reference(self, obj:Object) -> str:
+    def render_reference(self, obj: Object) -> str:
         assert obj
         tmpl = TemplateEnvironment().from_string(self.reference_template)
         reference = tmpl.render(self._context_of(obj))
-        logger.debug('[any] render references template %s: %s',
-                    self.reference_template, reference)
+        logger.debug(
+            '[any] render references template %s: %s',
+            self.reference_template,
+            reference,
+        )
         return reference
 
-
-    def _render_reference_without_object(self, explicit_title:str,
-                                         reference_template:str) -> str:
+    def _render_reference_without_object(
+        self, explicit_title: str, reference_template: str
+    ) -> str:
         context = self._context_without_object()
         context[self.TITLE_KEY] = explicit_title
         tmpl = TemplateEnvironment().from_string(reference_template)
         reference = tmpl.render(context)
-        logger.debug('[any] render references template without object %s: %s',
-                    reference_template, reference)
+        logger.debug(
+            '[any] render references template without object %s: %s',
+            reference_template,
+            reference,
+        )
         return reference
 
-
-    def render_missing_reference(self, explicit_title:str) -> str:
+    def render_missing_reference(self, explicit_title: str) -> str:
         logger.debug('[any] render missing references template %s', explicit_title)
         return self._render_reference_without_object(
-            explicit_title, self.missing_reference_template)
+            explicit_title, self.missing_reference_template
+        )
 
-
-    def render_ambiguous_reference(self, explicit_title:str) -> str:
+    def render_ambiguous_reference(self, explicit_title: str) -> str:
         logger.debug('[any] render ambiguous references template %s', explicit_title)
         return self._render_reference_without_object(
-            explicit_title, self.ambiguous_reference_template)
+            explicit_title, self.ambiguous_reference_template
+        )
 
-
-    def __eq__(self, other:Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """
         Schema is dynamically created and used in sphinx configuration,
         in order to prevent config changed (lead to sphinx environment rebuild),

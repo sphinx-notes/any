@@ -1,11 +1,11 @@
 """
-    sphinxnotes.any
-    ~~~~~~~~~~~~~~~
+sphinxnotes.any
+~~~~~~~~~~~~~~~
 
-    Sphinx extension entrypoint.
+Sphinx extension entrypoint.
 
-    :copyright: Copyright 2020 Shengyu Zhang
-    :license: BSD, see LICENSE for details.
+:copyright: Copyright 2020 Shengyu Zhang
+:license: BSD, see LICENSE for details.
 """
 
 from __future__ import annotations
@@ -28,7 +28,8 @@ logger = logging.getLogger(__name__)
 Field = Field
 Schema = Schema
 
-def _config_inited(app:Sphinx, config:Config) -> None:
+
+def _config_inited(app: Sphinx, config: Config) -> None:
     AnyDomain.name = config.any_domain_name
     AnyDomain.label = config.any_domain_name
 
@@ -39,7 +40,7 @@ def _config_inited(app:Sphinx, config:Config) -> None:
     app.add_domain(AnyDomain)
 
 
-def setup(app:Sphinx):
+def setup(app: Sphinx):
     """Sphinx extension entrypoint."""
 
     # Init template environment

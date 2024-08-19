@@ -19,6 +19,6 @@ tmplvar = Schema(
            Name of variables("{{ name }}") can be changed by setting
            :py:attr:`~any.Schema.{{ conf }}`
         {% endif %}"""),
-
     reference_template="{{ '{{' }}{{ title }}{{ '}}' }}",
-    missing_reference_template="{{ '{{' }}{{ title }}{{ '}}' }}")
+    missing_reference_template="{{ '{{' }}{{ title }}{{ '}}' }}",
+)

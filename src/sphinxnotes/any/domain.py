@@ -1,11 +1,11 @@
 """
-    sphinxnotes.any.domain
-    ~~~~~~~~~~~~~~~~~~~~~~
+sphinxnotes.any.domain
+~~~~~~~~~~~~~~~~~~~~~~
 
-    Sphinx domain for describing anything.
+Sphinx domain for describing anything.
 
-    :copyright: Copyright 2021 Shengyu Zhang
-    :license: BSD, see LICENSE for details.
+:copyright: Copyright 2021 Shengyu Zhang
+:license: BSD, see LICENSE for details.
 """
 
 from __future__ import annotations
@@ -38,56 +38,60 @@ class AnyDomain(Domain):
     """
 
     #: Domain name: should be short, but unique
-    name:str = 'any'
+    name: str = 'any'
     #: Domain label: longer, more descriptive (used in messages)
     label = 'Any'
     #: Type (usually directive) name -> ObjType instance
-    object_types:dict[str,ObjType]= {}
+    object_types: dict[str, ObjType] = {}
     #: Directive name -> directive class
-    directives:dict[str,type[AnyDirective]] = {}
+    directives: dict[str, type[AnyDirective]] = {}
     #: Role name -> role callable
-    roles:dict[str,RoleFunction] = {}
+    roles: dict[str, RoleFunction] = {}
     #: A list of Index subclasses
-    indices:list[type[AnyIndex]] = []
+    indices: list[type[AnyIndex]] = []
     #: AnyDomain specific: type -> index class
-    _indices_for_reftype:dict[str,type[AnyIndex]] = {}
+    _indices_for_reftype: dict[str, type[AnyIndex]] = {}
     #: AnyDomain specific: type -> Schema instance
-    _schemas:dict[str,Schema] = {}
+    _schemas: dict[str, Schema] = {}
 
-    initial_data:dict[str,Any] = {
+    initial_data: dict[str, Any] = {
         # See property object
         'objects': {},
         # See property references
-        'references': {}
+        'references': {},
     }
 
     @property
-    def objects(self) -> dict[tuple[str,str], tuple[str,str,Object]]:
+    def objects(self) -> dict[tuple[str, str], tuple[str, str, Object]]:
         """(objtype, objid) -> (docname, anchor, obj)"""
         return self.data.setdefault('objects', {})
 
     @property
-    def references(self) -> dict[tuple[str,str,str],set[str]]:
+    def references(self) -> dict[tuple[str, str, str], set[str]]:
         """(objtype, objfield, objref) -> set(objid)"""
         return self.data.setdefault('references', {})
 
-
-    def note_object(self, docname:str, anchor:str, schema:Schema, obj:Object) -> None:
+    def note_object(
+        self, docname: str, anchor: str, schema: Schema, obj: Object
+    ) -> None:
         objtype = obj.objtype
         _, objid = schema.identifier_of(obj)
         objrefs = schema.references_of(obj)
         if (objtype, objid) in self.objects:
             other_docname, other_anchor, other_obj = self.objects[objtype, objid]
-            logger.warning(f'duplicate identifier of {obj} at {docname}#{anchor}' +
-                           f'other object is {other_obj} at {other_docname}#{other_anchor}')
-        logger.debug(f'[any] note object {objtype} {objid} at {docname}#{anchor}, references: {objrefs}')
+            logger.warning(
+                f'duplicate identifier of {obj} at {docname}#{anchor}'
+                + f'other object is {other_obj} at {other_docname}#{other_anchor}'
+            )
+        logger.debug(
+            f'[any] note object {objtype} {objid} at {docname}#{anchor}, references: {objrefs}'
+        )
         self.objects[objtype, objid] = (docname, anchor, obj)
         for objfield, objref in objrefs:
             self.references.setdefault((objtype, objfield, objref), set()).add(objid)
 
-
     # Override parent method
-    def clear_doc(self, docname:str) -> None:
+    def clear_doc(self, docname: str) -> None:
         objids = set()
         for (objtype, objid), (doc, _, _) in list(self.objects.items()):
             if doc == docname:
@@ -100,12 +104,17 @@ class AnyDomain(Domain):
             else:
                 del self.references[objtype, objfield, objref]
 
-
     # Override parent method
-    def resolve_xref(self, env:BuildEnvironment, fromdocname:str,
-                     builder:Builder, typ:str, target:str,
-                     node:pending_xref, contnode:Element,
-                     ) -> Element|None:
+    def resolve_xref(
+        self,
+        env: BuildEnvironment,
+        fromdocname: str,
+        builder: Builder,
+        typ: str,
+        target: str,
+        node: pending_xref,
+        contnode: Element,
+    ) -> Element | None:
         assert isinstance(contnode, literal)
 
         logger.debug('[any] resolveing xref of %s', (typ, target))
@@ -136,30 +145,34 @@ class AnyDomain(Domain):
                 newtitle = schema.render_reference(obj)
         else:
             # Mulitple objects found, we should create link to indices page.
-            todocname, anchor, = self._get_index_anchor(typ, target)
+            (
+                todocname,
+                anchor,
+            ) = self._get_index_anchor(typ, target)
             if not has_explicit_title:
                 newtitle = schema.render_ambiguous_reference(title)
-            logger.debug(f'ambiguous {objtype} {target} in {self}, ' +
-                        f'ids: {objids} index: {todocname}#{anchor}')
+            logger.debug(
+                f'ambiguous {objtype} {target} in {self}, '
+                + f'ids: {objids} index: {todocname}#{anchor}'
+            )
 
         if newtitle:
             logger.debug(f'[any] rewrite title from {title} to {newtitle}')
             contnode.replace(contnode[0], Text(newtitle))
 
-        refnode = make_refnode(builder, fromdocname, todocname, anchor,
-                            contnode, objtype + ' ' + target)
+        refnode = make_refnode(
+            builder, fromdocname, todocname, anchor, contnode, objtype + ' ' + target
+        )
         refnode['classes'] += [self.name, self.name + '-' + objtype]
         return refnode
-
 
     # Override parent method
     def get_objects(self) -> Iterator[tuple[str, str, str, str, str, int]]:
         for (objtype, objid), (docname, anchor, _) in self.data['objects'].items():
             yield objid, objid, objtype, docname, anchor, 1
 
-
     @classmethod
-    def add_schema(cls, schema:Schema) -> None:
+    def add_schema(cls, schema: Schema) -> None:
         # Add to schemas dict
         cls._schemas[schema.objtype] = schema
 
@@ -187,8 +200,7 @@ class AnyDomain(Domain):
             cls.indices.append(index)
             cls._indices_for_reftype[r] = index
 
-
-    def _get_index_anchor(self, reftype:str, refval:str) -> tuple[str,str]:
+    def _get_index_anchor(self, reftype: str, refval: str) -> tuple[str, str]:
         """
         Return the docname and anchor name of index page. Can be used for ``make_refnode()``.
 
@@ -199,8 +211,9 @@ class AnyDomain(Domain):
         return f'{domain}-{index}', f'cap-{refval}'
 
 
-def warn_missing_reference(app: Sphinx, domain: Domain, node: pending_xref
-                           ) -> bool|None:
+def warn_missing_reference(
+    app: Sphinx, domain: Domain, node: pending_xref
+) -> bool | None:
     if domain and domain.name != AnyDomain.name:
         return None
 
@@ -212,12 +225,12 @@ def warn_missing_reference(app: Sphinx, domain: Domain, node: pending_xref
     return True
 
 
-def reftype_to_objtype_and_objfield(reftype:str) -> tuple[str,str|None]:
+def reftype_to_objtype_and_objfield(reftype: str) -> tuple[str, str | None]:
     """Helper function for converting reftype(role name) to object infos."""
     v = reftype.split('.', maxsplit=1)
     return v[0], v[1] if len(v) == 2 else None
 
 
-def objtype_and_objfield_to_reftype(objtype:str, objfield:str) -> str:
+def objtype_and_objfield_to_reftype(objtype: str, objfield: str) -> str:
     """Helper function for converting object infos to reftype(role name)."""
     return objtype + '.' + objfield

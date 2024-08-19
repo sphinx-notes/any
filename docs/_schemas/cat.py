@@ -1,7 +1,8 @@
 from textwrap import dedent
 from any import Schema, Field
 
-cat = Schema('cat',
+cat = Schema(
+    'cat',
     name=Field(referenceable=True, form=Field.Form.LINES),
     attrs={
         'id': Field(unique=True, referenceable=True, required=True),
@@ -18,4 +19,5 @@ cat = Schema('cat',
         {{ content }}"""),
     reference_template='🐈{{ title }}',
     missing_reference_template='😿{{ title }}',
-    ambiguous_reference_template='😼{{ title }}')
+    ambiguous_reference_template='😼{{ title }}',
+)

@@ -1,12 +1,13 @@
 """
-    sphinxnotes.any.directives
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+sphinxnotes.any.directives
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Directive implementations.
+Directive implementations.
 
-    :copyright: Copyright 2021 Shengyu Zhang
-    :license: BSD, see LICENSE for details.
+:copyright: Copyright 2021 Shengyu Zhang
+:license: BSD, see LICENSE for details.
 """
+
 from __future__ import annotations
 from typing import Type
 
@@ -24,6 +25,7 @@ from .schema import Schema, Object
 
 logger = logging.getLogger(__name__)
 
+
 class AnyDirective(SphinxDirective):
     """
     Directive to describe anything.  Not used directly,
@@ -32,17 +34,17 @@ class AnyDirective(SphinxDirective):
     The class is modified from sphinx.directives.ObjectDescription
     """
 
-    schema:Schema
+    schema: Schema
 
     # Member of parent
-    has_content:bool = True
-    required_arguments:int = 0
-    optional_arguments:int = 0
-    final_argument_whitespace:bool = True
-    option_spec:dict[str,callable] = {}
+    has_content: bool = True
+    required_arguments: int = 0
+    optional_arguments: int = 0
+    final_argument_whitespace: bool = True
+    option_spec: dict[str, callable] = {}
 
     @classmethod
-    def derive(cls, schema:Schema) -> Type["AnyDirective"]:
+    def derive(cls, schema: Schema) -> Type['AnyDirective']:
         """Generate an AnyDirective child class for describing object."""
         has_content = schema.content is not None
 
@@ -64,24 +66,30 @@ class AnyDirective(SphinxDirective):
                 option_spec[name] = directives.unchanged
 
         # Generate directive class
-        return type('Any%sDirective' % schema.objtype.title(),
-                    (AnyDirective,),
-                    {'schema': schema,
-                     'has_content': has_content,
-                     'required_arguments': required_arguments,
-                     'optional_arguments': optional_arguments,
-                     'option_spec': option_spec, })
-
+        return type(
+            'Any%sDirective' % schema.objtype.title(),
+            (AnyDirective,),
+            {
+                'schema': schema,
+                'has_content': has_content,
+                'required_arguments': required_arguments,
+                'optional_arguments': optional_arguments,
+                'option_spec': option_spec,
+            },
+        )
 
     def _build_object(self) -> Object:
         """Build object information for template rendering."""
-        return self.schema.object(name=self.arguments[0] if self.arguments else None,
-                                  attrs=self.options,
-                                  # Convert docutils.statemachine.ViewList.data -> str
-                                  content='\n'.join(list(self.content.data)))
+        return self.schema.object(
+            name=self.arguments[0] if self.arguments else None,
+            attrs=self.options,
+            # Convert docutils.statemachine.ViewList.data -> str
+            content='\n'.join(list(self.content.data)),
+        )
 
-
-    def _setup_nodes(self, obj:Object, sectnode:Element, ahrnode:Element|None, contnode:Element) -> None:
+    def _setup_nodes(
+        self, obj: Object, sectnode: Element, ahrnode: Element | None, contnode: Element
+    ) -> None:
         """
         Attach necessary informations to nodes and note them.
 
@@ -116,15 +124,16 @@ class AnyDirective(SphinxDirective):
                 ahrnode['names'].extend([fully_normalize_name(x) for x in name])
             self.state.document.note_explicit_target(ahrnode)
             # Note object by docu fields
-            domain.note_object(self.env.docname, ahrid, self.schema, obj) # FIXME: Cast to AnyDomain
+            domain.note_object(
+                self.env.docname, ahrid, self.schema, obj
+            )  # FIXME: Cast to AnyDomain
 
         # Parse description
-        nested_parse_with_titles(self.state,
-                                 StringList(self.schema.render_description(obj)),
-                                 contnode)
+        nested_parse_with_titles(
+            self.state, StringList(self.schema.render_description(obj)), contnode
+        )
 
-
-    def _run_section(self, obj:Object) -> list[Node]:
+    def _run_section(self, obj: Object) -> list[Node]:
         # Get the title of the "section" where the directive is located
         sectnode = self.state.parent
         titlenode = sectnode.next_node(nodes.title)
@@ -132,7 +141,9 @@ class AnyDirective(SphinxDirective):
             # Title should be direct child of section
             msg = 'Failed to get title of current section'
             logger.warning(msg, location=sectnode)
-            sm = nodes.system_message(msg, type='WARNING', level=2, backrefs=[], source='')
+            sm = nodes.system_message(
+                msg, type='WARNING', level=2, backrefs=[], source=''
+            )
             sectnode += sm
             title = ''
         else:
@@ -152,8 +163,7 @@ class AnyDirective(SphinxDirective):
         # Add all content to existed section, so return nothing
         return []
 
-
-    def _run_objdesc(self, obj:Object) -> list[Node]:
+    def _run_objdesc(self, obj: Object) -> list[Node]:
         descnode = addnodes.desc()
 
         # Generate signature node
@@ -174,7 +184,6 @@ class AnyDirective(SphinxDirective):
         descnode.append(contnode)
         self._setup_nodes(obj, descnode, signode, contnode)
         return [descnode]
-
 
     def run(self) -> list[Node]:
         obj = self._build_object()
