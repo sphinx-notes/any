@@ -7,11 +7,26 @@ MAKE  = make
 PY    = python3
 RM    = rm -rf
 GIT   = git
+OPEN  = xdg-open
 
 # Build sphinx documentation.
 .PHONY: docs
 docs:
 	$(MAKE) -C docs/
+
+# View sphinx HTML documentation in browser.
+.PHONY: view
+view:
+	$(OPEN) docs/_build/html/index.html
+
+.PHONY: clean
+clean:
+	$(MAKE) -C docs/ clean
+	$(RM) dist/
+
+.PHONY: clean
+fmt:
+	ruff format src/
 
 # Run unittest.
 .PHONY: test
@@ -20,8 +35,7 @@ test:
 
 # Build distribution package, for "install" or "upload".
 .PHONY: dist
-dist: pyproject.toml
-	$(RM) dist/ # clean up old dist
+dist: pyproject.toml clean
 	$(PY) -m build
 
 # Install distribution package to user directory.
@@ -61,3 +75,7 @@ update-template-done:
 bump-version:
 	@echo -n "Please enter the version to bump: "
 	@read version && $(PY) -m cruft update --variables-to-update "{ \"version\" : \"$$version\" }"
+
+# EXTRA TARGETS START
+
+# EXTRA TARGETS END
