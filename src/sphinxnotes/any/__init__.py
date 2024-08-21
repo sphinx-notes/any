@@ -14,7 +14,7 @@ from sphinx.util import logging
 
 from .template import Environment as TemplateEnvironment
 from .domain import AnyDomain, warn_missing_reference
-from .schema import Schema, Field
+from .schema import Schema, Field, DateClassifier
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -24,9 +24,10 @@ __version__ = '2.3.1'
 
 logger = logging.getLogger(__name__)
 
-# Export
+# Re-Export
 Field = Field
 Schema = Schema
+DateClassifier = DateClassifier
 
 
 def _config_inited(app: Sphinx, config: Config) -> None:

@@ -30,11 +30,11 @@ The necessary python classes for writing schema are listed here:
 
    |
 
-.. autoclass:: any.Field.Form
+.. autoclass:: any.Field.Forms
 
-   .. autoattribute:: any.Field.Form.PLAIN
-   .. autoattribute:: any.Field.Form.WORDS
-   .. autoattribute:: any.Field.Form.LINES
+   .. autoattribute:: any.Field.Forms.PLAIN
+   .. autoattribute:: any.Field.Forms.WORDS
+   .. autoattribute:: any.Field.Forms.LINES
 
 Documenting Object
 ==================

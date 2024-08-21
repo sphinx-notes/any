@@ -3,7 +3,7 @@ from any import Schema, Field
 
 tmplvar = Schema(
     'tmplvar',
-    name=Field(unique=True, referenceable=True),
+    name=Field(uniq=True, ref=True),
     attrs={
         'type': Field(),
         'conf': Field(),
