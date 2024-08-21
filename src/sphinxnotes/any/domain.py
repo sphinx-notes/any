@@ -18,7 +18,7 @@ from sphinx.domains import Domain, ObjType
 from sphinx.util import logging
 from sphinx.util.nodes import make_refnode
 
-from .schema import Schema, Object
+from .schema import Schema, Object, PlainClassifier
 from .directives import AnyDirective
 from .roles import AnyRole
 from .indices import AnyIndex
@@ -176,19 +176,20 @@ class AnyDomain(Domain):
         # Add to schemas dict
         cls._schemas[schema.objtype] = schema
 
-        # Generates reftypes(role names) for all referenceable fields
         reftypes = [schema.objtype]
-        for name, field, _ in schema.fields_of(None):
-            if field.referenceable:
-                reftypes.append(objtype_and_objfield_to_reftype(schema.objtype, name))
+        for name, field in schema.fields(all=False):
+            if not field.ref:
+                continue
 
-        # Roles is used for converting role name to corrsponding objtype
-        cls.object_types[schema.objtype] = ObjType(schema.objtype, *reftypes)
-        cls.directives[schema.objtype] = AnyDirective.derive(schema)
-        for r in reftypes:
-            # Create role for referencing object (by various fields)
-            _, field = reftype_to_objtype_and_objfield(r)
-            cls.roles[r] = AnyRole.derive(schema, field)(
+            # Generates reftypes for all referenceable fields
+            # For later use when generating roles and indices.
+            reftype = objtype_and_objfield_to_reftype(schema.objtype, name)
+            reftypes.append(reftype)
+
+        for reftype in reftypes:
+            _, field = reftype_to_objtype_and_objfield(reftype)
+            # Create role for referencing object by field
+            cls.roles[reftype] = AnyRole.derive(schema, field)(
                 # Emit warning when missing reference (node['refwarn'] = True)
                 warn_dangling=True,
                 # Inner node (contnode) would be replaced in resolve_xref method,
@@ -196,9 +197,23 @@ class AnyDomain(Domain):
                 innernodeclass=literal,
             )
 
-            index = AnyIndex.derive(schema, field)
-            cls.indices.append(index)
-            cls._indices_for_reftype[r] = index
+            # FIXME: name and content can not be index now
+            if field is not None:
+                classifiers = schema.attrs[field].classifiers
+            elif schema.name is not None:
+                classifiers = schema.name.classifiers
+            else:
+                classifiers = [PlainClassifier()]
+            # Generates index for indexing object by fields
+            for indexer in classifiers:
+                index = AnyIndex.derive(schema, field, indexer)
+                cls.indices.append(index)
+                cls._indices_for_reftype[reftype] = index  # TODO: mulitple catelogers.
+
+        # TODO: document
+        cls.object_types[schema.objtype] = ObjType(schema.objtype, *reftypes)
+        # Generates directive for creating object.
+        cls.directives[schema.objtype] = AnyDirective.derive(schema)
 
     def _get_index_anchor(self, reftype: str, refval: str) -> tuple[str, str]:
         """

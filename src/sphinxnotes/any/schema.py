@@ -8,11 +8,12 @@ Schema and object implementations.
 :license: BSD, see LICENSE for details.
 """
 
-from typing import Iterator, Any
-from enum import Enum, auto
-from dataclasses import dataclass
+from typing import Iterator, Any, Iterable, Literal, TypeVar, Callable
+import dataclasses
 import pickle
 import hashlib
+from time import strptime
+from abc import ABC, abstractmethod
 
 from sphinx.util import logging
 
@@ -31,18 +32,208 @@ class SchemaError(AnyExtensionError):
     pass
 
 
-@dataclass(frozen=True)
+class Value(object):
+    """ "An immutable optional :class:`Field`."""
+
+    type T = None | str | list[str]
+    _v: T
+
+    def __init__(self, v: T):
+        # TODO: type checking
+        self._v = v
+
+    @property
+    def value(self) -> T:
+        return self._v
+
+    def as_list(self) -> list[str]:
+        if isinstance(self._v, str):
+            return [self._v]
+        elif isinstance(self._v, list):
+            return self._v
+        else:
+            return []
+
+    def as_str(self) -> str:
+        return str(self._v)
+
+
+class Form(ABC):
+    @abstractmethod
+    def extract(self, raw: str) -> Value:
+        """Extract :class:`Value` from field's raw value."""
+        raise NotImplementedError
+
+
+class Single(Form):
+    def __init__(self, strip=False):
+        self.strip = strip
+
+    def extract(self, raw: str) -> Value:
+        return Value(raw.strip() if self.strip else raw)
+
+
+class List(Form):
+    def __init__(self, sep: str, strip=False, max=-1):
+        self.strip = strip
+        self.sep = sep
+        self.max = max
+
+    def extract(self, raw: str) -> Value:
+        strv = raw.split(self.sep, maxsplit=self.max)
+        if self.strip:
+            strv = [x.strip() for x in strv]
+        return Value(strv)
+
+
+@dataclasses.dataclass
+class Classif(object):
+    """
+    Classification and sorting of an object, and generating
+    py:cls:`sphinx.domain.IndexEntry`.
+
+    :py:meth:`sphinx.domain.Index.generate` returns ``(content, collapse)``,
+    and type of  ``contents`` is a list of ``(letter, IndexEntry list)``.
+    letter is categoy of index entries, and some of index entries may be followed
+    by sub-entries (distinguish by :py:attr:`~sphinx.domains.IndexEntry.subtype`).
+    So Sphinx's index can represent up to 2 levels of indexing:
+
+    :single index: letter -> normal entry
+    :dual index:   letter -> entry with sub-entries -> sub-entry
+
+    Classif can be used to generating all of 3 kinds of IndexEntry:
+
+    :normal entry:            Classif(category=X)
+    :entry with sub-entries:  Classif(category=X, entry=Y)
+    :sub-entry:               Classif(category=X, entry=Y, subentry=Z)
+
+    .. hint::
+
+       In genindex_, the category is usually a single first letter, this is why
+       category is called "letter" here.
+
+       .. _genindex: https://www.sphinx-doc.org/en/master/genindex.html
+
+    """
+
+    #: Possible value of :py:attr:`~sphinx.domains.IndexEntry.subtype`.
+    #:
+    #: - 0: normal entry
+    #: - 1: entry with sub-entries
+    #: - 2: sub-entry
+    type IndexEntrySubtype = Literal[0, 1, 2]
+
+    category: str  # main category
+    entry: str | None = None  # sub category or just for sorting
+    subentry: str | None = None  # just for sorting
+
+    @property
+    def index_entry_subtype(self) -> IndexEntrySubtype:
+        assert not (self.entry is None and self.subentry is not None)
+        if self.subentry is not None:
+            return 2
+        if self.entry is not None:
+            return 1
+        return 0
+
+    @property
+    def leaf(self) -> str:
+        if self.subentry is not None:
+            return self.subentry
+        if self.entry is not None:
+            return self.entry
+        return self.category
+
+    def as_category(self) -> 'Classif':
+        return Classif(category=self.category)
+
+    def as_entry(self) -> 'Classif | None':
+        if self.subentry is None:  # TODO:
+            return None
+        return Classif(category=self.category, entry=self.entry)
+
+    @property
+    def _sort_key(self) -> tuple[str, str | None, str | None]:
+        return (self.category, self.entry, self.subentry)
+
+    def __hash__(self):
+        return hash(self._sort_key)
+
+
+class Classifier(object):
+    name = ''
+
+    @abstractmethod
+    def classify(self, objref: Value) -> list[Classif]:
+        raise NotImplementedError
+
+    _T = TypeVar('_T')
+
+    @abstractmethod
+    def sort(self, data: Iterable[_T], key: Callable[[_T], Classif]) -> list[_T]:
+        # TODO: should have same kind
+        raise NotImplementedError
+
+
+class PlainClassifier(Classifier):
+    name = ''
+
+    def classify(self, objref: Value) -> list[Classif]:
+        entries = []
+        for v in objref.as_list():
+            entries.append(Classif(category=v))
+        return entries
+
+    def sort(
+        self, data: Iterable[Classifier._T], key: Callable[[Classifier._T], Classif]
+    ) -> list[Classifier._T]:
+        # TODO: should have same kind
+        return sorted(data, key=lambda x: key(x)._sort_key)
+
+
+class DateClassifier(Classifier):
+    name = 'by-date'
+
+    def __init__(self, datefmts: list[str]):
+        """datefmt is format used by time.strptime()."""
+        self.datefmts = datefmts
+
+    def classify(self, objref: Value) -> list[Classif]:
+        entries = []
+        for v in objref.as_list():
+            for datefmt in self.datefmts:
+                try:
+                    t = strptime(v, datefmt)
+                except ValueError:
+                    continue  # try next datefmt
+                entries.append(
+                    Classif(
+                        category=str(t.tm_year),
+                        entry=str(t.tm_mon),
+                        subentry=str(t.tm_mday),
+                    )
+                )
+        return entries
+
+    def sort(
+        self, data: Iterable[Classifier._T], key: Callable[[Classifier._T], Classif]
+    ) -> list[Classifier._T]:
+        # From newest to oldest.
+        return sorted(data, key=lambda x: key(x)._sort_key, reverse=True)
+
+
+@dataclasses.dataclass(frozen=True)
 class Object(object):
     objtype: str
-    name: str
+    name: str | None
     attrs: dict[str, str]
-    content: str
+    content: str | None
 
     def hexdigest(self) -> str:
         return hashlib.sha1(pickle.dumps(self)).hexdigest()[:7]
 
 
-@dataclass
+@dataclasses.dataclass
 class Field(object):
     """
     Describes value constraint of field of Object.
@@ -50,7 +241,7 @@ class Field(object):
     The value of field can be single or mulitple string.
 
     :param form: The form of value.
-    :param unique: Whether the field is unique.
+    :param uniq: Whether the field is unique.
         If true, the value of field must be unique within the scope of objects
         with same type. And it will be used as base string of object
         identifier.
@@ -61,7 +252,7 @@ class Field(object):
 
             Duplicated value causes a warning when building documentation,
             and the corresponding object cannot be referenced correctly.
-    :param referenceable: Whether the field is referenceable.
+    :param ref: Whether the field is referenceable.
         If ture, object can be referenced by field value.
         See :ref:`roles` for more details.
 
@@ -70,51 +261,26 @@ class Field(object):
         if the value is no given.
     """
 
-    class Form(Enum):
-        "An enumeration represents various string forms."
+    class Forms:
+        PLAIN = Single()
+        STRIPPED = Single(strip=True)
+        WORDS = List(sep=' ', strip=True)
+        LINES = List(sep='\n')
+        STRIPPED_LINES = List(sep='\n', strip=True)
 
-        #: A single string
-        PLAIN = auto()
-
-        #: Mulitple string separated by whitespace
-        WORDS = auto()
-
-        #: Mulitple string separated by newline(``\n``)
-        LINES = auto()
-
-    form: Form = Form.PLAIN
-    unique: bool = False
-    referenceable: bool = False
+    uniq: bool = False
+    ref: bool = False
     required: bool = False
+    form: Form = Forms.PLAIN
+    classifiers: list[Classifier] = dataclasses.field(
+        default_factory=lambda: [PlainClassifier()]
+    )
 
-    def _as_plain(self, rawval: str) -> str:
-        assert self.form == self.Form.PLAIN
-        assert rawval is not None
-        return rawval
-
-    def _as_words(self, rawval: str) -> list[str]:
-        assert self.form == self.Form.WORDS
-        assert rawval is not None
-        return [x.strip() for x in rawval.split(' ') if x.strip() != '']
-
-    def _as_lines(self, rawval: str) -> list[str]:
-        assert self.form == self.Form.LINES
-        assert rawval is not None
-        return rawval.split('\n')
-
-    def value_of(self, rawval: str | None) -> None | str | list[str]:
+    def value_of(self, rawval: str | None) -> Value:
         if rawval is None:
             assert not self.required
-            return None
-
-        if self.form == self.Form.PLAIN:
-            return self._as_plain(rawval)
-        elif self.form == self.Form.WORDS:
-            return self._as_words(rawval)
-        elif self.form == self.Form.LINES:
-            return self._as_lines(rawval)
-        else:
-            raise NotImplementedError
+            return Value(None)
+        return self.form.extract(rawval)
 
 
 class Schema(object):
@@ -136,23 +302,11 @@ class Schema(object):
     # Object type
     objtype: str
 
-    # Object fields
-    name: Field
+    # Object fields, use :py:meth:`Schema.fields`
+    name: Field | None
     attrs: dict[str, Field]
-    content: Field
+    content: Field | None
 
-    # Class-wide shared template environment
-    # FIXME: can not save jinja template environment because the following error::
-    #   Traceback (most recent call last):
-    #     File "/usr/lib/python3.9/site-packages/sphinx/cmd/build.py", line 280, in build_main
-    #       app.build(args.force_all, filenames)
-    #     File "/usr/lib/python3.9/site-packages/sphinx/application.py", line 350, in build
-    #       self.builder.build_update()
-    #     File "/usr/lib/python3.9/site-packages/sphinx/builders/__init__.py", line 292, in build_update
-    #       self.build(to_build,
-    #     File "/usr/lib/python3.9/site-packages/sphinx/builders/__init__.py", line 323, in build
-    #       pickle.dump(self.env, f, pickle.HIGHEST_PROTOCOL)
-    #   _pickle.PicklingError: Can't pickle <function sync_do_first at 0x7f839bc9d790>: it's not the same object as jinja2.filters.sync_do_first
     description_template: str
     reference_template: str
     missing_reference_template: str
@@ -161,7 +315,7 @@ class Schema(object):
     def __init__(
         self,
         objtype: str,
-        name: Field | None = Field(unique=True, referenceable=True),
+        name: Field | None = Field(uniq=True, ref=True),
         attrs: dict[str, Field] = {},
         content: Field | None = Field(),
         description_template: str = '{{ content }}',
@@ -194,11 +348,30 @@ class Schema(object):
 
         # Check attrs constraint
         has_unique = False
-        for field in [self.name, self.content] + list(self.attrs.values()):
-            if has_unique and field.unique:
+        all_fields = [self.name, self.content] + list(self.attrs.values())
+        for field in all_fields:
+            if field is None:
+                continue
+            if has_unique and field.uniq:
                 raise SchemaError('only one unique field is allowed in schema')
             else:
-                has_unique = field.unique
+                has_unique = field.uniq
+
+    def fields(self, all=True) -> list[tuple[str, Field]]:
+        """Return all fields of schema, including name and content.
+
+        .. note::
+
+           Return a tuple list rather than dict to prevent overwrite of fields
+           with the same name.
+        """
+
+        fields = list(self.attrs.items())
+        if all and self.content is not None:
+            fields.insert(0, (self.CONTENT_KEY, self.content))
+        if all and self.name is not None:
+            fields.insert(0, (self.NAME_KEY, self.name))
+        return fields
 
     def object(
         self, name: str | None, attrs: dict[str, str], content: str | None
@@ -207,7 +380,7 @@ class Schema(object):
         obj = Object(objtype=self.objtype, name=name, attrs=attrs, content=content)
         for name, field, val in self.fields_of(obj):
             if field.required and val is None:
-                raise ObjectError(f'value of field {name} is none while it is required')
+                raise ObjectError(f'field {name} is required')
         return obj
 
     def fields_of(
@@ -222,28 +395,36 @@ class Schema(object):
             yield (
                 self.NAME_KEY,
                 self.name,
-                self.name.value_of(obj.name) if obj else None,
+                self.name.value_of(obj.name).value,
             )
         for name, field in self.attrs.items():
-            yield (name, field, field.value_of(obj.attrs.get(name)) if obj else None)
+            yield (
+                name,
+                field,
+                field.value_of(obj.attrs.get(name)).value,
+            )
         if self.content:
             yield (
                 self.CONTENT_KEY,
                 self.content,
-                self.content.value_of(obj.content) if obj else None,
+                self.content.value_of(obj.content).value,
             )
 
     def name_of(self, obj: Object) -> None | str | list[str]:
         assert obj
-        return self.content.value_of(obj.name)
+        if self.name is None:
+            return None
+        return self.name.value_of(obj.name).value
 
     def attrs_of(self, obj: Object) -> dict[str, None | str | list[str]]:
         assert obj
-        return {k: f.value_of(obj.attrs.get(k)) for k, f in self.attrs.items()}
+        return {k: f.value_of(obj.attrs.get(k)).value for k, f in self.attrs.items()}
 
     def content_of(self, obj: Object) -> None | str | list[str]:
         assert obj
-        return self.content.value_of(obj.content)
+        if self.content is None:
+            return None
+        return self.content.value_of(obj.content).value
 
     def identifier_of(self, obj: Object) -> tuple[str | None, str]:
         """
@@ -252,7 +433,7 @@ class Schema(object):
         """
         assert obj
         for name, field, val in self.fields_of(obj):
-            if not field.unique:
+            if not field.uniq:
                 continue
             if val is None:
                 break
@@ -260,13 +441,17 @@ class Schema(object):
                 return name, val
             elif isinstance(val, list) and len(val) > 0:
                 return name, val[0]
-            return name, val
         return None, obj.hexdigest()
 
     def title_of(self, obj: Object) -> str | None:
         """Return title (display name) of object."""
         assert obj
+        if self.name is None:
+            return None
         name = self.name.value_of(obj.name)
+        if name is None:
+            return None
+        name = name.value
         if isinstance(name, str):
             return name
         elif isinstance(name, list) and len(name) > 0:
@@ -279,7 +464,7 @@ class Schema(object):
         assert obj
         refs = []
         for name, field, val in self.fields_of(obj):
-            if not field.referenceable:
+            if not field.ref:
                 continue
             if val is None:
                 continue

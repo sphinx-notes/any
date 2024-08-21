@@ -32,6 +32,7 @@ class AnyRole(XRefRole):
     @classmethod
     def derive(cls, schema: Schema, field: str | None = None) -> type['AnyRole']:
         """Generate an AnyRole child class for referencing object."""
+        # TODO: field: Field
         return type(
             'Any%s%sRole' % (schema.objtype.title(), field.title() if field else ''),
             (cls,),
