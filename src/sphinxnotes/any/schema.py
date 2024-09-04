@@ -164,10 +164,10 @@ class Indexer(object):
     def sort(self, data: Iterable[_T], key: Callable[[_T], Category]) -> list[_T]:
         raise NotImplementedError
 
-
     @abstractmethod
     def anchor(self, refval: str) -> str:
         raise NotImplementedError
+
 
 class LiteralIndexer(Indexer):
     name = 'literal'
@@ -242,7 +242,6 @@ class YearIndexer(Indexer):
 
         return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
 
-
     def anchor(self, refval: str) -> str:
         for datefmt in self.inputfmts:
             try:
@@ -292,7 +291,6 @@ class MonthIndexer(Indexer):
             return (t1, t2)
 
         return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
-
 
     def anchor(self, refval: str) -> str:
         for datefmt in self.inputfmts:

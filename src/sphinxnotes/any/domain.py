@@ -124,7 +124,7 @@ class AnyDomain(Domain):
         objtype, objfield, objidx = reftype.objtype, reftype.field, reftype.index
         objids = set()
         if objidx:
-            pass # no need to lookup objds
+            pass  # no need to lookup objds
         if objfield:
             # NOTE: To prevent change domain data, dont use ``objids = xxx``
             ids = self.references.get((objtype, objfield, target))
@@ -268,7 +268,7 @@ class RefType(object):
         v = reftype.split('.', maxsplit=2)
         objtype = v[0]
         field = v[1] if len(v) > 1 else None
-        index = v[2][3:] if len(v) > 2 else None # skip "by-"
+        index = v[2][3:] if len(v) > 2 else None  # skip "by-"
         return cls(objtype, field, index)
 
     def __str__(self):

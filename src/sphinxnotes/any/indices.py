@@ -39,12 +39,14 @@ class AnyIndex(Index):
         # TODO: add Indexer.name
         if field:
             typ = f'Any{schema.objtype.title()}{field.title()}IndexBy{indexer.name.title()}'
-            name = schema.objtype + '.' + field  + '.by-' + indexer.name # TODO: RefType
+            name = schema.objtype + '.' + field + '.by-' + indexer.name  # TODO: RefType
             localname = f'{schema.objtype.title()} {field.title()} Reference Index by {indexer.name.title()}'
         else:
             typ = f'Any{schema.objtype.title()}IndexBy{indexer.name.title()}'
-            name = schema.objtype + '.by-' + indexer.name # TODO: RefType
-            localname = f'{schema.objtype.title()} Reference Index by {indexer.name.title()}'
+            name = schema.objtype + '.by-' + indexer.name  # TODO: RefType
+            localname = (
+                f'{schema.objtype.title()} Reference Index by {indexer.name.title()}'
+            )
         return type(
             typ,
             (cls,),
