@@ -193,7 +193,9 @@ class AnyDomain(Domain):
         for name, field in schema.fields(all=False):
             # Field is not unique, link to index page.
             for indexer in field.indexers:
-                reftype = objtype_and_objfield_and_objidx_to_reftype(schema.objtype, name, indexer.by or '')
+                reftype = objtype_and_objfield_and_objidx_to_reftype(
+                    schema.objtype, name, indexer.by or ''
+                )
                 reftypes.append(reftype)
 
                 # FIXME: name and content can not be index now
@@ -247,7 +249,10 @@ def reftype_to_objtype_and_objfield(reftype: str) -> tuple[str, str | None]:
     v = reftype.split('.', maxsplit=2)
     return v[0], v[1] if len(v) == 2 else None
 
-def reftype_to_objtype_and_objfield_and_objidx(reftype: str) -> tuple[str, str | None, str | None]:
+
+def reftype_to_objtype_and_objfield_and_objidx(
+    reftype: str,
+) -> tuple[str, str | None, str | None]:
     """Helper function for converting reftype(role name) to object infos."""
     v = reftype.split('.', maxsplit=2)
     if len(v) == 3:
@@ -262,6 +267,9 @@ def objtype_and_objfield_to_reftype(objtype: str, objfield: str) -> str:
     """Helper function for converting object infos to reftype(role name)."""
     return objtype + '.' + objfield
 
-def objtype_and_objfield_and_objidx_to_reftype(objtype: str, objfield: str, objidx: str) -> str:
+
+def objtype_and_objfield_and_objidx_to_reftype(
+    objtype: str, objfield: str, objidx: str
+) -> str:
     """Helper function for converting object infos to reftype(role name)."""
     return objtype + '.' + objfield + '.' + objidx

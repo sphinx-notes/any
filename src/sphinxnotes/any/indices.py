@@ -86,9 +86,9 @@ class AnyIndex(Index):
                 main = category.as_main()
                 sub = category.as_sub()
                 if sub is None:
-                    singleidx.setdefault(main, {}).setdefault(
-                        category, set()
-                    ).update(objids)
+                    singleidx.setdefault(main, {}).setdefault(category, set()).update(
+                        objids
+                    )
                 else:
                     dualidx.setdefault(main, {}).setdefault(sub, {}).setdefault(
                         category, set()

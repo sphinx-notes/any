@@ -128,7 +128,7 @@ class Category(object):
     # Possible sub category of entry.
     sub: str | None = None
     #: Value of :py:attr:`sphinx.domains.IndexEntry.extra`.
-    extra: str | None = None 
+    extra: str | None = None
 
     def index_entry_subtype(self) -> IndexEntrySubtype:
         if self.sub is not None:
@@ -231,7 +231,8 @@ class YearIndexer(Indexer):
             t2 = strptime(x.sub, self.dispfmt_m) if x.sub else None
             t3 = strptime(x.extra, self.dispfmt_md) if x.extra else None
             return (t1, t2, t3)
-        return sorted(data, key=lambda x :sort_by_time(key(x)), reverse=True)
+
+        return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
 
 
 class MonthIndexer(Indexer):
@@ -270,7 +271,8 @@ class MonthIndexer(Indexer):
             t1 = strptime(x.main, self.dispfmt_ym)
             t2 = strptime(x.sub, self.dispfmt_md) if x.sub else None
             return (t1, t2)
-        return sorted(data, key=lambda x :sort_by_time(key(x)), reverse=True)
+
+        return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
 
 
 @dataclasses.dataclass(frozen=True)
