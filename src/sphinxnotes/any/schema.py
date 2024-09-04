@@ -8,11 +8,11 @@ Schema and object implementations.
 :license: BSD, see LICENSE for details.
 """
 
-from typing import Iterator, Any, Iterable, Literal, TypeVar, Callable
+from typing import Any, Iterable, Literal, TypeVar, Callable
 import dataclasses
 import pickle
 import hashlib
-from time import strptime
+from time import strptime, strftime
 from abc import ABC, abstractmethod
 
 from sphinx.util import logging
@@ -94,7 +94,7 @@ class Classif(object):
 
     :py:meth:`sphinx.domain.Index.generate` returns ``(content, collapse)``,
     and type of  ``contents`` is a list of ``(letter, IndexEntry list)``.
-    letter is categoy of index entries, and some of index entries may be followed
+    letter is category of index entries, and some of index entries may be followed
     by sub-entries (distinguish by :py:attr:`~sphinx.domains.IndexEntry.subtype`).
     So Sphinx's index can represent up to 2 levels of indexing:
 
@@ -161,7 +161,7 @@ class Classif(object):
 
 
 class Classifier(object):
-    name = ''
+    by: str | None = None
 
     @abstractmethod
     def classify(self, objref: Value) -> list[Classif]:
@@ -176,8 +176,6 @@ class Classifier(object):
 
 
 class PlainClassifier(Classifier):
-    name = ''
-
     def classify(self, objref: Value) -> list[Classif]:
         entries = []
         for v in objref.as_list():
@@ -187,30 +185,49 @@ class PlainClassifier(Classifier):
     def sort(
         self, data: Iterable[Classifier._T], key: Callable[[Classifier._T], Classif]
     ) -> list[Classifier._T]:
-        # TODO: should have same kind
         return sorted(data, key=lambda x: key(x)._sort_key)
 
 
-class DateClassifier(Classifier):
-    name = 'by-date'
+# I am Chinese :D
+# So the date formats follow Chinese conventions.
+INPUTFMTS = ['%Y-%m-%d', '%Y-%m', '%Y']
+DISPFMTS_Y = '%Y 年'
+DISPFMTS_M = '%m 月'
+DISPFMTS_YM = '%Y 年 %m 月'
+DISPFMTS_MD = '%m 月 %d 日，%a'
 
-    def __init__(self, datefmts: list[str]):
-        """datefmt is format used by time.strptime()."""
-        self.datefmts = datefmts
+
+class YearClassifier(Classifier):
+    by = 'year'
+
+    def __init__(
+        self,
+        inputfmts: list[str] = INPUTFMTS,
+        dispfmt_y: str = DISPFMTS_Y,
+        dispfmt_m: str = DISPFMTS_M,
+        dispfmt_md: str = DISPFMTS_MD,
+    ):
+        """*xxxfmt* are date format used by time.strptime/strftime.
+
+        .. seealso:: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes"""
+        self.inputfmts = inputfmts
+        self.dispfmt_y = dispfmt_y
+        self.dispfmt_m = dispfmt_m
+        self.dispfmt_md = dispfmt_md
 
     def classify(self, objref: Value) -> list[Classif]:
         entries = []
         for v in objref.as_list():
-            for datefmt in self.datefmts:
+            for datefmt in self.inputfmts:
                 try:
                     t = strptime(v, datefmt)
                 except ValueError:
                     continue  # try next datefmt
                 entries.append(
                     Classif(
-                        category=str(t.tm_year),
-                        entry=str(t.tm_mon),
-                        subentry=str(t.tm_mday),
+                        category=strftime(self.dispfmt_y, t),
+                        entry=strftime(self.dispfmt_m, t),
+                        subentry=strftime(self.dispfmt_md, t),
                     )
                 )
         return entries
@@ -218,8 +235,51 @@ class DateClassifier(Classifier):
     def sort(
         self, data: Iterable[Classifier._T], key: Callable[[Classifier._T], Classif]
     ) -> list[Classifier._T]:
-        # From newest to oldest.
-        return sorted(data, key=lambda x: key(x)._sort_key, reverse=True)
+        def sort_by_time(x):
+            t1 = strptime(x.category, self.dispfmt_y)
+            t2 = strptime(x.entry, self.dispfmt_m) if x.entry else None
+            t3 = strptime(x.subentry, self.dispfmt_md) if x.subentry else None
+            return (t1, t2, t3)
+        return sorted(data, key=lambda x :sort_by_time(key(x)), reverse=True)
+
+
+class MonthClassifier(Classifier):
+    by = 'month'
+
+    def __init__(
+        self,
+        inputfmts: list[str] = INPUTFMTS,
+        dispfmt_ym: str = DISPFMTS_YM,
+        dispfmt_md: str = DISPFMTS_MD,
+    ):
+        self.inputfmts = inputfmts
+        self.dispfmt_ym = dispfmt_ym
+        self.dispfmt_md = dispfmt_md
+
+    def classify(self, objref: Value) -> list[Classif]:
+        entries = []
+        for v in objref.as_list():
+            for datefmt in self.inputfmts:
+                try:
+                    t = strptime(v, datefmt)
+                except ValueError:
+                    continue  # try next datefmt
+                entries.append(
+                    Classif(
+                        category=strftime(self.dispfmt_ym, t),
+                        entry=strftime(self.dispfmt_md, t),
+                    )
+                )
+        return entries
+
+    def sort(
+        self, data: Iterable[Classifier._T], key: Callable[[Classifier._T], Classif]
+    ) -> list[Classifier._T]:
+        def sort_by_time(x):
+            t1 = strptime(x.category, self.dispfmt_ym)
+            t2 = strptime(x.entry, self.dispfmt_md) if x.entry else None
+            return (t1, t2)
+        return sorted(data, key=lambda x :sort_by_time(key(x)), reverse=True)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -385,10 +445,10 @@ class Schema(object):
 
     def fields_of(
         self, obj: Object
-    ) -> Iterator[tuple[str, Field, None | str | list[str]]]:
+    ) -> Iterable[tuple[str, Field, None | str | list[str]]]:
         """
         Helper method for returning all fields of object and its raw values.
-        -> Iterator[field_name, field_instance, field_value],
+        -> Iterable[field_name, field_instance, field_value],
         while the field_value is string_value|string_list_value.
         """
         if self.name:
@@ -444,7 +504,7 @@ class Schema(object):
         return None, obj.hexdigest()
 
     def title_of(self, obj: Object) -> str | None:
-        """Return title (display name) of object."""
+        """Return title (disp name) of object."""
         assert obj
         if self.name is None:
             return None
