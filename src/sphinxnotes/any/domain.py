@@ -18,7 +18,7 @@ from sphinx.domains import Domain, ObjType
 from sphinx.util import logging
 from sphinx.util.nodes import make_refnode
 
-from .schema import Schema, Object, PlainClassifier
+from .schema import Schema, Object
 from .directives import AnyDirective
 from .roles import AnyRole
 from .indices import AnyIndex
@@ -118,8 +118,12 @@ class AnyDomain(Domain):
         assert isinstance(contnode, literal)
 
         logger.debug('[any] resolveing xref of %s', (typ, target))
-        objtype, objfield = reftype_to_objtype_and_objfield(typ)
+
+        reftype = RefType.parse(typ)
+        objtype, objfield, objidx = reftype.objtype, reftype.field, reftype.index
         objids = set()
+        if objidx:
+            pass  # no need to lookup objds
         if objfield:
             # NOTE: To prevent change domain data, dont use ``objids = xxx``
             ids = self.references.get((objtype, objfield, target))
@@ -135,16 +139,9 @@ class AnyDomain(Domain):
         has_explicit_title = node['refexplicit']
         newtitle = None
 
-        if not objids:
-            # The pending_xref node may be resolved by intersphinx,
-            # so not emit warning here, see also warn_missing_reference.
-            return None
-        elif len(objids) == 1:
-            todocname, anchor, obj = self.objects[objtype, objids.pop()]
-            if not has_explicit_title:
-                newtitle = schema.render_reference(obj)
-        else:
-            # Mulitple objects found, we should create link to indices page.
+        if len(objids) > 1 or objidx is not None:
+            # Mulitple objects found or reference index explicitly,
+            # create link to indices page.
             (
                 todocname,
                 anchor,
@@ -155,6 +152,14 @@ class AnyDomain(Domain):
                 f'ambiguous {objtype} {target} in {self}, '
                 + f'ids: {objids} index: {todocname}#{anchor}'
             )
+        elif len(objids) == 1:
+            todocname, anchor, obj = self.objects[objtype, objids.pop()]
+            if not has_explicit_title:
+                newtitle = schema.render_reference(obj)
+        else:
+            # The pending_xref node may be resolved by intersphinx,
+            # so do not emit warning here, see also warn_missing_reference.
+            return None
 
         if newtitle:
             logger.debug(f'[any] rewrite title from {title} to {newtitle}')
@@ -176,18 +181,32 @@ class AnyDomain(Domain):
         # Add to schemas dict
         cls._schemas[schema.objtype] = schema
 
-        reftypes = [schema.objtype]
+        # Generates reftypes for all referenceable fields
+        # For later use when generating roles and indices.
+        reftypes = [str(RefType(schema.objtype, None, None))]
         for name, field in schema.fields(all=False):
             if not field.ref:
                 continue
 
-            # Generates reftypes for all referenceable fields
-            # For later use when generating roles and indices.
-            reftype = objtype_and_objfield_to_reftype(schema.objtype, name)
-            reftypes.append(reftype)
+            # Field is unique , use ``:objtype.field:`` to reference.
+            if field.uniq:
+                reftype = str(RefType(schema.objtype, name, None))
+                reftypes.append(reftype)
+                continue
+
+        for name, field in schema.fields(all=False):
+            # Field is not unique, link to index page.
+            for indexer in field.indexers:
+                reftype = str(RefType(schema.objtype, name, indexer.name))
+                reftypes.append(reftype)
+
+                # FIXME: name and content can not be index now
+                index = AnyIndex.derive(schema, name, indexer)
+                cls.indices.append(index)
+                cls._indices_for_reftype[reftype] = index
 
         for reftype in reftypes:
-            _, field = reftype_to_objtype_and_objfield(reftype)
+            field = RefType.parse(reftype).field
             # Create role for referencing object by field
             cls.roles[reftype] = AnyRole.derive(schema, field)(
                 # Emit warning when missing reference (node['refwarn'] = True)
@@ -196,19 +215,6 @@ class AnyDomain(Domain):
                 # so fix its class.
                 innernodeclass=literal,
             )
-
-            # FIXME: name and content can not be index now
-            if field is not None:
-                classifiers = schema.attrs[field].classifiers
-            elif schema.name is not None:
-                classifiers = schema.name.classifiers
-            else:
-                classifiers = [PlainClassifier()]
-            # Generates index for indexing object by fields
-            for indexer in classifiers:
-                index = AnyIndex.derive(schema, field, indexer)
-                cls.indices.append(index)
-                cls._indices_for_reftype[reftype] = index  # TODO: mulitple catelogers.
 
         # TODO: document
         cls.object_types[schema.objtype] = ObjType(schema.objtype, *reftypes)
@@ -222,8 +228,8 @@ class AnyDomain(Domain):
         .. warning:: This is no public API of sphinx and may broken in future version.
         """
         domain = self.name
-        index = self._indices_for_reftype[reftype].name
-        return f'{domain}-{index}', f'cap-{refval}'
+        index = self._indices_for_reftype[reftype]
+        return f'{domain}-{index.name}', index.indexer.anchor(refval)
 
 
 def warn_missing_reference(
@@ -232,7 +238,7 @@ def warn_missing_reference(
     if domain and domain.name != AnyDomain.name:
         return None
 
-    objtype, _ = reftype_to_objtype_and_objfield(node['reftype'])
+    objtype = RefType.parse(node['reftype']).objtype
     target = node['reftarget']
 
     msg = f'undefined {objtype}: {target}'
@@ -240,12 +246,34 @@ def warn_missing_reference(
     return True
 
 
-def reftype_to_objtype_and_objfield(reftype: str) -> tuple[str, str | None]:
-    """Helper function for converting reftype(role name) to object infos."""
-    v = reftype.split('.', maxsplit=1)
-    return v[0], v[1] if len(v) == 2 else None
+class RefType(object):
+    """Reference type, used as role name and node['reftype'] and
+    and *typ* argument of :meth:`AnyDomain.resolve_xref` method."""
 
+    #: :attr:`ObjType.lname`
+    objtype: str
+    #: :attr:`.schema.Field.name`
+    field: str | None
+    #: :attr:`.schema.Indexer.name`
+    index: str | None
 
-def objtype_and_objfield_to_reftype(objtype: str, objfield: str) -> str:
-    """Helper function for converting object infos to reftype(role name)."""
-    return objtype + '.' + objfield
+    def __init__(self, objtype: str, field: str | None, index: str | None):
+        self.objtype = objtype
+        self.field = field
+        self.index = index
+
+    @classmethod
+    def parse(cls, reftype: str):
+        v = reftype.split('.', maxsplit=2)
+        objtype = v[0]
+        field = v[1] if len(v) > 1 else None
+        index = v[2][3:] if len(v) > 2 else None  # skip "by-"
+        return cls(objtype, field, index)
+
+    def __str__(self):
+        s = self.objtype
+        if self.field is not None:
+            s += '.' + self.field
+        if self.index is not None:
+            s += '.' + 'by-' + self.index
+        return s

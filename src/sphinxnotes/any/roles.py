@@ -20,21 +20,16 @@ logger = logging.getLogger(__name__)
 
 class AnyRole(XRefRole):
     """
-    XRefRole child class for referencing to anything. Not used directly,
-    but dynamically subclassed to reference to specific .
-
-
-    TODO: rst reference template
+    XRefRole child class for referencing to :cls:`.schema.Object`.
+    Not used directly, but dynamically subclassed to reference to specific
+    objtype.
     """
-
-    schema: Schema
 
     @classmethod
     def derive(cls, schema: Schema, field: str | None = None) -> type['AnyRole']:
         """Generate an AnyRole child class for referencing object."""
-        # TODO: field: Field
         return type(
             'Any%s%sRole' % (schema.objtype.title(), field.title() if field else ''),
             (cls,),
-            {'schema': schema},
+            {},
         )

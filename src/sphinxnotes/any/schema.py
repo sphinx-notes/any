@@ -8,11 +8,11 @@ Schema and object implementations.
 :license: BSD, see LICENSE for details.
 """
 
-from typing import Iterator, Any, Iterable, Literal, TypeVar, Callable
+from typing import Any, Iterable, Literal, TypeVar, Callable
 import dataclasses
 import pickle
 import hashlib
-from time import strptime
+from time import strptime, strftime
 from abc import ABC, abstractmethod
 
 from sphinx.util import logging
@@ -87,14 +87,14 @@ class List(Form):
 
 
 @dataclasses.dataclass
-class Classif(object):
+class Category(object):
     """
     Classification and sorting of an object, and generating
     py:cls:`sphinx.domain.IndexEntry`.
 
     :py:meth:`sphinx.domain.Index.generate` returns ``(content, collapse)``,
     and type of  ``contents`` is a list of ``(letter, IndexEntry list)``.
-    letter is categoy of index entries, and some of index entries may be followed
+    letter is category of index entries, and some of index entries may be followed
     by sub-entries (distinguish by :py:attr:`~sphinx.domains.IndexEntry.subtype`).
     So Sphinx's index can represent up to 2 levels of indexing:
 
@@ -103,9 +103,9 @@ class Classif(object):
 
     Classif can be used to generating all of 3 kinds of IndexEntry:
 
-    :normal entry:            Classif(category=X)
-    :entry with sub-entries:  Classif(category=X, entry=Y)
-    :sub-entry:               Classif(category=X, entry=Y, subentry=Z)
+    :normal entry:            Classif(main=X)
+    :entry with sub-entries:  Classif(main=X, sub=Y, extra=None)
+    :sub-entry:               Classif(main=X, sub=Y, extra=Z)
 
     .. hint::
 
@@ -123,103 +123,184 @@ class Classif(object):
     #: - 2: sub-entry
     type IndexEntrySubtype = Literal[0, 1, 2]
 
-    category: str  # main category
-    entry: str | None = None  # sub category or just for sorting
-    subentry: str | None = None  # just for sorting
+    #: Main category of entry.
+    main: str
+    # Possible sub category of entry.
+    sub: str | None = None
+    #: Value of :py:attr:`sphinx.domains.IndexEntry.extra`.
+    extra: str | None = None
 
-    @property
     def index_entry_subtype(self) -> IndexEntrySubtype:
-        assert not (self.entry is None and self.subentry is not None)
-        if self.subentry is not None:
-            return 2
-        if self.entry is not None:
-            return 1
+        if self.sub is not None:
+            return 2 if self.extra is not None else 1
         return 0
 
-    @property
-    def leaf(self) -> str:
-        if self.subentry is not None:
-            return self.subentry
-        if self.entry is not None:
-            return self.entry
-        return self.category
+    def as_main(self) -> 'Category':
+        return Category(main=self.main)
 
-    def as_category(self) -> 'Classif':
-        return Classif(category=self.category)
-
-    def as_entry(self) -> 'Classif | None':
-        if self.subentry is None:  # TODO:
+    def as_sub(self) -> 'Category | None':
+        if self.sub is None:
             return None
-        return Classif(category=self.category, entry=self.entry)
+        return Category(main=self.main, sub=self.sub)
 
     @property
     def _sort_key(self) -> tuple[str, str | None, str | None]:
-        return (self.category, self.entry, self.subentry)
+        return (self.main, self.sub, self.extra)
 
     def __hash__(self):
         return hash(self._sort_key)
 
 
-class Classifier(object):
-    name = ''
+class Indexer(object):
+    name: str
 
     @abstractmethod
-    def classify(self, objref: Value) -> list[Classif]:
+    def classify(self, objref: Value) -> list[Category]:
         raise NotImplementedError
 
     _T = TypeVar('_T')
 
     @abstractmethod
-    def sort(self, data: Iterable[_T], key: Callable[[_T], Classif]) -> list[_T]:
-        # TODO: should have same kind
+    def sort(self, data: Iterable[_T], key: Callable[[_T], Category]) -> list[_T]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def anchor(self, refval: str) -> str:
         raise NotImplementedError
 
 
-class PlainClassifier(Classifier):
-    name = ''
+class LiteralIndexer(Indexer):
+    name = 'literal'
 
-    def classify(self, objref: Value) -> list[Classif]:
+    def classify(self, objref: Value) -> list[Category]:
         entries = []
         for v in objref.as_list():
-            entries.append(Classif(category=v))
+            entries.append(Category(main=v))
         return entries
 
     def sort(
-        self, data: Iterable[Classifier._T], key: Callable[[Classifier._T], Classif]
-    ) -> list[Classifier._T]:
-        # TODO: should have same kind
+        self, data: Iterable[Indexer._T], key: Callable[[Indexer._T], Category]
+    ) -> list[Indexer._T]:
         return sorted(data, key=lambda x: key(x)._sort_key)
 
+    def anchor(self, refval: str) -> str:
+        return refval
 
-class DateClassifier(Classifier):
-    name = 'by-date'
 
-    def __init__(self, datefmts: list[str]):
-        """datefmt is format used by time.strptime()."""
-        self.datefmts = datefmts
+# I am Chinese :D
+# So the date formats follow Chinese conventions.
+INPUTFMTS = ['%Y-%m-%d', '%Y-%m', '%Y']
+DISPFMTS_Y = '%Y 年'
+DISPFMTS_M = '%m 月'
+DISPFMTS_YM = '%Y 年 %m 月'
+DISPFMTS_MD = '%m 月 %d 日，%a'
 
-    def classify(self, objref: Value) -> list[Classif]:
+
+class YearIndexer(Indexer):
+    name = 'year'
+
+    def __init__(
+        self,
+        inputfmts: list[str] = INPUTFMTS,
+        dispfmt_y: str = DISPFMTS_Y,
+        dispfmt_m: str = DISPFMTS_M,
+        dispfmt_md: str = DISPFMTS_MD,
+    ):
+        """*xxxfmt* are date format used by time.strptime/strftime.
+
+        .. seealso:: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes"""
+        self.inputfmts = inputfmts
+        self.dispfmt_y = dispfmt_y
+        self.dispfmt_m = dispfmt_m
+        self.dispfmt_md = dispfmt_md
+
+    def classify(self, objref: Value) -> list[Category]:
         entries = []
         for v in objref.as_list():
-            for datefmt in self.datefmts:
+            for datefmt in self.inputfmts:
                 try:
                     t = strptime(v, datefmt)
                 except ValueError:
                     continue  # try next datefmt
                 entries.append(
-                    Classif(
-                        category=str(t.tm_year),
-                        entry=str(t.tm_mon),
-                        subentry=str(t.tm_mday),
+                    Category(
+                        main=strftime(self.dispfmt_y, t),
+                        sub=strftime(self.dispfmt_m, t),
+                        extra=strftime(self.dispfmt_md, t),
                     )
                 )
         return entries
 
     def sort(
-        self, data: Iterable[Classifier._T], key: Callable[[Classifier._T], Classif]
-    ) -> list[Classifier._T]:
-        # From newest to oldest.
-        return sorted(data, key=lambda x: key(x)._sort_key, reverse=True)
+        self, data: Iterable[Indexer._T], key: Callable[[Indexer._T], Category]
+    ) -> list[Indexer._T]:
+        def sort_by_time(x: Category):
+            t1 = strptime(x.main, self.dispfmt_y)
+            t2 = strptime(x.sub, self.dispfmt_m) if x.sub else None
+            t3 = strptime(x.extra, self.dispfmt_md) if x.extra else None
+            return (t1, t2, t3)
+
+        return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
+
+    def anchor(self, refval: str) -> str:
+        for datefmt in self.inputfmts:
+            try:
+                t = strptime(refval, datefmt)
+            except ValueError:
+                continue  # try next datefmt
+            anchor = strftime(self.dispfmt_y, t)
+            return f'cap-{anchor}'
+        return ''
+
+
+class MonthIndexer(Indexer):
+    name = 'month'
+
+    def __init__(
+        self,
+        inputfmts: list[str] = INPUTFMTS,
+        dispfmt_ym: str = DISPFMTS_YM,
+        dispfmt_md: str = DISPFMTS_MD,
+    ):
+        self.inputfmts = inputfmts
+        self.dispfmt_ym = dispfmt_ym
+        self.dispfmt_md = dispfmt_md
+
+    def classify(self, objref: Value) -> list[Category]:
+        entries = []
+        for v in objref.as_list():
+            for datefmt in self.inputfmts:
+                try:
+                    t = strptime(v, datefmt)
+                except ValueError:
+                    continue  # try next datefmt
+                entries.append(
+                    Category(
+                        main=strftime(self.dispfmt_ym, t),
+                        extra=strftime(self.dispfmt_md, t),
+                    )
+                )
+        return entries
+
+    def sort(
+        self, data: Iterable[Indexer._T], key: Callable[[Indexer._T], Category]
+    ) -> list[Indexer._T]:
+        def sort_by_time(x: Category):
+            t1 = strptime(x.main, self.dispfmt_ym)
+            t2 = strptime(x.sub, self.dispfmt_md) if x.sub else None
+            return (t1, t2)
+
+        return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
+
+    def anchor(self, refval: str) -> str:
+        for datefmt in self.inputfmts:
+            try:
+                t = strptime(refval, datefmt)
+            except ValueError:
+                continue  # try next datefmt
+            anchor = strftime(self.dispfmt_ym, t)
+            return f'cap-{anchor}'
+        return ''
 
 
 @dataclasses.dataclass(frozen=True)
@@ -272,8 +353,8 @@ class Field(object):
     ref: bool = False
     required: bool = False
     form: Form = Forms.PLAIN
-    classifiers: list[Classifier] = dataclasses.field(
-        default_factory=lambda: [PlainClassifier()]
+    indexers: list[Indexer] = dataclasses.field(
+        default_factory=lambda: [LiteralIndexer()]
     )
 
     def value_of(self, rawval: str | None) -> Value:
@@ -385,10 +466,10 @@ class Schema(object):
 
     def fields_of(
         self, obj: Object
-    ) -> Iterator[tuple[str, Field, None | str | list[str]]]:
+    ) -> Iterable[tuple[str, Field, None | str | list[str]]]:
         """
         Helper method for returning all fields of object and its raw values.
-        -> Iterator[field_name, field_instance, field_value],
+        -> Iterable[field_name, field_instance, field_value],
         while the field_value is string_value|string_list_value.
         """
         if self.name:
@@ -444,7 +525,7 @@ class Schema(object):
         return None, obj.hexdigest()
 
     def title_of(self, obj: Object) -> str | None:
-        """Return title (display name) of object."""
+        """Return title (disp name) of object."""
         assert obj
         if self.name is None:
             return None
