@@ -9,7 +9,6 @@ Sphinx domain for describing anything.
 """
 
 from __future__ import annotations
-from logging import warn
 from typing import Any, Iterator, TYPE_CHECKING
 
 from docutils.nodes import Element, literal, Text
@@ -19,7 +18,7 @@ from sphinx.domains import Domain, ObjType
 from sphinx.util import logging
 from sphinx.util.nodes import make_refnode
 
-from .schema import Schema, Object, LiteralIndexer
+from .schema import Schema, Object
 from .directives import AnyDirective
 from .roles import AnyRole
 from .indices import AnyIndex
