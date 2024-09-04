@@ -38,17 +38,13 @@ class AnyIndex(Index):
         """Generate an AnyIndex child class for indexing object."""
         # TODO: add Indexer.name
         if field:
-            typ = f'Any{schema.objtype.title()}{field.title()}Index'
-            name = schema.objtype + '.' + field  # TOOD: objtype_and_objfield_to_reftype
-            localname = f'{schema.objtype.title()} {field.title()} Reference Index'
+            typ = f'Any{schema.objtype.title()}{field.title()}IndexBy{indexer.name.title()}'
+            name = schema.objtype + '.' + field  + '.by-' + indexer.name # TODO: RefType
+            localname = f'{schema.objtype.title()} {field.title()} Reference Index by {indexer.name.title()}'
         else:
-            typ = f'Any{schema.objtype.title()}Index'
-            name = schema.objtype
-            localname = f'{schema.objtype.title()} Reference Index'
-        if indexer.by is not None:
-            typ += f'By{indexer.by.title()}'
-            name += '.by-' + indexer.by
-            localname += f' by {indexer.by.title()}'
+            typ = f'Any{schema.objtype.title()}IndexBy{indexer.name.title()}'
+            name = schema.objtype + '.by-' + indexer.name # TODO: RefType
+            localname = f'{schema.objtype.title()} Reference Index by {indexer.name.title()}'
         return type(
             typ,
             (cls,),

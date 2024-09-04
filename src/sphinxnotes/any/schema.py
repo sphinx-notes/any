@@ -152,7 +152,7 @@ class Category(object):
 
 
 class Indexer(object):
-    by: str | None = None
+    name: str
 
     @abstractmethod
     def classify(self, objref: Value) -> list[Category]:
@@ -162,11 +162,16 @@ class Indexer(object):
 
     @abstractmethod
     def sort(self, data: Iterable[_T], key: Callable[[_T], Category]) -> list[_T]:
-        # TODO: should have same kind
         raise NotImplementedError
 
 
+    @abstractmethod
+    def anchor(self, refval: str) -> str:
+        raise NotImplementedError
+
 class LiteralIndexer(Indexer):
+    name = 'literal'
+
     def classify(self, objref: Value) -> list[Category]:
         entries = []
         for v in objref.as_list():
@@ -177,6 +182,9 @@ class LiteralIndexer(Indexer):
         self, data: Iterable[Indexer._T], key: Callable[[Indexer._T], Category]
     ) -> list[Indexer._T]:
         return sorted(data, key=lambda x: key(x)._sort_key)
+
+    def anchor(self, refval: str) -> str:
+        return refval
 
 
 # I am Chinese :D
@@ -189,7 +197,7 @@ DISPFMTS_MD = '%m 月 %d 日，%a'
 
 
 class YearIndexer(Indexer):
-    by = 'year'
+    name = 'year'
 
     def __init__(
         self,
@@ -235,8 +243,19 @@ class YearIndexer(Indexer):
         return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
 
 
+    def anchor(self, refval: str) -> str:
+        for datefmt in self.inputfmts:
+            try:
+                t = strptime(refval, datefmt)
+            except ValueError:
+                continue  # try next datefmt
+            anchor = strftime(self.dispfmt_y, t)
+            return f'cap-{anchor}'
+        return ''
+
+
 class MonthIndexer(Indexer):
-    by = 'month'
+    name = 'month'
 
     def __init__(
         self,
@@ -273,6 +292,17 @@ class MonthIndexer(Indexer):
             return (t1, t2)
 
         return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
+
+
+    def anchor(self, refval: str) -> str:
+        for datefmt in self.inputfmts:
+            try:
+                t = strptime(refval, datefmt)
+            except ValueError:
+                continue  # try next datefmt
+            anchor = strftime(self.dispfmt_ym, t)
+            return f'cap-{anchor}'
+        return ''
 
 
 @dataclasses.dataclass(frozen=True)
