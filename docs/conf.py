@@ -115,16 +115,16 @@ extensions.append('any')
 # 
 # DOG FOOD CONFIGURATION START
 from any import Schema, Field as F
-from any.schema import YearClassifier, MonthClassifier
+from any.schema import YearIndexer, MonthIndexer
 sys.path.insert(0, os.path.abspath('.'))
 
-by_year = YearClassifier()
-by_month = MonthClassifier()
+by_year = YearIndexer()
+by_month = MonthIndexer()
 
 version_schema = Schema('version',
                         name=F(uniq=True, ref=True, required=True, form=F.Forms.LINES),
                         attrs={
-                            'date': F(ref=True, classifiers=[by_year, by_month]),
+                            'date': F(ref=True, indexers=[by_year, by_month]),
                         },
                         content=F(form=F.Forms.LINES),
                         description_template=open('_templates/version.rst', 'r').read(),

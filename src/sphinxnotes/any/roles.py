@@ -27,7 +27,7 @@ class AnyRole(XRefRole):
     TODO: rst reference template
     """
 
-    schema: Schema
+    schema: Schema # FIXME: not used
 
     @classmethod
     def derive(cls, schema: Schema, field: str | None = None) -> type['AnyRole']:

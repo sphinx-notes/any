@@ -87,7 +87,7 @@ class List(Form):
 
 
 @dataclasses.dataclass
-class Classif(object):
+class Category(object):
     """
     Classification and sorting of an object, and generating
     py:cls:`sphinx.domain.IndexEntry`.
@@ -103,9 +103,9 @@ class Classif(object):
 
     Classif can be used to generating all of 3 kinds of IndexEntry:
 
-    :normal entry:            Classif(category=X)
-    :entry with sub-entries:  Classif(category=X, entry=Y)
-    :sub-entry:               Classif(category=X, entry=Y, subentry=Z)
+    :normal entry:            Classif(main=X)
+    :entry with sub-entries:  Classif(main=X, sub=Y, extra=None)
+    :sub-entry:               Classif(main=X, sub=Y, extra=Z)
 
     .. hint::
 
@@ -123,68 +123,59 @@ class Classif(object):
     #: - 2: sub-entry
     type IndexEntrySubtype = Literal[0, 1, 2]
 
-    category: str  # main category
-    entry: str | None = None  # sub category or just for sorting
-    subentry: str | None = None  # just for sorting
+    #: Main category of entry.
+    main: str
+    # Possible sub category of entry.
+    sub: str | None = None
+    #: Value of :py:attr:`sphinx.domains.IndexEntry.extra`.
+    extra: str | None = None 
 
-    @property
     def index_entry_subtype(self) -> IndexEntrySubtype:
-        assert not (self.entry is None and self.subentry is not None)
-        if self.subentry is not None:
-            return 2
-        if self.entry is not None:
-            return 1
+        if self.sub is not None:
+            return 2 if self.extra is not None else 1
         return 0
 
-    @property
-    def leaf(self) -> str:
-        if self.subentry is not None:
-            return self.subentry
-        if self.entry is not None:
-            return self.entry
-        return self.category
+    def as_main(self) -> 'Category':
+        return Category(main=self.main)
 
-    def as_category(self) -> 'Classif':
-        return Classif(category=self.category)
-
-    def as_entry(self) -> 'Classif | None':
-        if self.subentry is None:  # TODO:
+    def as_sub(self) -> 'Category | None':
+        if self.sub is None:
             return None
-        return Classif(category=self.category, entry=self.entry)
+        return Category(main=self.main, sub=self.sub)
 
     @property
     def _sort_key(self) -> tuple[str, str | None, str | None]:
-        return (self.category, self.entry, self.subentry)
+        return (self.main, self.sub, self.extra)
 
     def __hash__(self):
         return hash(self._sort_key)
 
 
-class Classifier(object):
+class Indexer(object):
     by: str | None = None
 
     @abstractmethod
-    def classify(self, objref: Value) -> list[Classif]:
+    def classify(self, objref: Value) -> list[Category]:
         raise NotImplementedError
 
     _T = TypeVar('_T')
 
     @abstractmethod
-    def sort(self, data: Iterable[_T], key: Callable[[_T], Classif]) -> list[_T]:
+    def sort(self, data: Iterable[_T], key: Callable[[_T], Category]) -> list[_T]:
         # TODO: should have same kind
         raise NotImplementedError
 
 
-class PlainClassifier(Classifier):
-    def classify(self, objref: Value) -> list[Classif]:
+class LiteralIndexer(Indexer):
+    def classify(self, objref: Value) -> list[Category]:
         entries = []
         for v in objref.as_list():
-            entries.append(Classif(category=v))
+            entries.append(Category(main=v))
         return entries
 
     def sort(
-        self, data: Iterable[Classifier._T], key: Callable[[Classifier._T], Classif]
-    ) -> list[Classifier._T]:
+        self, data: Iterable[Indexer._T], key: Callable[[Indexer._T], Category]
+    ) -> list[Indexer._T]:
         return sorted(data, key=lambda x: key(x)._sort_key)
 
 
@@ -197,7 +188,7 @@ DISPFMTS_YM = '%Y 年 %m 月'
 DISPFMTS_MD = '%m 月 %d 日，%a'
 
 
-class YearClassifier(Classifier):
+class YearIndexer(Indexer):
     by = 'year'
 
     def __init__(
@@ -215,7 +206,7 @@ class YearClassifier(Classifier):
         self.dispfmt_m = dispfmt_m
         self.dispfmt_md = dispfmt_md
 
-    def classify(self, objref: Value) -> list[Classif]:
+    def classify(self, objref: Value) -> list[Category]:
         entries = []
         for v in objref.as_list():
             for datefmt in self.inputfmts:
@@ -224,26 +215,26 @@ class YearClassifier(Classifier):
                 except ValueError:
                     continue  # try next datefmt
                 entries.append(
-                    Classif(
-                        category=strftime(self.dispfmt_y, t),
-                        entry=strftime(self.dispfmt_m, t),
-                        subentry=strftime(self.dispfmt_md, t),
+                    Category(
+                        main=strftime(self.dispfmt_y, t),
+                        sub=strftime(self.dispfmt_m, t),
+                        extra=strftime(self.dispfmt_md, t),
                     )
                 )
         return entries
 
     def sort(
-        self, data: Iterable[Classifier._T], key: Callable[[Classifier._T], Classif]
-    ) -> list[Classifier._T]:
-        def sort_by_time(x):
-            t1 = strptime(x.category, self.dispfmt_y)
-            t2 = strptime(x.entry, self.dispfmt_m) if x.entry else None
-            t3 = strptime(x.subentry, self.dispfmt_md) if x.subentry else None
+        self, data: Iterable[Indexer._T], key: Callable[[Indexer._T], Category]
+    ) -> list[Indexer._T]:
+        def sort_by_time(x: Category):
+            t1 = strptime(x.main, self.dispfmt_y)
+            t2 = strptime(x.sub, self.dispfmt_m) if x.sub else None
+            t3 = strptime(x.extra, self.dispfmt_md) if x.extra else None
             return (t1, t2, t3)
         return sorted(data, key=lambda x :sort_by_time(key(x)), reverse=True)
 
 
-class MonthClassifier(Classifier):
+class MonthIndexer(Indexer):
     by = 'month'
 
     def __init__(
@@ -256,7 +247,7 @@ class MonthClassifier(Classifier):
         self.dispfmt_ym = dispfmt_ym
         self.dispfmt_md = dispfmt_md
 
-    def classify(self, objref: Value) -> list[Classif]:
+    def classify(self, objref: Value) -> list[Category]:
         entries = []
         for v in objref.as_list():
             for datefmt in self.inputfmts:
@@ -265,19 +256,19 @@ class MonthClassifier(Classifier):
                 except ValueError:
                     continue  # try next datefmt
                 entries.append(
-                    Classif(
-                        category=strftime(self.dispfmt_ym, t),
-                        entry=strftime(self.dispfmt_md, t),
+                    Category(
+                        main=strftime(self.dispfmt_ym, t),
+                        extra=strftime(self.dispfmt_md, t),
                     )
                 )
         return entries
 
     def sort(
-        self, data: Iterable[Classifier._T], key: Callable[[Classifier._T], Classif]
-    ) -> list[Classifier._T]:
-        def sort_by_time(x):
-            t1 = strptime(x.category, self.dispfmt_ym)
-            t2 = strptime(x.entry, self.dispfmt_md) if x.entry else None
+        self, data: Iterable[Indexer._T], key: Callable[[Indexer._T], Category]
+    ) -> list[Indexer._T]:
+        def sort_by_time(x: Category):
+            t1 = strptime(x.main, self.dispfmt_ym)
+            t2 = strptime(x.sub, self.dispfmt_md) if x.sub else None
             return (t1, t2)
         return sorted(data, key=lambda x :sort_by_time(key(x)), reverse=True)
 
@@ -332,8 +323,8 @@ class Field(object):
     ref: bool = False
     required: bool = False
     form: Form = Forms.PLAIN
-    classifiers: list[Classifier] = dataclasses.field(
-        default_factory=lambda: [PlainClassifier()]
+    indexers: list[Indexer] = dataclasses.field(
+        default_factory=lambda: [LiteralIndexer()]
     )
 
     def value_of(self, rawval: str | None) -> Value:

@@ -16,7 +16,7 @@ from sphinx.util import logging
 from docutils import core, nodes
 from docutils.parsers.rst import roles
 
-from .schema import Schema, Value, Classifier, Classif
+from .schema import Schema, Value, Indexer, Category
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +29,11 @@ class AnyIndex(Index):
     domain: Domain  # for type hint
     schema: Schema
     field: str | None = None
-    classifier: Classifier
+    indexer: Indexer
 
     @classmethod
     def derive(
-        cls, schema: Schema, field: str | None, classifier: Classifier
+        cls, schema: Schema, field: str | None, indexer: Indexer
     ) -> type['AnyIndex']:
         """Generate an AnyIndex child class for indexing object."""
         # TODO: add Indexer.name
@@ -45,6 +45,10 @@ class AnyIndex(Index):
             typ = f'Any{schema.objtype.title()}Index'
             name = schema.objtype
             localname = f'{schema.objtype.title()} Reference Index'
+        if indexer.by is not None:
+            typ += f'By{indexer.by.title()}'
+            name += '.by-' + indexer.by
+            localname += f' by {indexer.by.title()}'
         return type(
             typ,
             (cls,),
@@ -54,7 +58,7 @@ class AnyIndex(Index):
                 'shortname': 'references',
                 'schema': schema,
                 'field': field,
-                'classifier': classifier,
+                'indexer': indexer,
             },
         )
 
@@ -64,11 +68,11 @@ class AnyIndex(Index):
         """Override parent method."""
 
         # Single index for generating normal entries (subtype=0).
-        # Category (lv1) →  Category (for ordering objids) →  objids
-        singleidx: dict[Classif, dict[Classif, set[str]]] = {}
+        # Main Category →  Extra (for ordering objids) →  objids
+        singleidx: dict[Category, dict[Category, set[str]]] = {}
         # Dual index for generating entrie (subtype=1) and its sub-entries (subtype=2).
-        # Category (lv1) →  Category (lv2) →  Category (for ordering objids) →  objids
-        dualidx: dict[Classif, dict[Classif, dict[Classif, set[str]]]] = {}
+        # Main category  →  Sub-Category →  Extra (for ordering objids) →  objids
+        dualidx: dict[Category, dict[Category, dict[Category, set[str]]]] = {}
 
         objrefs = sorted(self.domain.data['references'].items())
         for (objtype, objfield, objref), objids in objrefs:
@@ -77,57 +81,57 @@ class AnyIndex(Index):
             if self.field and objfield != self.field:
                 continue
 
-            # TODO: pass a real value
-            for catelog in self.classifier.classify(Value(objref)):
-                category = catelog.as_category()
-                entry = catelog.as_entry()
-                if entry is None:
-                    singleidx.setdefault(category, {}).setdefault(
-                        catelog, set()
+            # TODO: pass a real Value
+            for category in self.indexer.classify(Value(objref)):
+                main = category.as_main()
+                sub = category.as_sub()
+                if sub is None:
+                    singleidx.setdefault(main, {}).setdefault(
+                        category, set()
                     ).update(objids)
                 else:
-                    dualidx.setdefault(category, {}).setdefault(entry, {}).setdefault(
-                        catelog, set()
+                    dualidx.setdefault(main, {}).setdefault(sub, {}).setdefault(
+                        category, set()
                     ).update(objids)
 
-        content: dict[Classif, list[IndexEntry]] = {}  # category →  entries
-        for category, entries in self._sort_by_catelog(singleidx):
-            index_entries = content.setdefault(category, [])
-            for category, objids in self._sort_by_catelog(entries):
+        content: dict[Category, list[IndexEntry]] = {}  # category →  entries
+        for main, entries in self._sort_by_category(singleidx):
+            index_entries = content.setdefault(main, [])
+            for main, objids in self._sort_by_category(entries):
                 for objid in objids:
-                    entry = self._generate_index_entry(objid, docnames, category)
+                    entry = self._generate_index_entry(objid, docnames, main)
                     if entry is None:
                         continue
                     index_entries.append(entry)
 
-        for category, entries in self._sort_by_catelog(dualidx):
-            index_entries = content.setdefault(category, [])
-            for entry, subentries in self._sort_by_catelog(entries):
-                index_entries.append(self._generate_empty_index_entry(entry))
-                for subentry, objids in self._sort_by_catelog(subentries):
+        for main, entries in self._sort_by_category(dualidx):
+            index_entries = content.setdefault(main, [])
+            for sub, subentries in self._sort_by_category(entries):
+                index_entries.append(self._generate_subcategory_index_entry(sub))
+                for subentry, objids in self._sort_by_category(subentries):
                     for objid in objids:
                         entry = self._generate_index_entry(objid, docnames, subentry)
                         if entry is None:
                             continue
                         index_entries.append(entry)
 
-        # sort by category, and map classif -> str
+        # sort by category, and map category -> str
         sorted_content = [
-            (classif.leaf, entries)
-            for classif, entries in self._sort_by_catelog(content)
+            (category.main, entries)
+            for category, entries in self._sort_by_category(content)
         ]
 
         return sorted_content, False
 
     def _generate_index_entry(
-        self, objid: str, ignore_docnames: Iterable[str] | None, category: Classif
+        self, objid: str, ignore_docnames: Iterable[str] | None, category: Category
     ) -> IndexEntry | None:
         docname, anchor, obj = self.domain.data['objects'][self.schema.objtype, objid]
         if ignore_docnames and docname not in ignore_docnames:
             return None
         name = self.schema.title_of(obj) or objid
-        subtype = category.index_entry_subtype
-        extra = category.leaf
+        subtype = category.index_entry_subtype()
+        extra = category.extra or ''
         objcont = self.schema.content_of(obj)
         if isinstance(objcont, str):
             desc = objcont
@@ -148,16 +152,17 @@ class AnyIndex(Index):
             desc,  # description for the entry
         )
 
-    def _generate_empty_index_entry(self, category: Classif) -> IndexEntry:
+    def _generate_subcategory_index_entry(self, category: Category) -> IndexEntry:
+        assert category.sub is not None
         return IndexEntry(
-            category.leaf, category.index_entry_subtype, '', '', '', '', ''
+            category.sub, category.index_entry_subtype(), '', '', '', '', ''
         )
 
     _T = TypeVar('_T')
 
-    def _sort_by_catelog(self, d: dict[Classif, _T]) -> list[tuple[Classif, _T]]:
-        """Helper for sorting dict items by Category."""
-        return self.classifier.sort(d.items(), lambda x: x[0])
+    def _sort_by_category(self, d: dict[Category, _T]) -> list[tuple[Category, _T]]:
+        """Helper for sorting dict items by classif."""
+        return self.indexer.sort(d.items(), lambda x: x[0])
 
 
 def strip_rst_markups(rst: str) -> str:
