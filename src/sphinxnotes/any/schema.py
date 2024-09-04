@@ -353,9 +353,7 @@ class Field(object):
     ref: bool = False
     required: bool = False
     form: Form = Forms.PLAIN
-    indexers: list[Indexer] = dataclasses.field(
-        default_factory=lambda: [LiteralIndexer()]
-    )
+    indexers: list[Indexer] = dataclasses.field(default_factory=lambda: [])
 
     def value_of(self, rawval: str | None) -> Value:
         if rawval is None:
@@ -438,7 +436,9 @@ class Schema(object):
             else:
                 has_unique = field.uniq
 
-    def fields(self, all=True) -> list[tuple[str, Field]]:
+    def fields(
+        self, exclude_name: bool = False, exclude_content: bool = False
+    ) -> list[tuple[str, Field]]:
         """Return all fields of schema, including name and content.
 
         .. note::
@@ -448,9 +448,9 @@ class Schema(object):
         """
 
         fields = list(self.attrs.items())
-        if all and self.content is not None:
+        if not exclude_content and self.content is not None:
             fields.insert(0, (self.CONTENT_KEY, self.content))
-        if all and self.name is not None:
+        if not exclude_name and self.name is not None:
             fields.insert(0, (self.NAME_KEY, self.name))
         return fields
 
@@ -631,3 +631,58 @@ class Schema(object):
         if not isinstance(other, Schema):
             return False
         return pickle.dumps(self) == pickle.dumps(other)
+
+
+class RefType(object):
+    """Reference type, object can be referenced:
+
+    - by type *objtype*
+    - by field *objtype*.*field*
+    - by field index *objtype*.*field*+by-*index*
+    """
+
+    #: Object type, same to :attr:`Schema.objtype`.
+    objtype: str
+    #: Name of field, see :attr:`.schema.Field.name`.
+    field: str | None
+    #: Name of indexer, see :attr:`.schema.Indexer.name`.
+    indexer: str | None
+
+    def __init__(
+        self, objtype: str, field: str | None = None, indexer: str | None = None
+    ):
+        self.objtype = objtype
+        self.field = field
+        self.indexer = indexer
+
+    @classmethod
+    def parse(cls, reftype: str):
+        """Format: <objtype>[.<field>[+<action>]]. Possible action:
+
+        - by-<indexer>
+        """
+
+        if '+' in reftype:
+            reftype, action = reftype.split('+', 1)
+            if action.startswith('by-'):
+                index = action[3:]
+            else:
+                raise ValueError(f'unknown action {action} in RefType {reftype}')
+        else:
+            index = None
+
+        if '.' in reftype:
+            objtype, field = reftype.split('.', 1)
+        else:
+            objtype, field = reftype, None
+
+        return cls(objtype, field, index)
+
+    def __str__(self):
+        """Used as role name and index name."""
+        s = self.objtype
+        if self.field:
+            s += '.' + self.field
+        if self.indexer:
+            s += '+' + 'by-' + self.indexer
+        return s

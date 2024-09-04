@@ -13,8 +13,6 @@ from __future__ import annotations
 from sphinx.util import logging
 from sphinx.roles import XRefRole
 
-from .schema import Schema
-
 logger = logging.getLogger(__name__)
 
 
@@ -25,11 +23,7 @@ class AnyRole(XRefRole):
     objtype.
     """
 
-    @classmethod
-    def derive(cls, schema: Schema, field: str | None = None) -> type['AnyRole']:
-        """Generate an AnyRole child class for referencing object."""
-        return type(
-            'Any%s%sRole' % (schema.objtype.title(), field.title() if field else ''),
-            (cls,),
-            {},
-        )
+    # NOTE: derive is not necessary for now.
+    # @classmethod
+    # def derive(cls) -> type['AnyRole']:
+    #     pass
