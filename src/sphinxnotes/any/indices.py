@@ -16,7 +16,7 @@ from sphinx.util import logging
 from docutils import core, nodes
 from docutils.parsers.rst import roles
 
-from .schema import Schema, Value, Indexer, Category
+from .schema import Schema, Value, Indexer, Category, RefType
 
 logger = logging.getLogger(__name__)
 
@@ -28,34 +28,35 @@ class AnyIndex(Index):
 
     domain: Domain  # for type hint
     schema: Schema
-    field: str | None = None
+    reftype: RefType
     indexer: Indexer
 
     @classmethod
     def derive(
-        cls, schema: Schema, field: str | None, indexer: Indexer
+        cls, schema: Schema, reftype: RefType, indexer: Indexer
     ) -> type['AnyIndex']:
         """Generate an AnyIndex child class for indexing object."""
-        # TODO: add Indexer.name
-        if field:
-            typ = f'Any{schema.objtype.title()}{field.title()}IndexBy{indexer.name.title()}'
-            name = schema.objtype + '.' + field + '.by-' + indexer.name  # TODO: RefType
-            localname = f'{schema.objtype.title()} {field.title()} Reference Index by {indexer.name.title()}'
-        else:
-            typ = f'Any{schema.objtype.title()}IndexBy{indexer.name.title()}'
-            name = schema.objtype + '.by-' + indexer.name  # TODO: RefType
+        if reftype.field:
+            clsname = f'Any{reftype.objtype.title()}{reftype.field.title()}Index'
             localname = (
-                f'{schema.objtype.title()} Reference Index by {indexer.name.title()}'
+                f'{reftype.objtype.title()} {reftype.field.title()} Reference Index'
             )
+        else:
+            clsname = f'Any{reftype.objtype.title()}Index'
+            localname = f'{reftype.objtype.title()} Reference Index'
+        if reftype.indexer:
+            clsname += 'By' + reftype.indexer.title()
+            localname += ' by ' + reftype.indexer.title()
         return type(
-            typ,
+            clsname,
             (cls,),
             {
-                'name': name,
+                # HTML builder will generate /<domain>-<name>.html index page.
+                'name': str(reftype),
                 'localname': localname,
                 'shortname': 'references',
                 'schema': schema,
-                'field': field,
+                'reftype': reftype,
                 'indexer': indexer,
             },
         )
@@ -74,9 +75,9 @@ class AnyIndex(Index):
 
         objrefs = sorted(self.domain.data['references'].items())
         for (objtype, objfield, objref), objids in objrefs:
-            if objtype != self.schema.objtype:
+            if objtype != self.reftype.objtype:
                 continue
-            if self.field and objfield != self.field:
+            if self.reftype.field and objfield != self.reftype.field:
                 continue
 
             # TODO: pass a real Value
@@ -124,7 +125,7 @@ class AnyIndex(Index):
     def _generate_index_entry(
         self, objid: str, ignore_docnames: Iterable[str] | None, category: Category
     ) -> IndexEntry | None:
-        docname, anchor, obj = self.domain.data['objects'][self.schema.objtype, objid]
+        docname, anchor, obj = self.domain.data['objects'][self.reftype.objtype, objid]
         if ignore_docnames and docname not in ignore_docnames:
             return None
         name = self.schema.title_of(obj) or objid

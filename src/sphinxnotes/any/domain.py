@@ -18,7 +18,7 @@ from sphinx.domains import Domain, ObjType
 from sphinx.util import logging
 from sphinx.util.nodes import make_refnode
 
-from .schema import Schema, Object
+from .schema import Schema, Object, RefType, Indexer, LiteralIndexer
 from .directives import AnyDirective
 from .roles import AnyRole
 from .indices import AnyIndex
@@ -49,9 +49,9 @@ class AnyDomain(Domain):
     roles: dict[str, RoleFunction] = {}
     #: A list of Index subclasses
     indices: list[type[AnyIndex]] = []
-    #: AnyDomain specific: type -> index class
+    #: AnyDomain specific: reftype -> index class
     _indices_for_reftype: dict[str, type[AnyIndex]] = {}
-    #: AnyDomain specific: type -> Schema instance
+    #: AnyDomain specific: objtype -> Schema instance
     _schemas: dict[str, Schema] = {}
 
     initial_data: dict[str, Any] = {
@@ -120,7 +120,7 @@ class AnyDomain(Domain):
         logger.debug('[any] resolveing xref of %s', (typ, target))
 
         reftype = RefType.parse(typ)
-        objtype, objfield, objidx = reftype.objtype, reftype.field, reftype.index
+        objtype, objfield, objidx = reftype.objtype, reftype.field, reftype.indexer
         objids = set()
         if objidx:
             pass  # no need to lookup objds
@@ -142,10 +142,7 @@ class AnyDomain(Domain):
         if len(objids) > 1 or objidx is not None:
             # Mulitple objects found or reference index explicitly,
             # create link to indices page.
-            (
-                todocname,
-                anchor,
-            ) = self._get_index_anchor(typ, target)
+            (todocname, anchor) = self._get_index_anchor(typ, target)
             if not has_explicit_title:
                 newtitle = schema.render_ambiguous_reference(title)
             logger.debug(
@@ -181,43 +178,51 @@ class AnyDomain(Domain):
         # Add to schemas dict
         cls._schemas[schema.objtype] = schema
 
-        # Generates reftypes for all referenceable fields
-        # For later use when generating roles and indices.
-        reftypes = [str(RefType(schema.objtype, None, None))]
-        for name, field in schema.fields(all=False):
-            if not field.ref:
-                continue
-
-            # Field is unique , use ``:objtype.field:`` to reference.
-            if field.uniq:
-                reftype = str(RefType(schema.objtype, name, None))
-                reftypes.append(reftype)
-                continue
-
-        for name, field in schema.fields(all=False):
-            # Field is not unique, link to index page.
-            for indexer in field.indexers:
-                reftype = str(RefType(schema.objtype, name, indexer.name))
-                reftypes.append(reftype)
-
-                # FIXME: name and content can not be index now
-                index = AnyIndex.derive(schema, name, indexer)
-                cls.indices.append(index)
-                cls._indices_for_reftype[reftype] = index
-
-        for reftype in reftypes:
-            field = RefType.parse(reftype).field
-            # Create role for referencing object by field
-            cls.roles[reftype] = AnyRole.derive(schema, field)(
+        def mkrole(reftype: RefType):
+            """Create and register role for referencing object."""
+            role = AnyRole(
                 # Emit warning when missing reference (node['refwarn'] = True)
                 warn_dangling=True,
                 # Inner node (contnode) would be replaced in resolve_xref method,
                 # so fix its class.
                 innernodeclass=literal,
             )
+            cls.roles[str(reftype)] = role
+            logger.debug(f'[any] make role {reftype} →  {type(role)}')
+
+        def mkindex(reftype: RefType, indexer: Indexer):
+            """Create and register object index."""
+            index = AnyIndex.derive(schema, reftype, indexer)
+            cls.indices.append(index)
+            cls._indices_for_reftype[str(reftype)] = index
+            logger.debug(f'[any] make index {reftype} →  {type(index)}')
+
+        # Create all-in-one role and index (do not distinguish reference fields).
+        reftypes = [RefType(schema.objtype)]
+        mkrole(reftypes[0])
+        mkindex(reftypes[0], LiteralIndexer())
+
+        # Create {field,indexer}-specificed role and index.
+        for name, field in schema.fields():
+            if field.ref:
+                reftype = RefType(schema.objtype, field=name)
+                reftypes.append(reftype)
+                mkrole(reftype)  # create a role to reference object(s)
+                # Create a fallback indexer, for possible ambiguous reference
+                # (if field is not unique).
+                mkindex(reftype, LiteralIndexer())
+
+            for indexer in field.indexers:
+                reftype = RefType(schema.objtype, field=name, indexer=indexer.name)
+                reftypes.append(reftype)
+                # Create role and index for reference objects by index.
+                mkrole(reftype)
+                mkindex(reftype, indexer)
 
         # TODO: document
-        cls.object_types[schema.objtype] = ObjType(schema.objtype, *reftypes)
+        cls.object_types[schema.objtype] = ObjType(
+            schema.objtype, *[str(x) for x in reftypes]
+        )
         # Generates directive for creating object.
         cls.directives[schema.objtype] = AnyDirective.derive(schema)
 
@@ -238,42 +243,9 @@ def warn_missing_reference(
     if domain and domain.name != AnyDomain.name:
         return None
 
-    objtype = RefType.parse(node['reftype']).objtype
+    reftype = RefType.parse(node['reftype'])
     target = node['reftarget']
 
-    msg = f'undefined {objtype}: {target}'
-    logger.warning(msg, location=node, type='ref', subtype=objtype)
+    msg = f'undefined reftype {reftype}: {target}'
+    logger.warning(msg, location=node, type='ref', subtype=reftype.objtype)
     return True
-
-
-class RefType(object):
-    """Reference type, used as role name and node['reftype'] and
-    and *typ* argument of :meth:`AnyDomain.resolve_xref` method."""
-
-    #: :attr:`ObjType.lname`
-    objtype: str
-    #: :attr:`.schema.Field.name`
-    field: str | None
-    #: :attr:`.schema.Indexer.name`
-    index: str | None
-
-    def __init__(self, objtype: str, field: str | None, index: str | None):
-        self.objtype = objtype
-        self.field = field
-        self.index = index
-
-    @classmethod
-    def parse(cls, reftype: str):
-        v = reftype.split('.', maxsplit=2)
-        objtype = v[0]
-        field = v[1] if len(v) > 1 else None
-        index = v[2][3:] if len(v) > 2 else None  # skip "by-"
-        return cls(objtype, field, index)
-
-    def __str__(self):
-        s = self.objtype
-        if self.field is not None:
-            s += '.' + self.field
-        if self.index is not None:
-            s += '.' + 'by-' + self.index
-        return s
