@@ -160,9 +160,8 @@ class Indexer(object):
 
     _T = TypeVar('_T')
 
-    @abstractmethod
     def sort(self, data: Iterable[_T], key: Callable[[_T], Category]) -> list[_T]:
-        raise NotImplementedError
+        return sorted(data, key=lambda x: key(x)._sort_key)
 
     @abstractmethod
     def anchor(self, refval: str) -> str:
@@ -177,11 +176,6 @@ class LiteralIndexer(Indexer):
         for v in objref.as_list():
             entries.append(Category(main=v))
         return entries
-
-    def sort(
-        self, data: Iterable[Indexer._T], key: Callable[[Indexer._T], Category]
-    ) -> list[Indexer._T]:
-        return sorted(data, key=lambda x: key(x)._sort_key)
 
     def anchor(self, refval: str) -> str:
         return refval
@@ -301,6 +295,27 @@ class MonthIndexer(Indexer):
             anchor = strftime(self.dispfmt_ym, t)
             return f'cap-{anchor}'
         return ''
+
+
+class PathIndexer(Indexer):
+    name = 'path'
+
+    def __init__(self, sep: str, maxsplit: Literal[1, 2]):
+        self.sep = sep
+        self.maxsplit = maxsplit
+
+    def classify(self, objref: Value) -> list[Category]:
+        entries = []
+        for v in objref.as_list():
+            comps = v.split(self.sep, maxsplit=self.maxsplit)
+            category = Category(main=comps[0], extra=v)
+            if self.maxsplit == 2:
+                category.sub = v[1] if len(comps) > 1 else None
+            entries.append(category)
+        return entries
+
+    def anchor(self, refval: str) -> str:
+        return refval.split(self.sep, maxsplit=self.maxsplit)[0]
 
 
 @dataclasses.dataclass(frozen=True)
