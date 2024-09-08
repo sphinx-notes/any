@@ -1,5 +1,5 @@
 from textwrap import dedent
-from any import Schema, Field
+from any.api import Schema, Field
 
 tmplvar = Schema(
     'tmplvar',

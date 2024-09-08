@@ -4,7 +4,7 @@ import unittest
 from textwrap import dedent
 
 sys.path.insert(0, os.path.abspath('./src/sphinxnotes'))
-from any import Schema, Field
+from any.api import Schema, Field
 
 
 class TestSchema(unittest.TestCase):

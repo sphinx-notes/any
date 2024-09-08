@@ -18,10 +18,11 @@ from sphinx.domains import Domain, ObjType
 from sphinx.util import logging
 from sphinx.util.nodes import make_refnode
 
-from .schema import Schema, Object, RefType, Indexer, LiteralIndexer
+from .objects import Schema, Object, RefType, Indexer
 from .directives import AnyDirective
 from .roles import AnyRole
 from .indices import AnyIndex
+from .indexers import DEFAULT_INDEXER
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -200,7 +201,7 @@ class AnyDomain(Domain):
         # Create all-in-one role and index (do not distinguish reference fields).
         reftypes = [RefType(schema.objtype)]
         mkrole(reftypes[0])
-        mkindex(reftypes[0], LiteralIndexer())
+        mkindex(reftypes[0], DEFAULT_INDEXER)
 
         # Create {field,indexer}-specificed role and index.
         for name, field in schema.fields():
@@ -210,7 +211,7 @@ class AnyDomain(Domain):
                 mkrole(reftype)  # create a role to reference object(s)
                 # Create a fallback indexer, for possible ambiguous reference
                 # (if field is not unique).
-                mkindex(reftype, LiteralIndexer())
+                mkindex(reftype, DEFAULT_INDEXER)
 
             for indexer in field.indexers:
                 reftype = RefType(schema.objtype, field=name, indexer=indexer.name)

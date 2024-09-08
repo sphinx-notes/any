@@ -11,12 +11,12 @@ Object index implementations
 from typing import Iterable, TypeVar
 import re
 
-from sphinx.domains import Domain, Index, IndexEntry
-from sphinx.util import logging
 from docutils import core, nodes
 from docutils.parsers.rst import roles
+from sphinx.domains import Domain, Index, IndexEntry
+from sphinx.util import logging
 
-from .schema import Schema, Value, Indexer, Category, RefType
+from .objects import Schema, Value, Indexer, Category, RefType
 
 logger = logging.getLogger(__name__)
 
