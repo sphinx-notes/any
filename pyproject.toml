@@ -27,7 +27,7 @@ classifiers = [
     "Topic :: Documentation :: Sphinx",
 ]
 
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 dependencies = [
     "Sphinx >= 4",
     "Jinja2",
