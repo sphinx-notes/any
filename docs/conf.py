@@ -114,12 +114,7 @@ extensions.append('any')
 
 # 
 # DOG FOOD CONFIGURATION START
-from any import Schema, Field as F
-from any.schema import YearIndexer, MonthIndexer
-sys.path.insert(0, os.path.abspath('.'))
-
-by_year = YearIndexer()
-by_month = MonthIndexer()
+from any.api import Schema, Field as F, by_year, by_month
 
 version_schema = Schema('version',
                         name=F(uniq=True, ref=True, required=True, form=F.Forms.LINES),

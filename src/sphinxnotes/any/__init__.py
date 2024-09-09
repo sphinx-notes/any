@@ -10,23 +10,20 @@ Sphinx extension entrypoint.
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from importlib.metadata import version
+
 from sphinx.util import logging
 
 from .template import Environment as TemplateEnvironment
 from .domain import AnyDomain, warn_missing_reference
-from .schema import Schema, Field
+from .objects import Schema
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.config import Config
 
-__version__ = '2.3.1'
 
 logger = logging.getLogger(__name__)
-
-# Re-Export
-Field = Field
-Schema = Schema
 
 
 def _config_inited(app: Sphinx, config: Config) -> None:
@@ -51,4 +48,4 @@ def setup(app: Sphinx):
     app.connect('config-inited', _config_inited)
     app.connect('warn-missing-reference', warn_missing_reference)
 
-    return {'version': __version__}
+    return {'version': version('sphinxnotes.any')}
