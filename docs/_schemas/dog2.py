@@ -1,11 +1,11 @@
 from textwrap import dedent
-from any import Schema, Field
+from any.api import Schema, Field
 
 dog = Schema(
     'dog',
     attrs={
-        'breed': Field(referenceable=True),
-        'color': Field(referenceable=True, form=Field.Form.WORDS),
+        'breed': Field(ref=True),
+        'color': Field(ref=True, form=Field.Forms.WORDS),
     },
     description_template=dedent("""
         :Breed: :any:dog.breed:`{{ breed }}`

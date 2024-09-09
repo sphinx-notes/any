@@ -15,13 +15,12 @@ from docutils import nodes
 from docutils.nodes import Node, Element, fully_normalize_name
 from docutils.statemachine import StringList
 from docutils.parsers.rst import directives
-
 from sphinx import addnodes
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_id, nested_parse_with_titles
 from sphinx.util import logging
 
-from .schema import Schema, Object
+from .objects import Schema, Object
 
 logger = logging.getLogger(__name__)
 

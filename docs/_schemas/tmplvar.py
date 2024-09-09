@@ -1,9 +1,9 @@
 from textwrap import dedent
-from any import Schema, Field
+from any.api import Schema, Field
 
 tmplvar = Schema(
     'tmplvar',
-    name=Field(unique=True, referenceable=True),
+    name=Field(uniq=True, ref=True),
     attrs={
         'type': Field(),
         'conf': Field(),

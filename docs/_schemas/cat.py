@@ -1,12 +1,12 @@
 from textwrap import dedent
-from any import Schema, Field
+from any.api import Schema, Field
 
 cat = Schema(
     'cat',
-    name=Field(referenceable=True, form=Field.Form.LINES),
+    name=Field(ref=True, form=Field.Forms.LINES),
     attrs={
-        'id': Field(unique=True, referenceable=True, required=True),
-        'color': Field(referenceable=True),
+        'id': Field(uniq=True, ref=True, required=True),
+        'color': Field(ref=True),
         'picture': Field(),
     },
     description_template=dedent("""
