@@ -57,33 +57,6 @@ class Value(object):
         return str(self._v)
 
 
-class Form(ABC):
-    @abstractmethod
-    def extract(self, raw: str) -> Value:
-        """Extract :class:`Value` from field's raw value."""
-        raise NotImplementedError
-
-
-class Single(Form):
-    def __init__(self, strip=False):
-        self.strip = strip
-
-    def extract(self, raw: str) -> Value:
-        return Value(raw.strip() if self.strip else raw)
-
-
-class List(Form):
-    def __init__(self, sep: str, strip=False, max=-1):
-        self.strip = strip
-        self.sep = sep
-        self.max = max
-
-    def extract(self, raw: str) -> Value:
-        strv = raw.split(self.sep, maxsplit=self.max)
-        if self.strip:
-            strv = [x.strip() for x in strv]
-        return Value(strv)
-
 
 @dataclasses.dataclass
 class Category(object):
