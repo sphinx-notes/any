@@ -9,16 +9,19 @@ import jinja2
 class Environment(jinja2.Environment):
     pass
 
-def render(cls: Type[SphinxRole] | Type[SphinxDirective], ctx: dict[str, Any]):
+def render(obj: SphinxDirective | SphinxRole, ctx: dict[str, Any]):
     env = Environment()
-    if cls is SphinxDirective:
+    print('type', obj)
+    if isinstance(obj, SphinxDirective):
+        print('>>>>>>>>>>>>>> is dir')
         template = dedent("""
                           {{ args[0] }}
                           ==============================================
 
                           {{ content }}
                           """)
-    else:
+    if isinstance(obj, SphinxRole):
+        print('>>>>>>>>>>>>>> is role')
         template = "<{{ text }}>"
 
     return env.from_string(template).render(ctx)

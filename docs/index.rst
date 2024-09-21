@@ -7,11 +7,11 @@ sphinxnotes-any
 
 Role:
 
-:test:`Hey!`
+:rrr:`Hey!`
 
 
 Directive:
 
-.. test:: Hey!
+.. ddd:: Hey!
 
    I am here.

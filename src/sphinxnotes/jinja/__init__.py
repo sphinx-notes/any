@@ -15,7 +15,7 @@ from .context import ContextRole, ContextDirective
 def setup(app: Sphinx):
     """Sphinx extension entrypoint."""
 
-    app.add_role('test', ContextRole.derive('test'))
-    app.add_directive('test', ContextDirective.derive('test', required_arguments=1, has_content=True))
+    app.add_role('rrr', ContextRole.derive('rrr')())
+    app.add_directive('ddd', ContextDirective.derive('ddd', required_arguments=1, has_content=True))
 
-    return {'version': version('sphinxnotes.any')}
+    return {}

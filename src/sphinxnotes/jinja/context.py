@@ -25,7 +25,7 @@ from docutils.parsers.rst import directives, states
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.util import logging
 
-import .template
+from . import template
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ class ContextDirective(SphinxDirective):
         for key in self.option_spec or {}:
             ctx[key] = self.options.get(key)
         
-        text = template.render(type(self), ctx)
+        text = template.render(self, ctx)
 
         return self.parse_text_to_nodes(text, allow_section_headings=True)
 
@@ -97,7 +97,7 @@ class ContextRole(SphinxRole):
     def derive(cls, role_name: str, text_variable_name: str = 'text') -> Type['ContextRole']:
         # Generate sphinx role class
         return type(
-            role_name.title() + 'ContextDirective',
+            role_name.title() + 'ContextRole',
             (ContextRole,),
             {
                 'text_variable_name': text_variable_name,
@@ -109,12 +109,12 @@ class ContextRole(SphinxRole):
             self.text_variable_name: self.text,
         }
 
-        text = template.render(type(self), ctx)
+        text = template.render(self, ctx)
 
         parent = inline(self.rawtext, '', **self.options)
         memo = states.Struct(
-            document=inliner.document, # type: ignore[attr-defined]
-            reporter=inliner.reporter, # type: ignore[attr-defined]
-            language=inliner.language) # type: ignore[attr-defined]
+            document=self.inliner.document, # type: ignore[attr-defined]
+            reporter=self.inliner.reporter, # type: ignore[attr-defined]
+            language=self.inliner.language) # type: ignore[attr-defined]
         return self.inliner.parse(text, self.lineno, memo, parent) # type: ignore[attr-defined]
 
