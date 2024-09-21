@@ -18,85 +18,17 @@ context:
 """
 
 from __future__ import annotations
-from typing import Type
-from abc import ABC, abstractmethod
+from typing import Type, Callable, Any
 
-from docutils import nodes
-from docutils.nodes import Node, Element, fully_normalize_name
-from docutils.statemachine import StringList
-from docutils.parsers.rst import directives
-from sphinx import addnodes
+from docutils.nodes import Node, system_message, inline
+from docutils.parsers.rst import directives, states
 from sphinx.util.docutils import SphinxDirective, SphinxRole
-from sphinx.util.nodes import make_id, nested_parse_with_titles
 from sphinx.util import logging
+
+import .template
 
 logger = logging.getLogger(__name__)
 
-class Value(object):
-    """Immutable optional string value of :cls:`Field`."""
-
-    type T = None | str | list[str]
-    _v: T
-
-    def __init__(self, v: T):
-        self._v = v # TODO: type checking
-
-    @property
-    def value(self) -> T:
-        return self._v
-
-    def as_list(self) -> list[str]:
-        if isinstance(self._v, str):
-            return [self._v]
-        elif isinstance(self._v, list):
-            return self._v
-        else:
-            return []
-
-    def as_str(self) -> str:
-        return str(self._v)
-
-class Form(ABC):
-    @abstractmethod
-    def extract(self, raw: str) -> Value:
-        """Extract :class:`Value` from field's raw value."""
-        raise NotImplementedError
-
-
-class Single(Form):
-    def __init__(self, strip=False):
-        self.strip = strip
-
-    def extract(self, raw: str) -> Value:
-        return Value(raw.strip() if self.strip else raw)
-
-
-class List(Form):
-    def __init__(self, sep: str, strip=False, max=-1):
-        self.strip = strip
-        self.sep = sep
-        self.max = max
-
-    def extract(self, raw: str) -> Value:
-        strv = raw.split(self.sep, maxsplit=self.max)
-        if self.strip:
-            strv = [x.strip() for x in strv]
-        return Value(strv)
-
-
-class Field(object):
-    """
-    Describes value constraint of field of Object.
-
-    The value of field can be single or mulitple string.
-
-    :param form: The form of value.
-    :param required: Whether the field is required.
-        If ture, :py:exc:`ObjectError` will be raised when building documentation
-        if the value is no given.
-    """
-
-    form: Form = Forms.PLAIN
 
 class RstContext(object):
     pass
@@ -107,174 +39,82 @@ class DocContext(object):
 class EnvContext(object):
     pass
 
+
 class ContextDirective(SphinxDirective):
-    """
-    Directive to describe anything.  Not used directly,
-    but dynamically subclassed to describe specific object.
-
-    The class is modified from sphinx.directives.ObjectDescription
-    """
-
-    schema: Schema
-
-    # Member of parent
-    has_content: bool = True
-    required_arguments: int = 0
-    optional_arguments: int = 0
-    final_argument_whitespace: bool = True
-    option_spec: dict[str, callable] = {}
+    arguments_variable_name: str
+    content_variable_name: str
 
     @classmethod
-    def derive(cls, schema: Schema) -> Type['ContextDirective']:
-        """Generate an AnyDirective child class for describing object."""
-        has_content = schema.content is not None
-
-        if not schema.name:
-            required_arguments = 0
-            optional_arguments = 0
-        elif schema.name.required:
-            required_arguments = 1
-            optional_arguments = 0
-        else:
-            required_arguments = 0
-            optional_arguments = 1
-
-        option_spec = {}
-        for name, field in schema.attrs.items():
-            if field.required:
-                option_spec[name] = directives.unchanged_required
-            else:
-                option_spec[name] = directives.unchanged
-
+    def derive(cls, 
+               directive_name: str,
+               required_arguments: int = 0,
+               optional_arguments: int = 0,
+               final_argument_whitespace: bool = False,
+               option_spec: list[str] | dict[str, Callable[[str], Any]] = {},
+               has_content: bool = False,
+               arguments_variable_name: str = 'args',
+               content_variable_name: str = 'content') -> Type['ContextDirective']:
         # Generate directive class
+
+        # If no conversion function provided in option_spec, fallback to directive.unchanged.
+        if isinstance(option_spec, list):
+            option_spec = {k: directives.unchanged for k in option_spec}
+
         return type(
-            'Any%sDirective' % schema.objtype.title(),
+            directive_name.title() + 'ContextDirective',
             (ContextDirective,),
             {
-                'schema': schema,
-                'has_content': has_content,
+                # Member of docutils.parsers.rst.Directive.
                 'required_arguments': required_arguments,
                 'optional_arguments': optional_arguments,
+                'final_argument_whitespace': final_argument_whitespace,
                 'option_spec': option_spec,
+                'has_content': has_content,
+
+                'arguments_variable_name': arguments_variable_name,
+                'content_variable_name': content_variable_name,
             },
         )
 
-    def _build_object(self) -> Object:
-        """Build object information for template rendering."""
-        return self.schema.object(
-            name=self.arguments[0] if self.arguments else None,
-            attrs=self.options,
-            # Convert docutils.statemachine.ViewList.data -> str
-            content='\n'.join(list(self.content.data)),
-        )
-
-    def _setup_nodes(
-        self, obj: Object, sectnode: Element, ahrnode: Element | None, contnode: Element
-    ) -> None:
-        """
-        Attach necessary informations to nodes and note them.
-
-        The necessary information contains: domain info, basic attributes for nodes
-        (ids, names, classes...), name of anchor, description content and so on.
-
-        :param sectnode: Section node, used as container of the whole object description
-        :param ahrnode: Anchor node, used to mark the location of object description
-        :param contnode: Content node, which contains the description content
-        """
-        domainname, objtype = self.name.split(':', 1)
-        domain = self.env.get_domain(domainname)
-
-        # Attach domain related info to section node
-        sectnode['domain'] = domain.name
-        # 'desctype' is a backwards compatible attribute
-        sectnode['objtype'] = sectnode['desctype'] = objtype
-        sectnode['classes'].append(domain.name)
-
-        # Setup anchor
-        if ahrnode is not None:
-            _, objid = self.schema.identifier_of(obj)
-            ahrid = make_id(self.env, self.state.document, prefix=objtype, term=objid)
-            ahrnode['ids'].append(ahrid)
-            # Add object name to node's names attribute.
-            # 'names' is space-separated list containing normalized reference
-            # names of an element.
-            name = self.schema.name_of(obj)
-            if isinstance(name, str):
-                ahrnode['names'].append(fully_normalize_name(name))
-            elif isinstance(name, list):
-                ahrnode['names'].extend([fully_normalize_name(x) for x in name])
-            self.state.document.note_explicit_target(ahrnode)
-            # Note object by docu fields
-            domain.note_object(
-                self.env.docname, ahrid, self.schema, obj
-            )  # FIXME: Cast to AnyDomain
-
-        # Parse description
-        nested_parse_with_titles(
-            self.state, StringList(self.schema.render_description(obj)), contnode
-        )
-
-    def _run_section(self, obj: Object) -> list[Node]:
-        # Get the title of the "section" where the directive is located
-        sectnode = self.state.parent
-        titlenode = sectnode.next_node(nodes.title)
-        if not titlenode or titlenode.parent != sectnode:
-            # Title should be direct child of section
-            msg = 'Failed to get title of current section'
-            logger.warning(msg, location=sectnode)
-            sm = nodes.system_message(
-                msg, type='WARNING', level=2, backrefs=[], source=''
-            )
-            sectnode += sm
-            title = ''
-        else:
-            title = titlenode.astext()
-        # Replace the first name "_" with section title
-        name = title + obj.name[1:]
-        # Object is immutable, so create a new one
-        obj = self.schema.object(name=name, attrs=obj.attrs, content=obj.content)
-        # NOTE: In _setup_nodes, the anchor node(ahrnode) will be noted by
-        # `note_explicit_target` for ahrnode, while `sectnode` is already noted
-        # by `note_implicit_target`.
-        # Multiple `note_xxx_target` calls to same node causes undefined behavior,
-        # so we use `titlenode` as anchor node
-        #
-        # See https://github.com/sphinx-notes/any/issues/18
-        self._setup_nodes(obj, sectnode, titlenode, sectnode)
-        # Add all content to existed section, so return nothing
-        return []
-
-    def _run_objdesc(self, obj: Object) -> list[Node]:
-        descnode = addnodes.desc()
-
-        # Generate signature node
-        title = self.schema.title_of(obj)
-        if title is None:
-            # Use non-generated object ID as replacement of title
-            idfield, objid = self.schema.identifier_of(obj)
-            title = objid if idfield is not None else None
-        if title is not None:
-            signode = addnodes.desc_signature(title, '')
-            signode += addnodes.desc_name(title, title)
-            descnode.append(signode)
-        else:
-            signode = None
-
-        # Generate content node
-        contnode = addnodes.desc_content()
-        descnode.append(contnode)
-        self._setup_nodes(obj, descnode, signode, contnode)
-        return [descnode]
-
     def run(self) -> list[Node]:
-        obj = self._build_object()
-        if self.schema.title_of(obj) == '_':
-            # If no argument is given, or the first argument is '_',
-            # use the section title as object name and anchor,
-            # append content nodes to section node
-            return self._run_section(obj)
-        else:
-            # Else, create Sphinx ObjectDescription(sphinx.addnodes.dsec_*)
-            return self._run_objdesc(obj)
+        ctx = {}
+        if self.required_arguments + self.optional_arguments != 0:
+            ctx[self.arguments_variable_name] = self.arguments
+        if self.has_content:
+            ctx[self.content_variable_name] = self.content
+        for key in self.option_spec or {}:
+            ctx[key] = self.options.get(key)
+        
+        text = template.render(type(self), ctx)
+
+        return self.parse_text_to_nodes(text, allow_section_headings=True)
+
 
 class ContextRole(SphinxRole):
+    text_variable_name: str
+
+    @classmethod
+    def derive(cls, role_name: str, text_variable_name: str = 'text') -> Type['ContextRole']:
+        # Generate sphinx role class
+        return type(
+            role_name.title() + 'ContextDirective',
+            (ContextRole,),
+            {
+                'text_variable_name': text_variable_name,
+            },
+        )
+
+    def run(self) -> tuple[list[Node], list[system_message]]:
+        ctx = {
+            self.text_variable_name: self.text,
+        }
+
+        text = template.render(type(self), ctx)
+
+        parent = inline(self.rawtext, '', **self.options)
+        memo = states.Struct(
+            document=inliner.document, # type: ignore[attr-defined]
+            reporter=inliner.reporter, # type: ignore[attr-defined]
+            language=inliner.language) # type: ignore[attr-defined]
+        return self.inliner.parse(text, self.lineno, memo, parent) # type: ignore[attr-defined]
+
