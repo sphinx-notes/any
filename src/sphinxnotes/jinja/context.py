@@ -19,7 +19,9 @@ context:
 
 from __future__ import annotations
 from typing import Type, Callable, Any
+from abc import ABC, abstractmethod
 
+from docutils import nodes 
 from docutils.nodes import Node, system_message, inline
 from docutils.parsers.rst import directives, states
 from sphinx.util.docutils import SphinxDirective, SphinxRole
@@ -29,21 +31,86 @@ from . import template
 
 logger = logging.getLogger(__name__)
 
+class ContextGenerator(ABC):
 
-class RstContext(object):
-    pass
-
-class DocContext(object):
-    pass
-
-class EnvContext(object):
-    pass
+    @abstractmethod
+    def gen(self) -> dict[str, Any]:
+        raise NotImplementedError()
 
 
-class ContextDirective(SphinxDirective):
-    arguments_variable_name: str
-    content_variable_name: str
+class NodeAdapter(object):
+    node: nodes.Node
 
+    def __init__(self, n: nodes.Node):
+        self.node = n
+
+    @property
+    def doc(self) -> NodeAdapter | None:
+        """Return the current doctree root node."""
+        if not self.node.document:
+            return None
+        return NodeAdapter(self.node.document)
+
+
+    @property
+    def section(self) -> NodeAdapter | None:
+        """Return the current section."""
+        sect = self.node.next_node(nodes.section, include_self=False, descend=False,
+                            siblings=False, ascend=False)
+        if not sect:
+            return None
+        return NodeAdapter(sect)
+
+    @property
+    def dom(self) -> str:
+        return self.node.pformat()
+
+    @property
+    def lines(self) -> list[str]:
+        return self.node.astext().split('\n')
+
+    @property
+    def text(self) -> str:
+        return self.node.astext()
+
+    @property
+    def title(self) -> NodeAdapter | None:
+        if not isinstance(self.node, (nodes.document, nodes.section)):
+            return None
+        title = self.node.first_child_matching_class(nodes.title)
+        if not title:
+            return None
+        return NodeAdapter(self.node[title])
+
+
+        
+class TopLevelVarNames(object):
+    env = 'env'
+    doc = 'doc'
+    self = 'self'
+    super = 'super'
+    git = 'git'
+
+class DirectiveContextVariableNames(object):
+    arguments = 'args'
+    options = 'opts'
+    content = 'content'
+
+    name = 'name'
+    rawtext = 'rawtext'
+    source = 'source'
+    lineno = 'lineno'
+
+
+class RoleContextVariableNames(object):
+    text = 'text' 
+
+    name = 'name'
+    rawtext = 'rawtext'
+    source = 'source'
+    lineno = 'lineno'
+
+class ContextDirective(SphinxDirective, ContextGenerator):
     @classmethod
     def derive(cls, 
                directive_name: str,
@@ -51,9 +118,7 @@ class ContextDirective(SphinxDirective):
                optional_arguments: int = 0,
                final_argument_whitespace: bool = False,
                option_spec: list[str] | dict[str, Callable[[str], Any]] = {},
-               has_content: bool = False,
-               arguments_variable_name: str = 'args',
-               content_variable_name: str = 'content') -> Type['ContextDirective']:
+               has_content: bool = False) -> Type['ContextDirective']:
         # Generate directive class
 
         # If no conversion function provided in option_spec, fallback to directive.unchanged.
@@ -70,27 +135,34 @@ class ContextDirective(SphinxDirective):
                 'final_argument_whitespace': final_argument_whitespace,
                 'option_spec': option_spec,
                 'has_content': has_content,
-
-                'arguments_variable_name': arguments_variable_name,
-                'content_variable_name': content_variable_name,
             },
         )
 
-    def run(self) -> list[Node]:
-        ctx = {}
+    def gen(self) -> dict[str, Any]:
+        ctx = {
+        }
         if self.required_arguments + self.optional_arguments != 0:
-            ctx[self.arguments_variable_name] = self.arguments
+            ctx['args'] = self.arguments
         if self.has_content:
-            ctx[self.content_variable_name] = self.content
+            ctx['content'] = self.content
+        opts = ctx.setdefault('opts', {})
         for key in self.option_spec or {}:
-            ctx[key] = self.options.get(key)
+            opts[key] = self.options.get(key)
+        return ctx
+
         
+    def run(self) -> list[Node]:
+        ctx = {
+            'rst': self.gen(),
+            'env': self.env,
+            'doc': NodeAdapter(self.state.document),
+        }
         text = template.render(self, ctx)
 
         return self.parse_text_to_nodes(text, allow_section_headings=True)
 
 
-class ContextRole(SphinxRole):
+class ContextRole(SphinxRole, ContextGenerator):
     text_variable_name: str
 
     @classmethod
@@ -104,9 +176,17 @@ class ContextRole(SphinxRole):
             },
         )
 
+    def gen(self) -> dict[str, Any]:
+        ctx = {
+            'text': self.text,
+        }
+        return ctx
+
     def run(self) -> tuple[list[Node], list[system_message]]:
         ctx = {
-            self.text_variable_name: self.text,
+            'rst': self.gen(),
+            'env': self.env,
+            'doc': NodeAdapter(self.inliner.document),
         }
 
         text = template.render(self, ctx)
