@@ -29,7 +29,7 @@ dom::
     {% endfor %}
 
 title::
-    {{ doc.title.text }}
+    {{ doc.section.title.text }}
 """
     if isinstance(obj, SphinxRole):
         print('>>>>>>>>>>>>>> is role')

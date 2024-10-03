@@ -76,9 +76,11 @@ class NodeAdapter(object):
     @property
     def title(self) -> NodeAdapter | None:
         if not isinstance(self.node, (nodes.document, nodes.section)):
+            print('node:', type(self.node), 'not doc sect')
             return None
         title = self.node.first_child_matching_class(nodes.title)
         if not title:
+            print('no title')
             return None
         return NodeAdapter(self.node[title])
 
@@ -91,24 +93,20 @@ class TopLevelVarNames(object):
     super = 'super'
     git = 'git'
 
-class DirectiveContextVariableNames(object):
+class _MarkupVars(object):
+    name = 'name'
+    rawtext = 'rawtext'
+    source = 'source'
+    lineno = 'lineno'
+
+class _DirectiveVars(_MarkupVars):
     arguments = 'args'
     options = 'opts'
     content = 'content'
 
-    name = 'name'
-    rawtext = 'rawtext'
-    source = 'source'
-    lineno = 'lineno'
 
-
-class RoleContextVariableNames(object):
-    text = 'text' 
-
-    name = 'name'
-    rawtext = 'rawtext'
-    source = 'source'
-    lineno = 'lineno'
+class RoleVars(_MarkupVars):
+    content = 'content' 
 
 class ContextDirective(SphinxDirective, ContextGenerator):
     @classmethod
@@ -139,7 +137,12 @@ class ContextDirective(SphinxDirective, ContextGenerator):
         )
 
     def gen(self) -> dict[str, Any]:
+        source, lineno = self.get_source_info()
         ctx = {
+            'name': self.name,
+            'rawtext': self.block_text,
+            'source': source,
+            'lineno': lineno,
         }
         if self.required_arguments + self.optional_arguments != 0:
             ctx['args'] = self.arguments
@@ -177,8 +180,13 @@ class ContextRole(SphinxRole, ContextGenerator):
         )
 
     def gen(self) -> dict[str, Any]:
+        source, lineno = self.get_source_info()
         ctx = {
-            'text': self.text,
+            'content': self.text,
+            'name': self.name,
+            'rawtext': self.rawtext,
+            'source': source,
+            'lineno': lineno,
         }
         return ctx
 

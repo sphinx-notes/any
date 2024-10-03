@@ -15,3 +15,6 @@ Directive:
 .. ddd:: Hey!
 
    I am here.
+
+.. autoclass:: jinja.context.NodeAdapter
+   :members:
