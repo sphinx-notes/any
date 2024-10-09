@@ -42,3 +42,20 @@ class ContextDirective(SphinxDirective):
         return self.parse_text_to_nodes(text, allow_section_headings=True)
 
 
+class TemplateDirective(SphinxDirective):
+    required_arguments = 0 
+    optional_arguments = 10
+    final_argument_whitespace = False
+    option_spec = {}
+    has_content = True
+
+    def run(self) -> list[nodes.Node]:
+        ctx = {}
+        for ctxname in self.arguments:
+            ctx = {
+                ctxname: context.load(ctxname)
+            }
+
+        text = template.render(self, ctx)
+
+        return self.parse_text_to_nodes(text, allow_section_headings=True)

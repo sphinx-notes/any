@@ -27,6 +27,7 @@ from sphinx.util import logging
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
+    from sphinx.environment import BuildEnvironment
 
 
 logger = logging.getLogger(__name__)
@@ -39,17 +40,17 @@ class ContextGenerator(ABC):
 _registry: dict[str, ContextGenerator] = {}
 
 class SphinxContext(ContextGenerator):
-    _app: Sphinx
+    _env: BuildEnvironment
 
-    def __init__(self, app: Sphinx):
-        self._app = app
+    def __init__(self, env: BuildEnvironment):
+        self._env = env
 
     def gen(self) -> dict[str, Any]:
         return {
-            'app': self._app,
-            'env': self._app.env,
-            'cfg': self._app.config,
-            'builder': self._app.builder,
+            'app': self._env.app,
+            'env': self._env,
+            'cfg': self._env.config,
+            'builder': self._env.app.builder,
         }
 
 class DocContext(ContextGenerator):
@@ -117,4 +118,19 @@ class RoleContext(ContextGenerator):
         return {
             'content': self._role.text,
         }
+
+def _load_single_ctx(env: BuildEnvironment, ctxname: str) -> dict[str, Any]:
+    if ctxname == 'sphinx':
+        return SphinxContext(env).gen()
+    elif ctxname == 'doc':
+        return DocContext(env).gen()
+
+
+def load_and_fuse(
+    buildenv: BuildEnvironment,
+    fuse_ctxs: list[str],
+    separate_ctxs: list[str],
+    allow_duplicate: bool = False) -> dict[str, Any]:
+
+
 

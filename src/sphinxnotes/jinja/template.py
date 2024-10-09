@@ -38,10 +38,10 @@ title::
 
 class TemplateDirective(SphinxDirective):
     required_arguments = 0 
-    optional_arguments = 1 
+    optional_arguments = 10
     final_argument_whitespace = False
     option_spec = {
-        'extra': directives.unchanged,
+        'ctxs': directives.unchanged,
     }
     has_content = True
 
