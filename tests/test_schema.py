@@ -4,7 +4,7 @@ import unittest
 from textwrap import dedent
 
 sys.path.insert(0, os.path.abspath('./src/sphinxnotes'))
-from any import Schema, Field
+from any.api import Schema, Field
 
 
 class TestSchema(unittest.TestCase):
@@ -15,9 +15,9 @@ class TestSchema(unittest.TestCase):
     def new_schema(self) -> Schema:
         return Schema(
             'cat',
-            name=Field(referenceable=True, form=Field.Form.LINES),
+            name=Field(ref=True, form=Field.Forms.LINES),
             attrs={
-                'id': Field(unique=True, referenceable=True, required=True),
+                'id': Field(uniq=True, ref=True, required=True),
                 'owner': Field(),
                 'height': Field(),
                 'width': Field(),

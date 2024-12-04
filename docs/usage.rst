@@ -15,7 +15,7 @@ Defining Schema
 
 The necessary python classes for writing schema are listed here:
 
-.. autoclass:: any.Schema
+.. autoclass:: any.api.Schema
 
    Class-wide shared special keys used in template rendering context:
 
@@ -26,15 +26,15 @@ The necessary python classes for writing schema are listed here:
 
    |
 
-.. autoclass:: any.Field
+.. autoclass:: any.api.Field
 
    |
 
-.. autoclass:: any.Field.Form
+.. autoclass:: any.api.Field.Forms
 
-   .. autoattribute:: any.Field.Form.PLAIN
-   .. autoattribute:: any.Field.Form.WORDS
-   .. autoattribute:: any.Field.Form.LINES
+   .. autoattribute:: any.api.Field.Forms.PLAIN
+   .. autoattribute:: any.api.Field.Forms.WORDS
+   .. autoattribute:: any.api.Field.Forms.LINES
 
 Documenting Object
 ==================

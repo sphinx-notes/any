@@ -114,25 +114,26 @@ extensions.append('any')
 
 # 
 # DOG FOOD CONFIGURATION START
-from any import Schema, Field as F
-sys.path.insert(0, os.path.abspath('.'))
+from any.api import Schema, Field as F, by_year, by_month
 
 version_schema = Schema('version',
-                        name=F(unique=True, referenceable=True, required=True, form=F.Form.LINES),
-                        attrs={'date': F(referenceable=True)},
-                        content=F(form=F.Form.LINES),
+                        name=F(uniq=True, ref=True, required=True, form=F.Forms.LINES),
+                        attrs={
+                            'date': F(ref=True, indexers=[by_year, by_month]),
+                        },
+                        content=F(form=F.Forms.LINES),
                         description_template=open('_templates/version.rst', 'r').read(),
                         reference_template='🏷️{{ title }}',
                         missing_reference_template='🏷️{{ title }}',
                         ambiguous_reference_template='🏷️{{ title }}')
 confval_schema = Schema('confval',
-                        name=F(unique=True, referenceable=True, required=True, form=F.Form.LINES),
+                        name=F(uniq=True, ref=True, required=True, form=F.Forms.LINES),
                         attrs={
                             'type': F(),
                             'default': F(),
-                            'choice': F(form=F.Form.WORDS),
+                            'choice': F(form=F.Forms.WORDS),
                             'versionadded': F(),
-                            'versionchanged': F(form=F.Form.LINES),
+                            'versionchanged': F(form=F.Forms.LINES),
                         },
                         content=F(),
                         description_template=open('_templates/confval.rst', 'r').read(),
@@ -140,9 +141,9 @@ confval_schema = Schema('confval',
                         missing_reference_template='⚙️{{ title }}',
                         ambiguous_reference_template='⚙️{{ title }}')
 example_schema = Schema('example',
-                        name=F(referenceable=True),
+                        name=F(ref=True),
                         attrs={'style': F()},
-                        content=F(form=F.Form.LINES),
+                        content=F(form=F.Forms.LINES),
                         description_template=open('_templates/example.rst', 'r').read(),
                         reference_template='📝{{ title }}',
                         missing_reference_template='📝{{ title }}',
