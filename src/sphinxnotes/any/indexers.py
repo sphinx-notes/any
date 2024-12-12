@@ -24,7 +24,8 @@ class LiteralIndexer(Indexer):
         return entries
 
     def anchor(self, refval: str) -> str:
-        return refval
+        # https://github.com/sphinx-doc/sphinx/blob/df3d94ffdad09cc2592caccd179004e31aa63227/sphinx/themes/basic/domainindex.html#L28
+        return 'cap-' + refval
 
 
 DEFAULT_INDEXER = LiteralIndexer()
