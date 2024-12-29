@@ -59,8 +59,16 @@ INPUTFMTS = ['%Y-%m-%d', '%Y-%m', '%Y']
 DISPFMTS_Y = '%Y 年'
 DISPFMTS_M = '%m 月'
 DISPFMTS_YM = '%Y 年 %m 月'
-DISPFMTS_MD = '%m 月 %d 日，%a'
+DISPFMTS_DW = '%d 日，%a'
+ZEROTIME = strptime('0001', '%Y')
 
+def _safe_strptime(datestr, fmt):
+    if datestr is None or datestr == '':
+        return ZEROTIME
+    try:
+        return strptime(datestr, fmt)
+    except ValueError:
+        return ZEROTIME
 
 class YearIndexer(Indexer):
     name = 'year'
@@ -70,7 +78,7 @@ class YearIndexer(Indexer):
         inputfmts: list[str] = INPUTFMTS,
         dispfmt_y: str = DISPFMTS_Y,
         dispfmt_m: str = DISPFMTS_M,
-        dispfmt_md: str = DISPFMTS_MD,
+        dispfmt_dw: str = DISPFMTS_DW,
     ):
         """*xxxfmt* are date format used by time.strptime/strftime.
 
@@ -78,7 +86,7 @@ class YearIndexer(Indexer):
         self.inputfmts = inputfmts
         self.dispfmt_y = dispfmt_y
         self.dispfmt_m = dispfmt_m
-        self.dispfmt_md = dispfmt_md
+        self.dispfmt_dw = dispfmt_dw
 
     def classify(self, objref: Value) -> list[Category]:
         entries = []
@@ -88,22 +96,31 @@ class YearIndexer(Indexer):
                     t = strptime(v, datefmt)
                 except ValueError:
                     continue  # try next datefmt
-                entries.append(
-                    Category(
+
+                if all(x not in datefmt for x in ['%m', '%b', '%B'] ): # missing month
+                    entry = Category(main=strftime(self.dispfmt_y, t))
+                elif all(x not in datefmt for x in ['%d', '%j']): # missing day
+                    entry = Category(
                         main=strftime(self.dispfmt_y, t),
                         sub=strftime(self.dispfmt_m, t),
-                        extra=strftime(self.dispfmt_md, t),
+                        extra='', # TODO: leave it empty, or sub-type will not take effect
                     )
-                )
+                else:
+                    entry = Category(
+                        main=strftime(self.dispfmt_y, t),
+                        sub=strftime(self.dispfmt_m, t),
+                        extra=strftime(self.dispfmt_dw, t),
+                    )
+                entries.append(entry)
         return entries
 
     def sort(
         self, data: Iterable[Indexer._T], key: Callable[[Indexer._T], Category]
     ) -> list[Indexer._T]:
         def sort_by_time(x: Category):
-            t1 = strptime(x.main, self.dispfmt_y)
-            t2 = strptime(x.sub, self.dispfmt_m) if x.sub else None
-            t3 = strptime(x.extra, self.dispfmt_md) if x.extra else None
+            t1 = _safe_strptime(x.main, self.dispfmt_y)
+            t2 = _safe_strptime(x.sub, self.dispfmt_m)
+            t3 = _safe_strptime(x.extra, self.dispfmt_dw)
             return (t1, t2, t3)
 
         return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
@@ -126,11 +143,11 @@ class MonthIndexer(Indexer):
         self,
         inputfmts: list[str] = INPUTFMTS,
         dispfmt_ym: str = DISPFMTS_YM,
-        dispfmt_md: str = DISPFMTS_MD,
+        dispfmt_dw: str = DISPFMTS_DW,
     ):
         self.inputfmts = inputfmts
         self.dispfmt_ym = dispfmt_ym
-        self.dispfmt_md = dispfmt_md
+        self.dispfmt_dw = dispfmt_dw
 
     def classify(self, objref: Value) -> list[Category]:
         entries = []
@@ -140,20 +157,23 @@ class MonthIndexer(Indexer):
                     t = strptime(v, datefmt)
                 except ValueError:
                     continue  # try next datefmt
-                entries.append(
-                    Category(
+
+                if all(x not in datefmt for x in ['%d', '%j']): # missing day
+                    entry = Category(main=strftime(self.dispfmt_ym, t))
+                else:
+                    entry = Category(
                         main=strftime(self.dispfmt_ym, t),
-                        extra=strftime(self.dispfmt_md, t),
+                        extra=strftime(self.dispfmt_dw, t),
                     )
-                )
+                entries.append(entry)
         return entries
 
     def sort(
         self, data: Iterable[Indexer._T], key: Callable[[Indexer._T], Category]
     ) -> list[Indexer._T]:
         def sort_by_time(x: Category):
-            t1 = strptime(x.main, self.dispfmt_ym)
-            t2 = strptime(x.sub, self.dispfmt_md) if x.sub else None
+            t1 = _safe_strptime(x.main, self.dispfmt_ym)
+            t2 = _safe_strptime(x.extra, self.dispfmt_dw)
             return (t1, t2)
 
         return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
