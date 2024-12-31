@@ -100,11 +100,11 @@ class Category(object):
     :single index: letter -> normal entry
     :dual index:   letter -> entry with sub-entries -> sub-entry
 
-    Classif can be used to generating all of 3 kinds of IndexEntry:
+    Category can be used to generating all of 3 kinds of IndexEntry:
 
-    :normal entry:            Classif(main=X)
-    :entry with sub-entries:  Classif(main=X, sub=Y, extra=None)
-    :sub-entry:               Classif(main=X, sub=Y, extra=Z)
+    :normal entry:            Category(main=X)
+    :entry with sub-entries:  Category(main=X, sub=Y, extra=None)
+    :sub-entry:               Category(main=X, sub=Y, extra=Z)
 
     .. hint::
 
