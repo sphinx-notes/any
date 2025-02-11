@@ -21,8 +21,8 @@ view:
 
 .PHONY: clean
 clean:
-	$(MAKE) -C docs/ clean
-	$(RM) dist/
+	$(MAKE) -C docs/ clean | true
+	$(RM) dist/ | true
 
 .PHONY: clean
 fmt:

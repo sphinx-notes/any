@@ -74,8 +74,6 @@ html_logo = html_favicon = '_static/sphinx-notes.png'
 
 # -- Extensions -------------------------------------------------------------
 
-# 
-
 extensions.append('sphinx.ext.extlinks')
 extlinks = {
     'issue': ('https://github.com/sphinx-notes/any/issues/%s', '💬%s'),
@@ -97,12 +95,10 @@ intersphinx_mapping = {
     'jinja': ('https://jinja.palletsprojects.com/en/latest/', None),
 }
 
-# 
 extensions.append('sphinxnotes.comboroles')
 comboroles_roles = {
     'parsed_literal': (['literal'], True),
 }
-#
 
 # -- Eat your own dog food --------------------------------------------------
 
@@ -112,7 +108,6 @@ comboroles_roles = {
 sys.path.insert(0, os.path.abspath('../src/sphinxnotes'))
 extensions.append('any')
 
-# 
 # DOG FOOD CONFIGURATION START
 from any.api import Schema, Field as F, by_year, by_month
 
@@ -161,4 +156,3 @@ any_schemas = [
 
 primary_domain = 'any'
 # DOG FOOD CONFIGURATION END
-# 
