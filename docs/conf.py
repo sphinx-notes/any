@@ -144,6 +144,9 @@ example_schema = Schema('example',
                         missing_reference_template='📝{{ title }}',
                         ambiguous_reference_template='📝{{ title }}')
 
+# For locating packages under _schemas/.
+sys.path.insert(0, os.path.abspath('.'))
+
 any_schemas = [
     version_schema,
     confval_schema,
