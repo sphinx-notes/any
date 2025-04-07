@@ -44,7 +44,7 @@ class PathIndexer(Indexer):
             comps = v.split(self.sep, maxsplit=self.maxsplit)
             category = Category(main=comps[0], extra=v)
             if self.maxsplit == 2:
-                category.sub = v[1] if len(comps) > 1 else None
+                category.sub = comps[1] if len(comps) > 1 else None
             entries.append(category)
         return entries
 
