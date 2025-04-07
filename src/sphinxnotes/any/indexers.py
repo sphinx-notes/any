@@ -49,7 +49,7 @@ class PathIndexer(Indexer):
         return entries
 
     def anchor(self, refval: str) -> str:
-        return refval.split(self.sep, maxsplit=self.maxsplit)[0]
+        return 'cap-' + refval.split(self.sep, maxsplit=self.maxsplit)[0]
 
 
 # I am Chinese :D
