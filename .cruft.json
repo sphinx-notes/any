@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/sphinx-notes/cookiecutter",
-  "commit": "7e07548aad55432b86d881ccdab66eb1c89986c0",
+  "commit": "0b096cd7ecff1b28ee8c2887ba3321418be34b9a",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -15,7 +15,7 @@
       "pypi_name": "sphinxnotes-any",
       "pypi_owner": "SilverRainZ",
       "_template": "https://github.com/sphinx-notes/cookiecutter",
-      "_commit": "7e07548aad55432b86d881ccdab66eb1c89986c0"
+      "_commit": "0b096cd7ecff1b28ee8c2887ba3321418be34b9a"
     }
   },
   "directory": null

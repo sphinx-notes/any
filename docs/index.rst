@@ -5,7 +5,7 @@
 sphinxnotes-any
 ===============
 
-.. |docs| image:: https://img.shields.io/github/deployments/sphinx-notes/any/github-pages
+.. |docs| image:: https://img.shields.io/github/deployments/sphinx-notes/any/github-pages?label=docs
    :target: https://sphinx.silverrainz.me/any
    :alt: Documentation Status
 
@@ -21,7 +21,11 @@ sphinxnotes-any
    :target: https://pypi.python.org/pypi/sphinxnotes-any
    :alt: PyPI Package Downloads
 
-|docs| |license| |pypi| |download|
+.. |github| image:: https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white/
+   :target: https://github.com/sphinx-notes/any
+   :alt: GitHub Repository
+
+|docs| |license| |pypi| |download| |github|
  
 Introduction
 ============
