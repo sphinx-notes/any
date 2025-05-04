@@ -441,8 +441,15 @@ class Schema(object):
 
     def render_description(self, obj: Object) -> list[str]:
         assert obj
-        tmpl = TemplateEnvironment().from_string(self.description_template)
-        description = tmpl.render(self._context_of(obj))
+        try:
+            tmpl = TemplateEnvironment().from_string(self.description_template)
+            description = tmpl.render(self._context_of(obj))
+        except Exception as e:
+            logger.warning(
+                '[any] failed to render description template %s: %s'
+                % (self.description_template, e)
+            )
+            description = str(e)
         logger.debug(
             '[any] render description template %s: %s'
             % (self.description_template, description)
@@ -451,8 +458,15 @@ class Schema(object):
 
     def render_reference(self, obj: Object) -> str:
         assert obj
-        tmpl = TemplateEnvironment().from_string(self.reference_template)
-        reference = tmpl.render(self._context_of(obj))
+        try:
+            tmpl = TemplateEnvironment().from_string(self.reference_template)
+            reference = tmpl.render(self._context_of(obj))
+        except Exception as e:
+            logger.warning(
+                '[any] failed to render reference template %s: %s'
+                % (self.reference_template, e)
+            )
+            reference = str(e)
         logger.debug(
             '[any] render references template %s: %s',
             self.reference_template,
