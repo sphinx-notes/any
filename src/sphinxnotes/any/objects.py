@@ -437,6 +437,10 @@ class Schema(object):
         for key, val in self.attrs_of(obj).items():
             set_if_not_none(key, val)
 
+        # Set a global key for referencing all any other keys.
+        # TODO: Fix return type hint.
+        context['_'] = context
+
         return context
 
     def render_description(self, obj: Object) -> list[str]:
