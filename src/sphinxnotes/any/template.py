@@ -83,8 +83,13 @@ class Environment(jinja2.Environment):
         # os.unlink(cls._srcdir)
         pass
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__(
+            extensions=[
+                'jinja2.ext.loopcontrols', # enable {% break %}, {% continue %}
+            ]
+        )
+
         self.filters['thumbnail'] = self.thumbnail_filter
         self.filters['install'] = self.install_filter
         # self.filters['watermark'] = self._watermark_filter
