@@ -62,6 +62,7 @@ DISPFMTS_YM = '%Y 年 %m 月'
 DISPFMTS_DW = '%d 日，%a'
 ZEROTIME = strptime('0001', '%Y')
 
+
 def _safe_strptime(datestr, fmt):
     if datestr is None or datestr == '':
         return ZEROTIME
@@ -69,6 +70,7 @@ def _safe_strptime(datestr, fmt):
         return strptime(datestr, fmt)
     except ValueError:
         return ZEROTIME
+
 
 class YearIndexer(Indexer):
     name = 'year'
@@ -97,13 +99,13 @@ class YearIndexer(Indexer):
                 except ValueError:
                     continue  # try next datefmt
 
-                if all(x not in datefmt for x in ['%m', '%b', '%B'] ): # missing month
+                if all(x not in datefmt for x in ['%m', '%b', '%B']):  # missing month
                     entry = Category(main=strftime(self.dispfmt_y, t))
-                elif all(x not in datefmt for x in ['%d', '%j']): # missing day
+                elif all(x not in datefmt for x in ['%d', '%j']):  # missing day
                     entry = Category(
                         main=strftime(self.dispfmt_y, t),
                         sub=strftime(self.dispfmt_m, t),
-                        extra='', # TODO: leave it empty, or sub-type will not take effect
+                        extra='',  # TODO: leave it empty, or sub-type will not take effect
                     )
                 else:
                     entry = Category(
@@ -158,7 +160,7 @@ class MonthIndexer(Indexer):
                 except ValueError:
                     continue  # try next datefmt
 
-                if all(x not in datefmt for x in ['%d', '%j']): # missing day
+                if all(x not in datefmt for x in ['%d', '%j']):  # missing day
                     entry = Category(main=strftime(self.dispfmt_ym, t))
                 else:
                     entry = Category(

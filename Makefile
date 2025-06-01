@@ -9,29 +9,29 @@ RM    = rm -rf
 GIT   = git
 OPEN  = xdg-open
 
-# Build sphinx documentation.
 .PHONY: docs
 docs:
 	$(MAKE) -C docs/
 
-# View sphinx HTML documentation in browser.
-.PHONY: view
+.PHONY:
 view:
 	$(OPEN) docs/_build/html/index.html
 
 .PHONY: clean
 clean:
-	$(MAKE) -C docs/ clean | true
-	$(RM) dist/ | true
+	$(MAKE) -C docs/ clean; $(RM) dist/
 
-.PHONY: clean
+.PHONY: fmt
 fmt:
-	ruff format src/
+	ruff format src/ && ruff check --fix src/
 
-# Run unittest.
 .PHONY: test
 test:
 	$(PY) -m unittest discover -s tests -v
+
+################################################################################
+# Distribution Package
+################################################################################
 
 # Build distribution package, for "install" or "upload".
 .PHONY: dist
@@ -54,21 +54,30 @@ install: dist
 upload: dist
 	$(PY) -m twine upload --repository pypi $</*
 
-# Same to the aboved "upload" target, but this publishs to PyPI test server
-# <https://test.pypi.org/>.
-.PHONY: upload-test
-upload-test: dist
-	$(PY) -m twine upload --repository testpypi $</*
+################################################################################
+# Cookiecutter Incremental Updates
+################################################################################
 
 # Keep up to date with the latest template.
-# See also https://github.com/sphinx-notes/cookiecutter.
-.PHONY: update-template
-update-template:
+# See https://github.com/sphinx-notes/cookiecutter.
+.PHONY: tmpl-update
+tmpl-update:
 	$(PY) -m cruft update
 
-.PHONY: update-template-done
-update-template-done:
+.PHONY: tmpl-update-done
+tmpl-update-done:
 	$(GIT) commit -m "chore: Update project template to sphinx-notes/cookiecutter@$(shell jq -r '.commit' .cruft.json | head -c8)"
+
+.PHONY: apply-rej
+apply-rej:
+	@for rej in $$(find . -name '*.rej'); do \
+		echo "applying $$rej..."; \
+		wiggle --replace $${rej%.rej} $$rej; \
+	done
+
+# Detect the minimum Python versions needed to run code.
+pyvermin:
+	vermin --eval-annotations --target=3.12- --versions src/
 
 # Update project version.
 .PHONY: bump-version
@@ -76,6 +85,6 @@ bump-version:
 	@echo -n "Please enter the version to bump: "
 	@read version && $(PY) -m cruft update --variables-to-update "{ \"version\" : \"$$version\" }"
 
-# EXTRA TARGETS START
-
-# EXTRA TARGETS END
+################################################################################
+# CUSTOM TARGETS
+################################################################################

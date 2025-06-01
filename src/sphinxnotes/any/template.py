@@ -86,7 +86,7 @@ class Environment(jinja2.Environment):
     def __init__(self):
         super().__init__(
             extensions=[
-                'jinja2.ext.loopcontrols', # enable {% break %}, {% continue %}
+                'jinja2.ext.loopcontrols',  # enable {% break %}, {% continue %}
             ]
         )
 

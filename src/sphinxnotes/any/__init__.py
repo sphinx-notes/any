@@ -10,13 +10,13 @@ Sphinx extension entrypoint.
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from importlib.metadata import version
 
 from sphinx.util import logging
 
 from .template import Environment as TemplateEnvironment
 from .domain import AnyDomain, warn_missing_reference
 from .objects import Schema
+from . import meta
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -39,6 +39,7 @@ def _config_inited(app: Sphinx, config: Config) -> None:
 
 def setup(app: Sphinx):
     """Sphinx extension entrypoint."""
+    meta.pre_setup(app)
 
     # Init template environment
     TemplateEnvironment.setup(app)
@@ -48,4 +49,4 @@ def setup(app: Sphinx):
     app.connect('config-inited', _config_inited)
     app.connect('warn-missing-reference', warn_missing_reference)
 
-    return {'version': version('sphinxnotes.any')}
+    return meta.post_setup(app)
