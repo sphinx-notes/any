@@ -34,6 +34,8 @@ class Environment(jinja2.Environment):
     _srcdir: str
     # Same to _srcdir, but relative to Sphinx's srcdir.
     _reldir: str
+    # List of user defined filter factories.
+    _filter_factories = {}
 
     @classmethod
     def setup(cls, app: Sphinx):
@@ -74,6 +76,10 @@ class Environment(jinja2.Environment):
         logger.debug(f'[any] outdir: {cls._outdir}')
 
     @classmethod
+    def add_filter(cls, name: str, ff):
+        cls._filter_factories[name] = ff
+
+    @classmethod
     def _on_build_finished(cls, app: Sphinx, exception):
         # NOTE: no need to clean up the symlink, it will cause unnecessary
         # rebuild because file is mssiing from Sphinx's srcdir. Logs like:
@@ -93,6 +99,8 @@ class Environment(jinja2.Environment):
         self.filters['thumbnail'] = self.thumbnail_filter
         self.filters['install'] = self.install_filter
         # self.filters['watermark'] = self._watermark_filter
+        for name, factory in self._filter_factories.items():
+            self.filters[name] = factory(self._builder.env)
 
     def thumbnail_filter(self, imgfn: str) -> str:
         srcfn, outfn, relfn = self._get_src_out_rel(imgfn)
