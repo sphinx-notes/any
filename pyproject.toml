@@ -44,7 +44,7 @@ dependencies = [
     "Sphinx >= 7.0",
 
     # CUSTOM DEPENDENCIES START
-    "Jinja2",
+    "sphinxnotes-data",
     "wand >= 0.6.11", # https://github.com/emcconville/wand/issues/587
     # CUSTOM DEPENDENCIES END
 ]

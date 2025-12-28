@@ -19,6 +19,7 @@ from sphinx.util import logging
 from .errors import AnyExtensionError
 from .template import Environment as TemplateEnvironment
 
+from sphinxnotes.data import data
 
 logger = logging.getLogger(__name__)
 
@@ -29,60 +30,6 @@ class ObjectError(AnyExtensionError):
 
 class SchemaError(AnyExtensionError):
     pass
-
-
-class Value(object):
-    """ "An immutable optional :class:`Field`."""
-
-    type T = None | str | list[str]
-    _v: T
-
-    def __init__(self, v: T):
-        # TODO: type checking
-        self._v = v
-
-    @property
-    def value(self) -> T:
-        return self._v
-
-    def as_list(self) -> list[str]:
-        if isinstance(self._v, str):
-            return [self._v]
-        elif isinstance(self._v, list):
-            return self._v
-        else:
-            return []
-
-    def as_str(self) -> str:
-        return str(self._v)
-
-
-class Form(ABC):
-    @abstractmethod
-    def extract(self, raw: str) -> Value:
-        """Extract :class:`Value` from field's raw value."""
-        raise NotImplementedError
-
-
-class Single(Form):
-    def __init__(self, strip=False):
-        self.strip = strip
-
-    def extract(self, raw: str) -> Value:
-        return Value(raw.strip() if self.strip else raw)
-
-
-class List(Form):
-    def __init__(self, sep: str, strip=False, max=-1):
-        self.strip = strip
-        self.sep = sep
-        self.max = max
-
-    def extract(self, raw: str) -> Value:
-        strv = raw.split(self.sep, maxsplit=self.max)
-        if self.strip:
-            strv = [x.strip() for x in strv]
-        return Value(strv)
 
 
 @dataclasses.dataclass
@@ -168,18 +115,15 @@ class Indexer(object):
 
 
 @dataclasses.dataclass(frozen=True)
-class Object(object):
+class Object(data.Data):
     objtype: str
-    name: str | None
-    attrs: dict[str, str]
-    content: str | None
 
     def hexdigest(self) -> str:
         return hashlib.sha1(pickle.dumps(self)).hexdigest()[:7]
 
 
 @dataclasses.dataclass
-class Field(object):
+class Field(data.Field):
     """
     Describes value constraint of field of Object.
 
@@ -206,41 +150,17 @@ class Field(object):
         if the value is no given.
     """
 
-    class Forms:
-        PLAIN = Single()
-        STRIPPED = Single(strip=True)
-        WORDS = List(sep=' ', strip=True)
-        LINES = List(sep='\n')
-        STRIPPED_LINES = List(sep='\n', strip=True)
-
     uniq: bool = False
     ref: bool = False
-    required: bool = False
-    form: Form = Forms.PLAIN
     indexers: list[Indexer] = dataclasses.field(default_factory=lambda: [])
 
-    def value_of(self, rawval: str | None) -> Value:
-        if rawval is None:
-            assert not self.required
-            return Value(None)
-        return self.form.extract(rawval)
 
-
-class Schema(object):
+class Schema(data.Schema):
     """
     Schema is used to describe objects, and be able to generate corresponding
     directive, role and index for describing, referencing, and indexing specific
     object.
     """
-
-    #: Template variable name of object type
-    TYPE_KEY = 'type'
-    #: Template variable name of object name
-    NAME_KEY = 'name'
-    #: Template variable name of object content
-    CONTENT_KEY = 'content'
-    #: Template variable name of object title
-    TITLE_KEY = 'title'
 
     # Object type
     objtype: str
@@ -252,8 +172,6 @@ class Schema(object):
 
     description_template: str
     reference_template: str
-    missing_reference_template: str
-    ambiguous_reference_template: str
 
     def __init__(
         self,
@@ -263,8 +181,6 @@ class Schema(object):
         content: Field | None = Field(),
         description_template: str = '{{ content }}',
         reference_template: str = '{{ title }}',
-        missing_reference_template: str = '{{ title }} (missing reference)',
-        ambiguous_reference_template: str = '{{ title }} (disambiguation)',
     ) -> None:
         """Create a Schema instance.
 
@@ -276,8 +192,6 @@ class Schema(object):
         :param content: Constraints of object content
         :param description_template: See :ref:`description-template`
         :param reference_template: See :ref:`reference-template`
-        :param missing_reference_template: See :ref:`reference-template`
-        :param ambiguous_reference_template: See :ref:`reference-template`
         """
 
         self.objtype = objtype
@@ -286,8 +200,6 @@ class Schema(object):
         self.content = content
         self.description_template = description_template
         self.reference_template = reference_template
-        self.missing_reference_template = missing_reference_template
-        self.ambiguous_reference_template = ambiguous_reference_template
 
         # Check attrs constraint
         has_unique = False
@@ -421,7 +333,7 @@ class Schema(object):
 
     def _context_without_object(self) -> dict[str, str | list[str]]:
         return {
-            self.TYPE_KEY: self.objtype,
+            'type': self.objtype,
         }
 
     def _context_of(self, obj: Object) -> dict[str, str | list[str]]:
@@ -491,18 +403,6 @@ class Schema(object):
             reference,
         )
         return reference
-
-    def render_missing_reference(self, explicit_title: str) -> str:
-        logger.debug('[any] render missing references template %s', explicit_title)
-        return self._render_reference_without_object(
-            explicit_title, self.missing_reference_template
-        )
-
-    def render_ambiguous_reference(self, explicit_title: str) -> str:
-        logger.debug('[any] render ambiguous references template %s', explicit_title)
-        return self._render_reference_without_object(
-            explicit_title, self.ambiguous_reference_template
-        )
 
     def __eq__(self, other: Any) -> bool:
         """
