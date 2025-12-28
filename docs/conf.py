@@ -117,7 +117,8 @@ import sys
 sys.path.insert(0, os.path.abspath('../src/sphinxnotes'))
 extensions.append('any')
 
-# DOG FOOD CONFIGURATION START
+# CUSTOM CONFIGURATION
+
 from any.api import Schema, Field as F, by_year, by_month
 
 version_schema = Schema('version',
@@ -167,6 +168,3 @@ any_schemas = [
 ]
 
 primary_domain = 'any'
-# DOG FOOD CONFIGURATION END
-
-# CUSTOM CONFIGURATION

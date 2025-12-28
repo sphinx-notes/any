@@ -12,7 +12,7 @@ sphinxnotes-any
    :target: https://github.com/sphinx-notes/any/blob/master/LICENSE
    :alt: Open Source License
 .. |pypi| image:: https://img.shields.io/pypi/v/sphinxnotes-any.svg
-   :target: https://pypi.python.org/pypi/sphinxnotes-any
+   :target: https://pypistats.org/packages/sphinxnotes-any
    :alt: PyPI Package
 .. |download| image:: https://img.shields.io/pypi/dm/sphinxnotes-any
    :target: https://pypi.python.org/pypi/sphinxnotes-any

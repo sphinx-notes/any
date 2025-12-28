@@ -12,7 +12,5 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version-file: 'pyproject.toml'
-    - name: Install the dependencies
-      run: python3 -m pip install .[dev]
-    - name: Build
-      run: make test
+    - run: python3 -m pip install .[dev]
+    - run: make test
