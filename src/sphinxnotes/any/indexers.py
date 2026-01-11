@@ -11,15 +11,16 @@ sphinxnotes.any.indexers
 from typing import Iterable, Literal, Callable
 from time import strptime, strftime
 
-from .objects import Indexer, Category, Value
+from .objects import Indexer, Category
 
+from sphinxnotes.data.data import Value, ValueWrapper
 
 class LiteralIndexer(Indexer):
     name = 'literal'
 
     def classify(self, objref: Value) -> list[Category]:
         entries = []
-        for v in objref.as_list():
+        for v in ValueWrapper(objref).as_str_list():
             entries.append(Category(main=v))
         return entries
 
@@ -40,7 +41,7 @@ class PathIndexer(Indexer):
 
     def classify(self, objref: Value) -> list[Category]:
         entries = []
-        for v in objref.as_list():
+        for v in ValueWrapper(objref).as_str_list():
             comps = v.split(self.sep, maxsplit=self.maxsplit)
             category = Category(main=comps[0], extra=v)
             if self.maxsplit == 2:
@@ -92,7 +93,7 @@ class YearIndexer(Indexer):
 
     def classify(self, objref: Value) -> list[Category]:
         entries = []
-        for v in objref.as_list():
+        for v in ValueWrapper(objref).as_str_list():
             for datefmt in self.inputfmts:
                 try:
                     t = strptime(v, datefmt)
@@ -153,7 +154,7 @@ class MonthIndexer(Indexer):
 
     def classify(self, objref: Value) -> list[Category]:
         entries = []
-        for v in objref.as_list():
+        for v in ValueWrapper(objref).as_str_list():
             for datefmt in self.inputfmts:
                 try:
                     t = strptime(v, datefmt)
@@ -189,3 +190,4 @@ class MonthIndexer(Indexer):
             anchor = strftime(self.dispfmt_ym, t)
             return f'cap-{anchor}'
         return ''
+

@@ -1,66 +1,220 @@
 """
-sphinxnotes.any.domain
+sphinxnotes.obj.domain
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Sphinx domain for describing anything.
+Domain implementions.
 
 :copyright: Copyright 2021 Shengyu Zhang
 :license: BSD, see LICENSE for details.
 """
 
 from __future__ import annotations
-from typing import Any, Iterator, TYPE_CHECKING
+from typing import TYPE_CHECKING, override, cast
 
-from docutils.nodes import Element, literal, Text
-
+from docutils import nodes
 from sphinx.addnodes import pending_xref
-from sphinx.domains import Domain, ObjType
+from sphinx.domains import Domain, ObjType, Index, IndexEntry
+from sphinx.roles import XRefRole
 from sphinx.util import logging
-from sphinx.util.nodes import make_refnode
+from sphinx.util.nodes import make_id, make_refnode
 
-from .objects import Schema, Object, RefType, Indexer
-from .directives import AnyDirective
-from .roles import AnyRole
-from .indices import AnyIndex
-from .indexers import DEFAULT_INDEXER
+from sphinxnotes.data import (
+    ValueWrapper, Schema,
+    pending_node, RenderedNode,
+    StrictDataDefineDirective,
+)
+
+from .obj import (
+    Object, RefType, Templates,
+    Category, Indexer,
+    get_object_uniq_ids, get_object_refs,
+)
+
+from .utils import strip_rst_markups
 
 if TYPE_CHECKING:
-    from sphinx.application import Sphinx
+    from typing import Iterator, Iterable, TypeVar, override
     from sphinx.builders import Builder
     from sphinx.environment import BuildEnvironment
-    from sphinx.util.typing import RoleFunction
 
 logger = logging.getLogger(__name__)
 
+# ===================
+# Domain implemention
+# ===================
 
-class AnyDomain(Domain):
+class ObjDomain(Domain):
     """
-    The Any domain for describing anything.
+    The Obj domain for describing anything.
     """
 
-    #: Domain name: should be short, but unique
-    name: str = 'any'
-    #: Domain label: longer, more descriptive (used in messages)
-    label = 'Any'
-    #: Type (usually directive) name -> ObjType instance
-    object_types: dict[str, ObjType] = {}
-    #: Directive name -> directive class
-    directives: dict[str, type[AnyDirective]] = {}
-    #: Role name -> role callable
-    roles: dict[str, RoleFunction] = {}
-    #: A list of Index subclasses
-    indices: list[type[AnyIndex]] = []
-    #: AnyDomain specific: reftype -> index class
-    _indices_for_reftype: dict[str, type[AnyIndex]] = {}
-    #: AnyDomain specific: objtype -> Schema instance
-    _schemas: dict[str, Schema] = {}
+    """Parent's class members."""
 
-    initial_data: dict[str, Any] = {
-        # See property object
-        'objects': {},
-        # See property references
-        'references': {},
+    name = 'obj'
+    label = 'Object'
+    object_types = {}
+    directives = {}
+    roles  = {}
+    indices = []
+    initial_data = {
+        'objects': {}, # see property object
+        'references': {}, # see property references
     }
+
+    """Custom class members."""
+
+    #: ObjDomain specific: reftype -> index class
+    _indices_for_reftype: dict[str, type[ObjIndex]] = {}
+    #: ObjDomain specific: objtype -> data schema
+    _schemas: dict[str, Schema] = {}
+    #: ObjDomain specific: objtype -> template set
+    _templates: dict[str, Templates]
+
+    """Methods that override from parent."""
+
+    @override
+    def clear_doc(self, docname: str) -> None:
+        objids = set()
+        for (objtype, objid), (doc, _, _) in list(self.objects.items()):
+            if doc == docname:
+                del self.objects[objtype, objid]
+                objids.add(objid)
+        for (objtype, objfield, objref), ids in list(self.references.items()):
+            ids = ids - objids
+            if ids:
+                self.references[objtype, objfield, objref] = ids
+            else:
+                del self.references[objtype, objfield, objref]
+
+    @override
+    def resolve_xref(
+        self,
+        env: BuildEnvironment,
+        fromdocname: str,
+        builder: Builder,
+        typ: str,
+        target: str,
+        node: pending_xref,
+        contnode: nodes.Element,
+    ) -> nodes.reference | None:
+        logger.debug('[any] resolveing xref of %s', (typ, target))
+
+        reftype = RefType.parse(typ)
+        objtype, objfield, objidx = reftype.objtype, reftype.field, reftype.indexer
+        objids = set()
+        if objidx:
+            pass  # no need to lookup objds
+        elif objfield:
+            # NOTE: To prevent change domain data, dont use ``objids = xxx``
+            if ids := self.references.get((objtype, objfield, target)):
+                objids.update(ids)
+        else:
+            for (t, _, r), ids in self.references.items():
+                if t == objtype and r == target:
+                    objids.update(ids)
+
+        extra_ctxs = {
+            '_ref': {
+                'title': contnode[0].astext(),
+                'has_explicit_title': node['refexplicit'],
+                'type': typ,
+                'target': target,
+            },
+            '_objs': [],
+        }
+
+        schema = self._schemas[objtype]
+
+        pending = pending_node()
+        pending.inline = True
+        pending.schema = schema
+        pending.template = self._templates[objtype].xref
+
+        todocname, anchor, obj = self.objects[objtype, objids.pop()]
+        pending.data = obj # TODO:
+
+        if len(objids) != 0 or objidx is not None:
+            # Mulitple objects found or reference index explicitly,
+            # create link to indices page.
+            todocname, anchor = self._get_index_anchor(typ, target)
+            logger.debug(
+                f'ambiguous {objtype} {target} in {self}, '
+                + f'ids: {objids} index: {todocname}#{anchor}'
+            )
+
+        for objid in objids:
+            _, _, obj = self.objects[objtype, objid]
+            extra_ctxs['_objs'].append(obj)
+
+        if False:
+            ...
+            # The pending_xref node may be resolved by intersphinx,
+            # so do not emit warning here, see also warn_missing_reference.
+            return None
+
+        refnode = make_refnode(
+            builder, fromdocname, todocname, anchor, pending, objtype + ' ' + target
+        )
+        refnode['classes'] += [self.name, self.name + '-' + objtype]
+        return refnode
+
+    @override
+    def get_objects(self) -> Iterator[tuple[str, str, str, str, str, int]]:
+        for (objtype, objid), (docname, anchor, _) in self.data['objects'].items():
+            yield objid, objid, objtype, docname, anchor, 1
+
+    """Publish methods."""
+
+    @classmethod
+    def add_object_type(cls, objtype: str, schema: Schema, tmpls: Templates) -> None:
+        # Add to schemas dict
+        cls._schemas[objtype] = schema
+
+        def mkrole(reftype: RefType):
+            """Create and register role for referencing object."""
+            role = XRefRole(
+                # Emit warning when missing reference (node['refwarn'] = True)
+                warn_dangling=True,
+                # Inner node (contnode) would be replaced in resolve_xref method,
+                # so fix its class.
+                innernodeclass=nodes.literal,
+            )
+            cls.roles[str(reftype)] = role
+            logger.debug(f'[any] make role {reftype} → {type(role)}')
+
+        def mkindex(reftype: RefType):
+            """Create and register object index."""
+            assert reftype.indexer
+            indexer = Registry[reftype.indexer]
+            index = ObjIndex.derive(reftype, indexer)
+            cls.indices.append(index)
+            cls._indices_for_reftype[str(reftype)] = index
+            logger.debug(f'[any] make index {reftype} → {type(index)}')
+
+        # Create all-in-one role and index (do not distinguish reference fields).
+        reftypes = [RefType(objtype)]
+        mkrole(reftypes[0])
+
+        # Create {field,indexer}-specificed role and index.
+        for name, field in schema.fields():
+            if field.ref:
+                reftype = RefType(objtype, name)
+                reftypes.append(reftype)
+                mkrole(reftype)  # create a role to reference object(s)
+
+            for idxname in field.indexers:
+                reftype = RefType(objtype, field=name, indexer=idxname)
+                reftypes.append(reftype)
+                # Create role and index for reference objects by index.
+                mkrole(reftype)
+                mkindex(reftype)
+
+        # TODO: document
+        cls.object_types[objtype] = ObjType(
+            objtype, *[str(x) for x in reftypes]
+        )
+        # Generates directive for creating object.
+        cls.directives[objtype] = ObjDefineDirective.derive(objtype, schema, tmpls.obj)
 
     @property
     def objects(self) -> dict[tuple[str, str], tuple[str, str, Object]]:
@@ -75,9 +229,10 @@ class AnyDomain(Domain):
     def note_object(
         self, docname: str, anchor: str, schema: Schema, obj: Object
     ) -> None:
-        objtype = obj.objtype
-        _, objid = schema.identifier_of(obj)
-        objrefs = schema.references_of(obj)
+        objtype = next((k for k, v in self._schemas.items() if v == schema))
+
+        objid = get_object_uniq_ids(schema, obj)[0]
+        objrefs = get_object_refs(schema, obj)
         if (objtype, objid) in self.objects:
             other_docname, other_anchor, other_obj = self.objects[objtype, objid]
             logger.warning(
@@ -91,141 +246,8 @@ class AnyDomain(Domain):
         for objfield, objref in objrefs:
             self.references.setdefault((objtype, objfield, objref), set()).add(objid)
 
-    # Override parent method
-    def clear_doc(self, docname: str) -> None:
-        objids = set()
-        for (objtype, objid), (doc, _, _) in list(self.objects.items()):
-            if doc == docname:
-                del self.objects[objtype, objid]
-                objids.add(objid)
-        for (objtype, objfield, objref), ids in list(self.references.items()):
-            ids = ids - objids
-            if ids:
-                self.references[objtype, objfield, objref] = ids
-            else:
-                del self.references[objtype, objfield, objref]
 
-    # Override parent method
-    def resolve_xref(
-        self,
-        env: BuildEnvironment,
-        fromdocname: str,
-        builder: Builder,
-        typ: str,
-        target: str,
-        node: pending_xref,
-        contnode: Element,
-    ) -> Element | None:
-        assert isinstance(contnode, literal)
-
-        logger.debug('[any] resolveing xref of %s', (typ, target))
-
-        reftype = RefType.parse(typ)
-        objtype, objfield, objidx = reftype.objtype, reftype.field, reftype.indexer
-        objids = set()
-        if objidx:
-            pass  # no need to lookup objds
-        if objfield:
-            # NOTE: To prevent change domain data, dont use ``objids = xxx``
-            ids = self.references.get((objtype, objfield, target))
-            if ids:
-                objids.update(ids)
-        else:
-            for (t, _, r), ids in self.references.items():
-                if t == objtype and r == target:
-                    objids.update(ids)
-
-        schema = self._schemas[objtype]
-        title = contnode[0].astext()
-        has_explicit_title = node['refexplicit']
-        newtitle = None
-
-        if len(objids) > 1 or objidx is not None:
-            # Mulitple objects found or reference index explicitly,
-            # create link to indices page.
-            (todocname, anchor) = self._get_index_anchor(typ, target)
-            if not has_explicit_title:
-                newtitle = schema.render_ambiguous_reference(title)
-            logger.debug(
-                f'ambiguous {objtype} {target} in {self}, '
-                + f'ids: {objids} index: {todocname}#{anchor}'
-            )
-        elif len(objids) == 1:
-            todocname, anchor, obj = self.objects[objtype, objids.pop()]
-            if not has_explicit_title:
-                newtitle = schema.render_reference(obj)
-        else:
-            # The pending_xref node may be resolved by intersphinx,
-            # so do not emit warning here, see also warn_missing_reference.
-            return None
-
-        if newtitle:
-            logger.debug(f'[any] rewrite title from {title} to {newtitle}')
-            contnode.replace(contnode[0], Text(newtitle))
-
-        refnode = make_refnode(
-            builder, fromdocname, todocname, anchor, contnode, objtype + ' ' + target
-        )
-        refnode['classes'] += [self.name, self.name + '-' + objtype]
-        return refnode
-
-    # Override parent method
-    def get_objects(self) -> Iterator[tuple[str, str, str, str, str, int]]:
-        for (objtype, objid), (docname, anchor, _) in self.data['objects'].items():
-            yield objid, objid, objtype, docname, anchor, 1
-
-    @classmethod
-    def add_schema(cls, schema: Schema) -> None:
-        # Add to schemas dict
-        cls._schemas[schema.objtype] = schema
-
-        def mkrole(reftype: RefType):
-            """Create and register role for referencing object."""
-            role = AnyRole(
-                # Emit warning when missing reference (node['refwarn'] = True)
-                warn_dangling=True,
-                # Inner node (contnode) would be replaced in resolve_xref method,
-                # so fix its class.
-                innernodeclass=literal,
-            )
-            cls.roles[str(reftype)] = role
-            logger.debug(f'[any] make role {reftype} →  {type(role)}')
-
-        def mkindex(reftype: RefType, indexer: Indexer):
-            """Create and register object index."""
-            index = AnyIndex.derive(schema, reftype, indexer)
-            cls.indices.append(index)
-            cls._indices_for_reftype[str(reftype)] = index
-            logger.debug(f'[any] make index {reftype} →  {type(index)}')
-
-        # Create all-in-one role and index (do not distinguish reference fields).
-        reftypes = [RefType(schema.objtype)]
-        mkrole(reftypes[0])
-        mkindex(reftypes[0], DEFAULT_INDEXER)
-
-        # Create {field,indexer}-specificed role and index.
-        for name, field in schema.fields():
-            if field.ref:
-                reftype = RefType(schema.objtype, field=name)
-                reftypes.append(reftype)
-                mkrole(reftype)  # create a role to reference object(s)
-                # Create a fallback indexer, for possible ambiguous reference
-                # (if field is not unique).
-                mkindex(reftype, DEFAULT_INDEXER)
-
-            for indexer in field.indexers:
-                reftype = RefType(schema.objtype, field=name, indexer=indexer.name)
-                reftypes.append(reftype)
-                # Create role and index for reference objects by index.
-                mkrole(reftype)
-                mkindex(reftype, indexer)
-
-        # TODO: document
-        cls.object_types[schema.objtype] = ObjType(
-            schema.objtype, *[str(x) for x in reftypes]
-        )
-        # Generates directive for creating object.
-        cls.directives[schema.objtype] = AnyDirective.derive(schema)
+    """Methods for inernal use"""
 
     def _get_index_anchor(self, reftype: str, refval: str) -> tuple[str, str]:
         """
@@ -238,15 +260,172 @@ class AnyDomain(Domain):
         return f'{domain}-{index.name}', index.indexer.anchor(refval)
 
 
-def warn_missing_reference(
-    app: Sphinx, domain: Domain, node: pending_xref
-) -> bool | None:
-    if domain and domain.name != AnyDomain.name:
-        return None
+# =============================
+# Directive/Roles implementions
+# =============================
 
-    reftype = RefType.parse(node['reftype'])
-    target = node['reftarget']
+class ObjDefineDirective(StrictDataDefineDirective):
+    schema: Schema
 
-    msg = f'undefined reftype {reftype}: {target}'
-    logger.warning(msg, location=node, type='ref', subtype=reftype.objtype)
-    return True
+    @override
+    def process_rendered_node(self, n: RenderedNode) -> None:
+        domainname, objtype = self.name.split(':', 1)
+        _domain = self.env.get_domain(domainname)
+        domain = cast(ObjDomain, _domain)
+
+        # Attach domain related info to section node
+        n['domain'] = domain.name
+        # 'desctype' is a backwards compatible attribute
+        n['objtype'] = n['desctype'] = objtype
+        n['classes'].append(domain.name)
+
+        # FIXME: get anchor node
+        if n.external_name is not None:
+            objids = get_object_uniq_ids(self.schema, n.data)
+            ahrid = make_id(self.env, self.state.document, prefix=objtype, term=objids[0])
+
+            n['ids'].append(ahrid)
+            # Add object name to node's names attribute.
+            # 'names' is space-separated list containing normalized reference
+            # names of an element.
+            n['names'].extend([nodes.fully_normalize_name(x) for x in objids])
+
+            self.state.document.note_explicit_target(n)
+            domain.note_object(self.env.docname, ahrid, self.schema, n.data)
+
+# =================
+# Index implemention
+# ==================
+#
+# NOTE: There are cross-references between ObjIndex and ObjDomain,
+# so they can only be implemented in the same Python file.
+
+class ObjIndex(Index):
+    """Index subclass to provide the object reference index."""
+    reftype: RefType
+    indexer: Indexer
+
+    if TYPE_CHECKING:
+        domain: ObjDomain
+
+    @classmethod
+    def derive(cls, reftype: RefType, indexer: Indexer) -> type[ObjIndex]:
+        """Generate an ObjIndex child class for indexing object."""
+        if reftype.field:
+            clsname = f'Obj{reftype.objtype.title()}{reftype.field.title()}Index'
+            localname = (
+                f'{reftype.objtype.title()} {reftype.field.title()} Reference Index'
+            )
+        else:
+            clsname = f'Obj{reftype.objtype.title()}Index'
+            localname = f'{reftype.objtype.title()} Reference Index'
+        if reftype.indexer:
+            clsname += 'By' + reftype.indexer.title()
+            localname += ' by ' + reftype.indexer.title()
+        return type(
+            clsname,
+            (cls,),
+            {
+                # HTML builder will generate /<domain>-<name>.html index page.
+                'name': str(reftype),
+                'localname': localname,
+                'shortname': 'references',
+                'reftype': reftype,
+                'indexer': indexer,
+            },
+        )
+
+    @override
+    def generate(
+        self, docnames: Iterable[str] | None = None
+    ) -> tuple[list[tuple[str, list[IndexEntry]]], bool]:
+        # Single index for generating normal entries (subtype=0).
+        # Main Category →  Extra (for ordering objids) →  objids
+        singleidx: dict[Category, dict[Category, set[str]]] = {}
+        # Dual index for generating entrie (subtype=1) and its sub-entries (subtype=2).
+        # Main category  →  Sub-Category →  Extra (for ordering objids) →  objids
+        dualidx: dict[Category, dict[Category, dict[Category, set[str]]]] = {}
+
+        objrefs = sorted(self.domain.references.items())
+        for (objtype, objfield, objref), objids in objrefs:
+            if objtype != self.reftype.objtype:
+                continue
+            if self.reftype.field and objfield != self.reftype.field:
+                continue
+
+            # TODO: pass a real Value
+            for category in self.indexer.classify(objref):
+                main = category.as_main()
+                sub = category.as_sub()
+                if sub is None:
+                    singleidx.setdefault(main, {}).setdefault(category, set()).update(
+                        objids
+                    )
+                else:
+                    dualidx.setdefault(main, {}).setdefault(sub, {}).setdefault(
+                        category, set()
+                    ).update(objids)
+
+        content: dict[Category, list[IndexEntry]] = {}  # category →  entries
+        for main, entries in self._sort_by_category(singleidx):
+            index_entries = content.setdefault(main, [])
+            for main, objids in self._sort_by_category(entries):
+                for objid in objids:
+                    entry = self._generate_index_entry(objid, docnames, main)
+                    if entry is None:
+                        continue
+                    index_entries.append(entry)
+
+        for main, entries in self._sort_by_category(dualidx):
+            index_entries = content.setdefault(main, [])
+            for sub, subentries in self._sort_by_category(entries):
+                index_entries.append(self._generate_subcategory_index_entry(sub))
+                for subentry, objids in self._sort_by_category(subentries):
+                    for objid in objids:
+                        entry = self._generate_index_entry(objid, docnames, subentry)
+                        if entry is None:
+                            continue
+                        index_entries.append(entry)
+
+        # sort by category, and map category -> str
+        sorted_content = [
+            (category.main, entries)
+            for category, entries in self._sort_by_category(content)
+        ]
+
+        return sorted_content, False
+
+    def _generate_index_entry(
+        self, objid: str, ignore_docnames: Iterable[str] | None, category: Category
+    ) -> IndexEntry | None:
+        docname, anchor, obj = self.domain.objects[self.reftype.objtype, objid]
+        if ignore_docnames and docname not in ignore_docnames:
+            return None
+        name = obj.title() or objid
+        subtype = category.index_entry_subtype()
+        extra = category.extra or ''
+        desc = '.\n'.join(ValueWrapper(obj.content).as_str_list())
+        desc = strip_rst_markups(desc)  # strip rst markups
+        desc = ''.join([ln for ln in desc.split('\n') if ln.strip()])  # strip NEWLINE
+        desc = desc[:50] + '…' if len(desc) > 50 else desc  # shorten
+        return IndexEntry(
+            name,  # the name of the index entry to be displayed
+            subtype,  # the sub-entry related type
+            docname,  # docname where the entry is located
+            anchor,  # anchor for the entry within docname
+            extra,  # extra info for the entry
+            '',  # qualifier for the description
+            desc,  # description for the entry
+        )
+
+    def _generate_subcategory_index_entry(self, category: Category) -> IndexEntry:
+        assert category.sub is not None
+        return IndexEntry(
+            category.sub, category.index_entry_subtype(), '', '', '', '', ''
+        )
+
+    _T = TypeVar('_T')
+
+    def _sort_by_category(self, d: dict[Category, _T]) -> list[tuple[Category, _T]]:
+        """Helper for sorting dict items by classif."""
+        return self.indexer.sort(d.items(), lambda x: x[0])
