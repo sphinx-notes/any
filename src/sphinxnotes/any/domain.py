@@ -9,7 +9,7 @@ Domain implementions.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, override, cast, TypeVar
+from typing import TYPE_CHECKING, override, overload, cast, TypeVar
 
 from docutils import nodes
 from sphinx.addnodes import pending_xref
@@ -26,7 +26,7 @@ from sphinxnotes.data import (
 
 from .obj import (
     Object, RefType, Templates,
-    Category, Indexer,
+    Category, Indexer, IndexerRegistry,
     get_object_uniq_ids, get_object_refs,
 )
 
@@ -68,7 +68,7 @@ class ObjDomain(Domain):
     #: ObjDomain specific: objtype -> data schema
     _schemas: dict[str, Schema] = {}
     #: ObjDomain specific: objtype -> template set
-    _templates: dict[str, Templates]
+    _templates: dict[str, Templates] = {}
 
     """Methods that override from parent."""
 
@@ -123,17 +123,7 @@ class ObjDomain(Domain):
             '_objs': [],
         }
 
-        schema = self._schemas[objtype]
-
-        pending = pending_node()
-        pending.inline = True
-        pending.schema = schema
-        pending.template = self._templates[objtype].ref
-
-        todocname, anchor, obj = self.objects[objtype, objids.pop()]
-        pending.data = obj # TODO:
-
-        if len(objids) != 0 or objidx is not None:
+        if len(objids) > 1 or objidx is not None:
             # Mulitple objects found or reference index explicitly,
             # create link to indices page.
             todocname, anchor = self._get_index_anchor(typ, target)
@@ -141,19 +131,21 @@ class ObjDomain(Domain):
                 f'ambiguous {objtype} {target} in {self}, '
                 + f'ids: {objids} index: {todocname}#{anchor}'
             )
-
-        for objid in objids:
-            _, _, obj = self.objects[objtype, objid]
-            extra_ctxs['_objs'].append(obj)
-
-        if False:
-            ...
+        elif len(objids) == 1:
+            todocname, anchor, obj = self.objects[objtype, objids.pop()]
+            pending = pending_node()
+            pending.inline = True
+            pending.schema = self._schemas[objtype]
+            pending.template = self._templates[objtype].ref
+            contnode = pending
+        else:
             # The pending_xref node may be resolved by intersphinx,
             # so do not emit warning here, see also warn_missing_reference.
+            # FIXME
             return None
 
         refnode = make_refnode(
-            builder, fromdocname, todocname, anchor, pending, objtype + ' ' + target
+            builder, fromdocname, todocname, anchor, contnode, objtype + ' ' + target
         )
         refnode['classes'] += [self.name, self.name + '-' + objtype]
         return refnode
@@ -167,17 +159,17 @@ class ObjDomain(Domain):
 
     @classmethod
     def add_object_type(cls, objtype: str, schema: Schema, tmpls: Templates) -> None:
-        # Add to schemas dict
         cls._schemas[objtype] = schema
+        cls._templates[objtype] = tmpls
+
+        # Create a directive for defining object.
+        cls.directives[objtype] = ObjDefineDirective.derive(objtype, schema, tmpls.obj)
 
         def mkrole(reftype: RefType):
             """Create and register role for referencing object."""
             role = XRefRole(
                 # Emit warning when missing reference (node['refwarn'] = True)
                 warn_dangling=True,
-                # Inner node (contnode) would be replaced in resolve_xref method,
-                # so fix its class.
-                innernodeclass=nodes.literal,
             )
             cls.roles[str(reftype)] = role
             logger.debug(f'[any] make role {reftype} → {type(role)}')
@@ -185,7 +177,7 @@ class ObjDomain(Domain):
         def mkindex(reftype: RefType):
             """Create and register object index."""
             assert reftype.indexer
-            indexer = Registry[reftype.indexer]
+            indexer = IndexerRegistry[reftype.indexer]
             index = ObjIndex.derive(reftype, indexer)
             cls.indices.append(index)
             cls._indices_for_reftype[str(reftype)] = index
@@ -209,12 +201,9 @@ class ObjDomain(Domain):
                 mkrole(reftype)
                 mkindex(reftype)
 
-        # TODO: document
         cls.object_types[objtype] = ObjType(
             objtype, *[str(x) for x in reftypes]
         )
-        # Generates directive for creating object.
-        cls.directives[objtype] = ObjDefineDirective.derive(objtype, schema, tmpls.obj)
 
     @property
     def objects(self) -> dict[tuple[str, str], tuple[str, str, Object]]:
