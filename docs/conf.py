@@ -45,6 +45,9 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # produce any output in the built files.
 show_authors = True
 
+# Keep warnings as “system message” paragraphs in the rendered documents.
+keep_warnings = True
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -87,11 +90,7 @@ autoclass_content = 'init'
 autodoc_typehints = 'description'
 
 extensions.append('sphinx.ext.intersphinx')
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'sphinx': ('https://www.sphinx-doc.org/en/master', None),
-    'jinja': ('https://jinja.palletsprojects.com/en/latest/', None),
-}
+intersphinx_mapping = {}
 
 extensions.append('sphinx_sitemap')
 sitemap_filename = "sitemap.xml"
