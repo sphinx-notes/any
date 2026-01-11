@@ -119,52 +119,55 @@ extensions.append('any')
 
 # CUSTOM CONFIGURATION
 
-from any.api import Schema, Field as F, by_year, by_month
+obj_domain_name = 'obj'
+obj_template_debug = True
 
-version_schema = Schema('version',
-                        name=F(uniq=True, ref=True, required=True, form=F.Forms.LINES),
-                        attrs={
-                            'date': F(ref=True, indexers=[by_year, by_month]),
-                        },
-                        content=F(form=F.Forms.LINES),
-                        description_template=open('_templates/version.rst', 'r').read(),
-                        reference_template='🏷️{{ title }}',
-                        missing_reference_template='🏷️{{ title }}',
-                        ambiguous_reference_template='🏷️{{ title }}')
-confval_schema = Schema('confval',
-                        name=F(uniq=True, ref=True, required=True, form=F.Forms.LINES),
-                        attrs={
-                            'type': F(),
-                            'default': F(),
-                            'choice': F(form=F.Forms.WORDS),
-                            'versionadded': F(),
-                            'versionchanged': F(form=F.Forms.LINES),
-                        },
-                        content=F(),
-                        description_template=open('_templates/confval.rst', 'r').read(),
-                        reference_template='⚙️{{ title }}',
-                        missing_reference_template='⚙️{{ title }}',
-                        ambiguous_reference_template='⚙️{{ title }}')
-example_schema = Schema('example',
-                        name=F(ref=True),
-                        attrs={'style': F()},
-                        content=F(form=F.Forms.LINES),
-                        description_template=open('_templates/example.rst', 'r').read(),
-                        reference_template='📝{{ title }}',
-                        missing_reference_template='📝{{ title }}',
-                        ambiguous_reference_template='📝{{ title }}')
+obj_defines = {
+    'version': {
+        'schema': {
+            'name': 'lines of str, required, uniq, ref',
+            'attrs': {
+                'date': 'str, required, ref', # TOOD: date, index
+            },
+            'content': 'lines of str',
+        },
+        'templates': {
+            'obj': open('_templates/version.rst', 'r').read(),
+            'ref': '🏷️{{ title }}',
+        },
+    },
 
-# For locating packages under _schemas/.
-sys.path.insert(0, os.path.abspath('.'))
+    'confval': {
+        'schema': {
+            'name': 'lines of str, required, uniq, ref',
+            'attrs': {
+                'type': 'str',
+                'default': 'str',
+                'choice': 'words of str',
+                'versionadded': 'str',
+                'versionchanged': 'lines of str',
+            },
+            'content': 'str',
+        },
+        'templates': {
+            'obj': open('_templates/confval.rst', 'r').read(),
+            'ref': '⚙️{{ title }}',
+        },
+    },
 
-any_schemas = [
-    version_schema,
-    confval_schema,
-    example_schema,
+    'example': {
+        'schema': {
+            'name': 'str, ref',
+            'attrs': {
+                'style': 'str',
+            },
+            'content': 'lines of str',
+        },
+        'templates': {
+            'obj': open('_templates/example.rst', 'r').read(),
+            'ref': '📝{{ title }}',
+        },
+    }
+}
 
-    __import__("_schemas.cat").cat.cat,
-    __import__("_schemas.dog2").dog2.dog,
-    __import__("_schemas.tmplvar").tmplvar.tmplvar,
-]
-
-primary_domain = 'any'
+primary_domain = 'obj'

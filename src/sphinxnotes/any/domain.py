@@ -9,7 +9,7 @@ Domain implementions.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, override, cast
+from typing import TYPE_CHECKING, override, cast, TypeVar
 
 from docutils import nodes
 from sphinx.addnodes import pending_xref
@@ -33,7 +33,7 @@ from .obj import (
 from .utils import strip_rst_markups
 
 if TYPE_CHECKING:
-    from typing import Iterator, Iterable, TypeVar, override
+    from typing import Iterator, Iterable, override
     from sphinx.builders import Builder
     from sphinx.environment import BuildEnvironment
 
@@ -128,7 +128,7 @@ class ObjDomain(Domain):
         pending = pending_node()
         pending.inline = True
         pending.schema = schema
-        pending.template = self._templates[objtype].xref
+        pending.template = self._templates[objtype].ref
 
         todocname, anchor, obj = self.objects[objtype, objids.pop()]
         pending.data = obj # TODO:

@@ -9,7 +9,7 @@ Basic object and related types definitons.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 from abc import ABC, abstractmethod
 import hashlib
 import pickle
@@ -18,11 +18,11 @@ from dataclasses import dataclass
 
 from sphinxnotes.data import (
     BoolFlag, OperFlag, Registry,
-    Data, Value, ValueWrapper, Template, Schema
+    Data, Value, ValueWrapper, Template, Phase, Schema
 )
 
 if TYPE_CHECKING:
-    from typing import Self, Literal,Iterable, TypeVar, Callable
+    from typing import Self, Literal,Iterable, Callable
 
 # ====================
 # Object related types
@@ -79,11 +79,36 @@ class RefType(object):
             s += '+' + 'by-' + self.indexer
         return s
 
-@dataclass
 class Templates:
+    """A set of templates that used for rendering object and object
+    cross-references."""
+
+    """Templates for rendering object"""
     obj: Template
-    xref: Template
-    # TODO: more...
+    # embed: Templates
+
+    """Templates for rendering corss references."""
+    ref: Template
+    ref_by: dict[str, Template]
+
+    """Templates for rendering index entry."""
+    # ...
+
+    # TODO: more...?
+
+    def __init__(self, obj: str, ref: str, ref_by: dict[str, str] = {},
+                 debug: bool = False):
+        self.obj = Template(obj, Phase.Parsing, debug)
+        self.ref = Template(ref, Phase.Resolving, debug)
+        self.ref_by = {f: Template(t, Phase.Resolving, debug) for f, t in ref_by}
+
+
+    def get_ref_template(self, reftype: RefType) -> Template:
+        if reftype.field is not None:
+            if t := self.ref_by.get(reftype.field):
+                return t
+        return self.ref
+
 
 # ============================
 # Basic types for object index
