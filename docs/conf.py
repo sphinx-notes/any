@@ -87,11 +87,11 @@ autoclass_content = 'init'
 autodoc_typehints = 'description'
 
 extensions.append('sphinx.ext.intersphinx')
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'sphinx': ('https://www.sphinx-doc.org/en/master', None),
-    'jinja': ('https://jinja.palletsprojects.com/en/latest/', None),
-}
+# intersphinx_mapping = {
+#     'python': ('https://docs.python.org/3', None),
+#     'sphinx': ('https://www.sphinx-doc.org/en/master', None),
+#     'jinja': ('https://jinja.palletsprojects.com/en/latest/', None),
+# }
 
 extensions.append('sphinx_sitemap')
 sitemap_filename = "sitemap.xml"

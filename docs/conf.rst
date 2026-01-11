@@ -4,13 +4,13 @@ Configuration
 
 The extension provides the following configuration:
 
-.. any:confval:: any_domain_name
+.. obj:confval:: any_domain_name
    :type: str
    :default: 'any'
 
    Name of the domain.
 
-.. any:confval:: any_domain_dump
+.. obj:confval:: any_domain_dump
    :type: bool
    :default: 'True'
 
@@ -19,7 +19,7 @@ The extension provides the following configuration:
 
    .. versionadded:: 3.0a8
 
-.. any:confval:: any_schemas
+.. obj:confval:: any_schemas
    :type: List[sphinxnotes.any.Schema]
    :default: []
 

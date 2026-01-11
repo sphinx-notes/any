@@ -11,7 +11,7 @@ Defining Schema
 
 .. topic:: What is Schema?
 
-    Before descibing any object, we need a "schema" to tell extension "how to descibe the object". For extension user, "schema" is a :py:class:`python object <any.Schema>` that can specific in configuration value :any:confval:`any_schemas`.
+    Before descibing any object, we need a "schema" to tell extension "how to descibe the object". For extension user, "schema" is a :py:class:`python object <any.Schema>` that can specific in configuration value :obj:confval:`any_schemas`.
 
 The necessary python classes for writing schema are listed here:
 
@@ -41,7 +41,7 @@ Documenting Object
 
 Once a schema created, the corresponding :ref:`directives`, :ref:`roles` and :ref:`indices` will be generated. You can use them to descibe, reference and index object in your documentation.
 
-For the convenience, we use default domain name "any", and we assume that we have the following schema with in :any:confval:`any_schemas`:
+For the convenience, we use default domain name "any", and we assume that we have the following schema with in :obj:confval:`any_schemas`:
 
 .. literalinclude:: /_schemas/cat.py
    :language: python
@@ -57,10 +57,10 @@ Directives
 Object Description
 ~~~~~~~~~~~~~~~~~~
 
-The aboved schema created a Directive_ named with "``domain``:\ ``objtype``" (In this case, it is ``any:cat``) for descibing object(INC, it is cat🐈).
+The aboved schema created a Directive_ named with "``domain``:\ ``objtype``" (In this case, it is ``obj:cat``) for descibing object(INC, it is cat🐈).
 
 Arguments
-   Arguments are used to specify the :any:tmplvar:`name` of the object. The number argument is depends on the name :py:class:`any.Field` of Schema.
+   Arguments are used to specify the :obj:tmplvar:`name` of the object. The number argument is depends on the name :py:class:`any.Field` of Schema.
 
    - A ``None`` field means no argument is required
    - For a non-``None`` Field, see :py:attr:`any.Field` for more details
@@ -69,7 +69,7 @@ Arguments
 
    Specially, If first argument is ``_`` (underscore), the directive must be located after a `Section Title`_, the text of section title is the real first argument.
 
-   In this case, the ``any:cat`` directive accepts multiple argument split by newline.
+   In this case, the ``obj:cat`` directive accepts multiple argument split by newline.
 
 Options
    All attributes defined in schema are converted to options of directive. Further, they will available in various :ref:`Templates <writing-template>`.
@@ -83,7 +83,7 @@ Options
    In this case, the directive has three options: ``id``, ``color`` and ``picture``.
 
 Content
-   Content is used to specify the :any:tmplvar:`content` of the object.
+   Content is used to specify the :obj:tmplvar:`content` of the object.
 
    - A ``None`` field means no content is required
    - For a non-``None`` Field, see :py:attr:`any.Field` for more details
@@ -116,26 +116,26 @@ Same to :ref:`sphinx:xref-syntax`, explicit title ``:role:`title <target>``` is 
 General Reference
 ~~~~~~~~~~~~~~~~~
 
-The aboved schema created a role named with "``domain``-\ ``objtype``" (In this case, it is ``any:cat``) for creating a reference to :ref:`object-description`. The interpreted text can be value of *any referenceable field*.
+The aboved schema created a role named with "``domain``-\ ``objtype``" (In this case, it is ``obj:cat``) for creating a reference to :ref:`object-description`. The interpreted text can be value of *any referenceable field*.
 
 =================== =================================== ========================
-Reference by name   ``:any:cat:`Nyan Cat```             :any:cat:`Nyan Cat`
-By another name     ``:any:cat:`Nyan_Cat```             :any:cat:`Nyan_Cat`
-By ID               ``:any:cat:`1```                    :any:cat:`1`
-Explicit title      ``:any:cat:`This cat <Nyan Cat>```  :any:cat:`This cat <Nyan Cat>`
-A nonexistent cat   ``:any:cat:`mimi```                 :any:cat:`mimi`
+Reference by name   ``:obj:cat:`Nyan Cat```             :any:cat:`Nyan Cat`
+By another name     ``:obj:cat:`Nyan_Cat```             :any:cat:`Nyan_Cat`
+By ID               ``:obj:cat:`1```                    :any:cat:`1`
+Explicit title      ``:obj:cat:`This cat <Nyan Cat>```  :any:cat:`This cat <Nyan Cat>`
+A nonexistent cat   ``:obj:cat:`mimi```                 :any:cat:`mimi`
 =================== =================================== ========================
 
 Field-Specific Reference
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Role "``domain``-\ ``objtype``.\ ``field``" will be created for all referenceable Fields (In this case, it is ``any:cat.name``, ``any:cat.id`` and ``any:cat.color``).
+Role "``domain``-\ ``objtype``.\ ``field``" will be created for all referenceable Fields (In this case, it is ``obj:cat.name``, ``any:cat.id`` and ``any:cat.color``).
 
 These roles also create reference to :ref:`object-description`. But the interpreted text must be value of field in role's name.
 
 =================== =============================== ============================
-Reference by name   ``:any:cat.name:`Nyan Cat```    :any:cat.name:`Nyan Cat`
-By ID               ``:any:cat.id:`1```             :any:cat.id:`1`
+Reference by name   ``:obj:cat.name:`Nyan Cat```    :any:cat.name:`Nyan Cat`
+By ID               ``:obj:cat.id:`1```             :any:cat.id:`1`
 =================== =============================== ============================
 
 .. _indices:
@@ -196,12 +196,12 @@ Reference Template has two various variants:
 Missing Reference Template
    Applied when the reference is missing.
 
-   .. hint:: In this template, only variables :any:tmplvar:`objtype` and :any:tmplvar:`title`  are available.
+   .. hint:: In this template, only variables :obj:tmplvar:`objtype` and :any:tmplvar:`title`  are available.
 
 Ambiguous Reference Template
    Applied when the reference is ambiguous.
 
-   .. hint:: In this template, only variables :any:tmplvar:`objtype` and :any:tmplvar:`title`  are available.
+   .. hint:: In this template, only variables :obj:tmplvar:`objtype` and :any:tmplvar:`title`  are available.
 
 Variables
 ---------
@@ -214,25 +214,25 @@ All attributes defined in schema are available as variables in template. Note th
 
 Beside, there are some special variable:
 
-.. any:tmplvar:: objtype
+.. obj:tmplvar:: objtype
    :type: str
    :conf: TYPE_KEY
 
    Type of object.
 
-.. any:tmplvar:: name
+.. obj:tmplvar:: name
    :type: Union[None,str,List[str]]
    :conf: NAME_KEY
 
    Name of object.
 
-.. any:tmplvar:: content
+.. obj:tmplvar:: content
    :type: Union[None,str,List[str]]
    :conf: CONTENT_KEY
 
    Content of object.
 
-.. any:tmplvar:: title
+.. obj:tmplvar:: title
    :type: str
    :conf: TITLE_KEY
 
