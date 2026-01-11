@@ -119,7 +119,12 @@ extensions.append('any')
 
 # CUSTOM CONFIGURATION
 
+# For locating packages under _schemas/.
+sys.path.insert(0, os.path.abspath('.'))
+
 obj_domain_name = 'obj'
+primary_domain = 'obj'
+
 obj_template_debug = True
 
 obj_defines = {
@@ -167,7 +172,10 @@ obj_defines = {
             'obj': open('_templates/example.rst', 'r').read(),
             'ref': '📝{{ title }}',
         },
-    }
+    },
+
+    'cat': __import__("_schemas.cat").cat.cat,
+    'dog': __import__("_schemas.dog2").dog2.dog,
+    'tmplvar': __import__("_schemas.tmplvar").tmplvar.tmplvar,
 }
 
-primary_domain = 'obj'

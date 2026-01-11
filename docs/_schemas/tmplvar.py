@@ -1,24 +1,25 @@
 from textwrap import dedent
-from any.api import Schema, Field
 
-tmplvar = Schema(
-    'tmplvar',
-    name=Field(uniq=True, ref=True),
-    attrs={
-        'type': Field(),
-        'conf': Field(),
+tmplvar = {
+    'schema': {
+        'name': 'str, uniq, ref',
+        'attrs': {
+            'type': 'str',
+            'conf': 'str',
+        },
     },
-    description_template=dedent("""
-        {% if type %}:Type: ``{{ type }}`` {% endif %}
+    'templates': {
+        'obj': dedent("""
+            {% if type %}:Type: ``{{ type }}`` {% endif %}
 
-        {{ content }}
+            {{ content }}
 
-        {% if conf %}
-        .. tip::
+            {% if conf %}
+            .. tip::
 
-           Name of variables("{{ name }}") can be changed by setting
-           :py:attr:`~any.Schema.{{ conf }}`
-        {% endif %}"""),
-    reference_template="{{ '{{' }}{{ title }}{{ '}}' }}",
-    missing_reference_template="{{ '{{' }}{{ title }}{{ '}}' }}",
-)
+               Name of variables("{{ name }}") can be changed by setting
+               :py:attr:`~any.Schema.{{ conf }}`
+            {% endif %}"""),
+        'ref': "{{ '{{' }}{{ title }}{{ '}}' }}",
+    },
+}

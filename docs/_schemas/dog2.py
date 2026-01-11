@@ -1,15 +1,16 @@
 from textwrap import dedent
-from any.api import Schema, Field
 
-dog = Schema(
-    'dog',
-    attrs={
-        'breed': Field(ref=True),
-        'color': Field(ref=True, form=Field.Forms.WORDS),
+dog = {
+    'schema': {
+        'attrs': {
+            'breed': 'str, ref',
+            'color': 'words of str, ref',
+        },
     },
-    description_template=dedent("""
-        :Breed: :obj:dog.breed:`{{ breed }}`
-        :Colors: {% for c in color %}:obj:dog.color:`{{ c }}` {% endfor %}"""),
-    reference_template='🐕{{ title }}',
-    ambiguous_reference_template='{{ title }}',
-)
+    'templates': {
+        'obj': dedent("""
+            :Breed: :obj:dog.breed:`{{ breed }}`
+            :Colors: {% for c in color %}:obj:dog.color:`{{ c }}` {% endfor %}"""),
+        'ref': '🐕{{ title }}',
+    },
+}
