@@ -131,7 +131,7 @@ obj_defines = {
         'schema': {
             'name': 'lines of str, required, uniq, ref',
             'attrs': {
-                'date': 'str, required, ref, index by year',
+                'date': 'date, required, ref, index by year',
             },
             'content': 'lines of str',
         },

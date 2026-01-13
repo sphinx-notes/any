@@ -63,14 +63,14 @@ DISPFMTS_Y = '%Y 年'
 DISPFMTS_M = '%m 月'
 DISPFMTS_YM = '%Y 年 %m 月'
 DISPFMTS_DW = '%d 日，%a'
-ZEROTIME = PartialDate.from_str('0001', ['%Y'])
+ZEROTIME = PartialDate.from_str('0001', '%Y')
 
 
 def _safe_strptime(datestr, fmt) -> PartialDate:
     if datestr is None or datestr == '':
         return ZEROTIME
     try:
-        return PartialDate.from_str(datestr, [fmt])
+        return PartialDate.from_str(datestr, fmt)
     except ValueError:
         return ZEROTIME
 
@@ -129,6 +129,8 @@ class YearIndexer(Indexer):
 
     @override
     def anchor(self, refval: str) -> str:
+        if refval == '':
+            return ''
         date = PartialDate.from_str(refval)
         anchor = date.strftime(self.dispfmt_y)
         return f'cap-{anchor}'

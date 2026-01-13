@@ -50,19 +50,19 @@ class PartialDate(date):
         return cls.from_ymd(d.year, month, day)
 
     @classmethod
-    def from_str(cls, rawval: str, fmts=DATE_FMTS) -> Self:
+    def from_str(cls, rawval: str, fmt: str | None = None) -> Self:
         lasterr = None
+        fmts = [fmt] if fmt else DATE_FMTS
         for fmt in fmts:
             try:
                 dt = datetime.strptime(rawval, fmt)
             except ValueError as e:
-                lasterr = e
+                lasterr, errfmt = e, fmt
                 continue  # try next
-            else:
-                return cls.from_date(dt, fmt=fmt)
+            return cls.from_date(dt, fmt)
 
         raise ValueError(
-            f'failed to parse date string {rawval} from formats: {DATE_FMTS} '
+            f'parse date from formats: {fmts}, '
             f'last error: {lasterr}'
         )
 
