@@ -14,20 +14,28 @@ from typing import TYPE_CHECKING
 from sphinx.errors import ConfigError
 from sphinx.util import logging
 
-from sphinxnotes.data import Schema
+from sphinxnotes.data import Schema, Config as DataConfig
 
 from schema import Schema as DictSchema, SchemaError as DictSchemaError, Optional
 
-
-from .domain import ObjDomain
-from .obj import Templates
 from . import meta
+from .obj import Templates, IndexerRegistry
+from .domain import ObjDomain
+from .indexers import LiteralIndexer, PathIndexer, YearIndexer, MonthIndexer
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.config import Config
 
 logger = logging.getLogger(__name__)
+
+IndexerRegistry.update({
+    'lit': LiteralIndexer(),
+    'literal': LiteralIndexer(),
+    'slash': PathIndexer('/', 2),
+    'year': YearIndexer(),
+    'month': MonthIndexer(),
+})
 
 OBJ_DEFINE_DICT_SCHEMA = DictSchema({
     'schema': {
@@ -37,14 +45,11 @@ OBJ_DEFINE_DICT_SCHEMA = DictSchema({
     },
     'templates': {
         'obj': str,
-        'ref': str,
-
-        # 3. ref_by 可选，默认值为空字典 {}
-        Optional('ref_by', default={}): { str: str }
+        'ref': str, Optional('ref_by', default={}): { str: str }
     },
 })
 
-def _parse_obj_define_dict(d: dict, obj_template_debug: bool = False) -> tuple[Schema, Templates]:
+def _parse_obj_define_dict(d: dict) -> tuple[Schema, Templates]:
     objdef = OBJ_DEFINE_DICT_SCHEMA.validate(d)
     schemadef = objdef['schema']
     schema = Schema.from_dsl(schemadef['name'], schemadef['attrs'], schemadef['content'])
@@ -52,7 +57,7 @@ def _parse_obj_define_dict(d: dict, obj_template_debug: bool = False) -> tuple[S
     tmplsdef = objdef['templates']
     tmpls = Templates(tmplsdef['obj'], tmplsdef['ref'],
                       ref_by=tmplsdef['ref_by'],
-                      debug=obj_template_debug)
+                      debug=DataConfig.template_debug)
 
     return schema, tmpls
 
@@ -80,7 +85,6 @@ def setup(app: Sphinx):
     app.setup_extension('sphinxnotes.data')
 
     app.add_config_value('obj_domain_name', 'obj', 'env', types=str)
-    app.add_config_value('obj_template_debug', False, '', types=bool)
     app.add_config_value('obj_defines', [], 'env', types=dict)
 
     app.connect('config-inited', _config_inited)

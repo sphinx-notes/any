@@ -53,7 +53,7 @@ keep_warnings = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'furo'
+# html_theme = ''
 
 html_theme_options = {}
 
@@ -124,14 +124,14 @@ sys.path.insert(0, os.path.abspath('.'))
 obj_domain_name = 'obj'
 primary_domain = 'obj'
 
-obj_template_debug = True
+data_template_debug = True
 
 obj_defines = {
     'version': {
         'schema': {
             'name': 'lines of str, required, uniq, ref',
             'attrs': {
-                'date': 'str, required, ref', # TOOD: date, index
+                'date': 'str, required, ref, index by year',
             },
             'content': 'lines of str',
         },

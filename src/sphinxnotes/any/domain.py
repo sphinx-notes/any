@@ -17,6 +17,7 @@ from sphinx.domains import Domain, ObjType, Index, IndexEntry
 from sphinx.roles import XRefRole
 from sphinx.util import logging
 from sphinx.util.nodes import make_id, make_refnode
+from sphinx.errors import ExtensionError
 
 from sphinxnotes.data import (
     ValueWrapper, Schema,
@@ -177,7 +178,8 @@ class ObjDomain(Domain):
         def mkindex(reftype: RefType):
             """Create and register object index."""
             assert reftype.indexer
-            indexer = IndexerRegistry[reftype.indexer]
+            if not(indexer := IndexerRegistry.get(reftype.indexer)):
+                raise ExtensionError(f'no such indexer "{reftype.indexer}"')
             index = ObjIndex.derive(reftype, indexer)
             cls.indices.append(index)
             cls._indices_for_reftype[str(reftype)] = index

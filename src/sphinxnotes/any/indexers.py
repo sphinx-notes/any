@@ -8,28 +8,28 @@ sphinxnotes.any.indexers
 :license: BSD, see LICENSE for details.
 """
 
-from typing import Iterable, Literal, Callable
+from typing import TYPE_CHECKING, Literal, Iterable, Callable, override
 from time import strptime, strftime
+from datetime import datetime, date, time
 
-from .objects import Indexer, Category
+from .obj import Category, Indexer
 
-from sphinxnotes.data.data import Value, ValueWrapper
+from sphinxnotes.data import Value, ValueWrapper
 
 class LiteralIndexer(Indexer):
     name = 'literal'
 
+    @override
     def classify(self, objref: Value) -> list[Category]:
         entries = []
         for v in ValueWrapper(objref).as_str_list():
             entries.append(Category(main=v))
         return entries
 
+    @override
     def anchor(self, refval: str) -> str:
         # https://github.com/sphinx-doc/sphinx/blob/df3d94ffdad09cc2592caccd179004e31aa63227/sphinx/themes/basic/domainindex.html#L28
         return 'cap-' + refval
-
-
-DEFAULT_INDEXER = LiteralIndexer()
 
 
 class PathIndexer(Indexer):
@@ -39,6 +39,7 @@ class PathIndexer(Indexer):
         self.sep = sep
         self.maxsplit = maxsplit
 
+    @override
     def classify(self, objref: Value) -> list[Category]:
         entries = []
         for v in ValueWrapper(objref).as_str_list():
@@ -49,6 +50,7 @@ class PathIndexer(Indexer):
             entries.append(category)
         return entries
 
+    @override
     def anchor(self, refval: str) -> str:
         return 'cap-' + refval.split(self.sep, maxsplit=self.maxsplit)[0]
 
@@ -76,24 +78,12 @@ def _safe_strptime(datestr, fmt):
 class YearIndexer(Indexer):
     name = 'year'
 
-    def __init__(
-        self,
-        inputfmts: list[str] = INPUTFMTS,
-        dispfmt_y: str = DISPFMTS_Y,
-        dispfmt_m: str = DISPFMTS_M,
-        dispfmt_dw: str = DISPFMTS_DW,
-    ):
-        """*xxxfmt* are date format used by time.strptime/strftime.
-
-        .. seealso:: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes"""
-        self.inputfmts = inputfmts
-        self.dispfmt_y = dispfmt_y
-        self.dispfmt_m = dispfmt_m
-        self.dispfmt_dw = dispfmt_dw
-
+    @override
     def classify(self, objref: Value) -> list[Category]:
         entries = []
-        for v in ValueWrapper(objref).as_str_list():
+        for v in ValueWrapper(objref).as_list():
+            assert isinstance(v, (datetime, date))
+
             for datefmt in self.inputfmts:
                 try:
                     t = strptime(v, datefmt)
@@ -117,6 +107,7 @@ class YearIndexer(Indexer):
                 entries.append(entry)
         return entries
 
+    @override
     def sort(
         self, data: Iterable[Indexer._T], key: Callable[[Indexer._T], Category]
     ) -> list[Indexer._T]:
@@ -128,6 +119,7 @@ class YearIndexer(Indexer):
 
         return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
 
+    @override
     def anchor(self, refval: str) -> str:
         for datefmt in self.inputfmts:
             try:
@@ -152,6 +144,7 @@ class MonthIndexer(Indexer):
         self.dispfmt_ym = dispfmt_ym
         self.dispfmt_dw = dispfmt_dw
 
+    @override
     def classify(self, objref: Value) -> list[Category]:
         entries = []
         for v in ValueWrapper(objref).as_str_list():
@@ -181,6 +174,7 @@ class MonthIndexer(Indexer):
 
         return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
 
+    @override
     def anchor(self, refval: str) -> str:
         for datefmt in self.inputfmts:
             try:
@@ -190,4 +184,3 @@ class MonthIndexer(Indexer):
             anchor = strftime(self.dispfmt_ym, t)
             return f'cap-{anchor}'
         return ''
-
