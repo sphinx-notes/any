@@ -8,13 +8,13 @@ sphinxnotes.any.indexers
 :license: BSD, see LICENSE for details.
 """
 
-from typing import TYPE_CHECKING, Literal, Iterable, Callable, override
-from time import strptime, strftime
-from datetime import datetime, date, time
+from typing import Literal, Iterable, Callable, override
 
 from .obj import Category, Indexer
+from .datetime import PartialDate
 
 from sphinxnotes.data import Value, ValueWrapper
+
 
 class LiteralIndexer(Indexer):
     name = 'literal'
@@ -63,14 +63,14 @@ DISPFMTS_Y = '%Y 年'
 DISPFMTS_M = '%m 月'
 DISPFMTS_YM = '%Y 年 %m 月'
 DISPFMTS_DW = '%d 日，%a'
-ZEROTIME = strptime('0001', '%Y')
+ZEROTIME = PartialDate.from_str('0001', ['%Y'])
 
 
-def _safe_strptime(datestr, fmt):
+def _safe_strptime(datestr, fmt) -> PartialDate:
     if datestr is None or datestr == '':
         return ZEROTIME
     try:
-        return strptime(datestr, fmt)
+        return PartialDate.from_str(datestr, [fmt])
     except ValueError:
         return ZEROTIME
 
@@ -78,33 +78,41 @@ def _safe_strptime(datestr, fmt):
 class YearIndexer(Indexer):
     name = 'year'
 
+    def __init__(
+        self,
+        dispfmt_y: str = DISPFMTS_Y,
+        dispfmt_m: str = DISPFMTS_M,
+        dispfmt_dw: str = DISPFMTS_DW,
+    ):
+        """*xxxfmt* are date format used by time.strptime/strftime.
+
+        .. seealso:: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes"""
+        self.dispfmt_y = dispfmt_y
+        self.dispfmt_m = dispfmt_m
+        self.dispfmt_dw = dispfmt_dw
+
     @override
     def classify(self, objref: Value) -> list[Category]:
         entries = []
         for v in ValueWrapper(objref).as_list():
-            assert isinstance(v, (datetime, date))
+            assert isinstance(v, PartialDate)
 
-            for datefmt in self.inputfmts:
-                try:
-                    t = strptime(v, datefmt)
-                except ValueError:
-                    continue  # try next datefmt
+            if v.no_month:
+                entry = Category(main=v.strftime(self.dispfmt_y))
+            if v.no_day:
+                entry = Category(
+                    main=v.strftime(self.dispfmt_y),
+                    sub=v.strftime(self.dispfmt_m),
+                    extra='',  # left it empty, or sub-type will not take effect
+                )
+            else:
+                entry = Category(
+                    main=v.strftime(self.dispfmt_y),
+                    sub=v.strftime(self.dispfmt_m),
+                    extra=v.strftime(self.dispfmt_dw),
+                )
+            entries.append(entry)
 
-                if all(x not in datefmt for x in ['%m', '%b', '%B']):  # missing month
-                    entry = Category(main=strftime(self.dispfmt_y, t))
-                elif all(x not in datefmt for x in ['%d', '%j']):  # missing day
-                    entry = Category(
-                        main=strftime(self.dispfmt_y, t),
-                        sub=strftime(self.dispfmt_m, t),
-                        extra='',  # TODO: leave it empty, or sub-type will not take effect
-                    )
-                else:
-                    entry = Category(
-                        main=strftime(self.dispfmt_y, t),
-                        sub=strftime(self.dispfmt_m, t),
-                        extra=strftime(self.dispfmt_dw, t),
-                    )
-                entries.append(entry)
         return entries
 
     @override
@@ -121,14 +129,9 @@ class YearIndexer(Indexer):
 
     @override
     def anchor(self, refval: str) -> str:
-        for datefmt in self.inputfmts:
-            try:
-                t = strptime(refval, datefmt)
-            except ValueError:
-                continue  # try next datefmt
-            anchor = strftime(self.dispfmt_y, t)
-            return f'cap-{anchor}'
-        return ''
+        date = PartialDate.from_str(refval)
+        anchor = date.strftime(self.dispfmt_y)
+        return f'cap-{anchor}'
 
 
 class MonthIndexer(Indexer):
@@ -136,32 +139,25 @@ class MonthIndexer(Indexer):
 
     def __init__(
         self,
-        inputfmts: list[str] = INPUTFMTS,
         dispfmt_ym: str = DISPFMTS_YM,
         dispfmt_dw: str = DISPFMTS_DW,
     ):
-        self.inputfmts = inputfmts
         self.dispfmt_ym = dispfmt_ym
         self.dispfmt_dw = dispfmt_dw
 
     @override
     def classify(self, objref: Value) -> list[Category]:
         entries = []
-        for v in ValueWrapper(objref).as_str_list():
-            for datefmt in self.inputfmts:
-                try:
-                    t = strptime(v, datefmt)
-                except ValueError:
-                    continue  # try next datefmt
+        for v in ValueWrapper(objref).as_list():
+            assert isinstance(v, PartialDate)
 
-                if all(x not in datefmt for x in ['%d', '%j']):  # missing day
-                    entry = Category(main=strftime(self.dispfmt_ym, t))
-                else:
-                    entry = Category(
-                        main=strftime(self.dispfmt_ym, t),
-                        extra=strftime(self.dispfmt_dw, t),
-                    )
-                entries.append(entry)
+            if v.no_day:
+                entry = Category(main=v.strftime(self.dispfmt_ym))
+            else:
+                entry = Category(
+                    main=v.strftime(self.dispfmt_ym), extra=v.strftime(self.dispfmt_dw)
+                )
+            entries.append(entry)
         return entries
 
     def sort(
@@ -176,11 +172,6 @@ class MonthIndexer(Indexer):
 
     @override
     def anchor(self, refval: str) -> str:
-        for datefmt in self.inputfmts:
-            try:
-                t = strptime(refval, datefmt)
-            except ValueError:
-                continue  # try next datefmt
-            anchor = strftime(self.dispfmt_ym, t)
-            return f'cap-{anchor}'
-        return ''
+        date = PartialDate.from_str(refval)
+        anchor = date.strftime(self.dispfmt_ym)
+        return f'cap-{anchor}'

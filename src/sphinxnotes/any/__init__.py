@@ -89,7 +89,8 @@ def setup(app: Sphinx):
 
     app.connect('config-inited', _config_inited)
 
-    from . import dump
+    from . import dump, datetime
     dump.setup(app)
+    datetime.setup(app)
 
     return meta.post_setup(app)
