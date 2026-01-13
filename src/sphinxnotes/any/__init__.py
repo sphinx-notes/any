@@ -84,7 +84,7 @@ def _config_inited(app: Sphinx, config: Config) -> None:
         except (DictSchemaError, ValueError) as e:
             raise ConfigError(f'{e}') from e
 
-        ObjDomain.add_object_type(objtype, schema, tmpls)
+        ObjDomain.add_objtype(objtype, schema, tmpls)
 
     app.add_domain(ObjDomain)
 

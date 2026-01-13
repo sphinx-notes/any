@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from sphinxnotes.data import (
     Registry,
     Data,
+    PlainValue,
     Value,
     ValueWrapper,
     Template,
@@ -234,7 +235,7 @@ def validate_schema(schema: Schema) -> None:
             has_uniq = field.uniq
 
 
-def get_object_uniq_ids(schema: Schema, obj: Object) -> list[str]:
+def get_object_uniq_ids(schema: Schema, obj: Object) -> list[PlainValue]:
     """
     Return unique identifier of object.
     If there is not any unique field, return (None, sha1) instead.
@@ -242,26 +243,21 @@ def get_object_uniq_ids(schema: Schema, obj: Object) -> list[str]:
     for _, field, val in schema.items(obj):
         if not field.uniq:
             continue
-        return ValueWrapper(val).as_str_list()
+        return ValueWrapper(val).as_list()
 
     # Fallback to SHA1 when there is not unique field.
     sha1 = hashlib.sha1(pickle.dumps(obj)).hexdigest()[:7]
     return [sha1]
 
 
-def get_object_refs(schema: Schema, obj: Object) -> set[tuple[str, str]]:
+def get_object_refs(schema: Schema, obj: Object) -> set[tuple[str, PlainValue]]:
     """Return all references (referenceable fields) of object"""
     assert obj
     refs = []
     for name, field, val in schema.items(obj):
         if not field.ref:
             continue
-        if val is None:
-            continue
-        elif isinstance(val, list):
-            refs += [(name, str(x)) for x in val]
-        else:
-            refs.append((name, str(val)))
+        refs += [(name, x) for x in ValueWrapper(val).as_list()]
     return set(refs)
 
 

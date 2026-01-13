@@ -50,7 +50,7 @@ def _dump_domain_data(app: Sphinx, _):
         }
 
     with open(app.doctreedir.joinpath(fn), 'w') as f:
-        f.write(json.dumps(objs, indent=2, ensure_ascii=False))
+        f.write(json.dumps(objs, indent=2, ensure_ascii=False, sort_keys=True, default=str))
 
 
 def setup(app: Sphinx):

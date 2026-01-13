@@ -20,6 +20,7 @@ from sphinx.util.nodes import make_id, make_refnode
 from sphinx.errors import ExtensionError
 
 from sphinxnotes.data import (
+    PlainValue,
     ValueWrapper,
     Schema,
     pending_node,
@@ -84,11 +85,11 @@ class ObjDomain(Domain):
     @override
     def clear_doc(self, docname: str) -> None:
         objids = set()
-        for (objtype, objid), (doc, _, _) in list(self.objects.items()):
+        for (objtype, objid), (doc, _, _) in self.objects.items():
             if doc == docname:
                 del self.objects[objtype, objid]
                 objids.add(objid)
-        for (objtype, objfield, objref), ids in list(self.references.items()):
+        for (objtype, objfield, objref), ids in self.references.items():
             ids = ids - objids
             if ids:
                 self.references[objtype, objfield, objref] = ids
@@ -167,7 +168,7 @@ class ObjDomain(Domain):
     """Publish methods."""
 
     @classmethod
-    def add_object_type(cls, objtype: str, schema: Schema, tmpls: Templates) -> None:
+    def add_objtype(cls, objtype: str, schema: Schema, tmpls: Templates) -> None:
         cls._schemas[objtype] = schema
         cls._templates[objtype] = tmpls
 
@@ -214,12 +215,12 @@ class ObjDomain(Domain):
         cls.object_types[objtype] = ObjType(objtype, *[str(x) for x in reftypes])
 
     @property
-    def objects(self) -> dict[tuple[str, str], tuple[str, str, Object]]:
+    def objects(self) -> dict[tuple[str, PlainValue], tuple[str, str, Object]]:
         """(objtype, objid) -> (docname, anchor, obj)"""
         return self.data.setdefault('objects', {})
 
     @property
-    def references(self) -> dict[tuple[str, str, str], set[str]]:
+    def references(self) -> dict[tuple[str, str, PlainValue], set[PlainValue]]:
         """(objtype, objfield, objref) -> set(objid)"""
         return self.data.setdefault('references', {})
 
@@ -277,20 +278,19 @@ class ObjDefineDirective(StrictDataDefineDirective):
         n['classes'].append(domain.name)
 
         # FIXME: get anchor node
-        if n.external_name is not None:
-            objids = get_object_uniq_ids(self.schema, n.data)
-            ahrid = make_id(
-                self.env, self.state.document, prefix=objtype, term=objids[0]
-            )
+        objids = get_object_uniq_ids(self.schema, n.data)
+        ahrid = make_id(
+            self.env, self.state.document, prefix=objtype, term=objids[0]
+        )
 
-            n['ids'].append(ahrid)
-            # Add object name to node's names attribute.
-            # 'names' is space-separated list containing normalized reference
-            # names of an element.
-            n['names'].extend([nodes.fully_normalize_name(x) for x in objids])
+        n['ids'].append(ahrid)
+        # Add object name to node's names attribute.
+        # 'names' is space-separated list containing normalized reference
+        # names of an element.
+        n['names'].extend([nodes.fully_normalize_name(x) for x in objids])
 
-            self.state.document.note_explicit_target(n)
-            domain.note_object(self.env.docname, ahrid, self.schema, n.data)
+        self.state.document.note_explicit_target(n)
+        domain.note_object(self.env.docname, ahrid, self.schema, n.data)
 
 
 # =================
@@ -368,7 +368,7 @@ class ObjIndex(Index):
                         category, set()
                     ).update(objids)
 
-        content: dict[Category, list[IndexEntry]] = {}  # category →  entries
+        content: dict[Category, list[IndexEntry]] = {}  # category → entries
         for main, entries in self._sort_by_category(singleidx):
             index_entries = content.setdefault(main, [])
             for main, objids in self._sort_by_category(entries):
