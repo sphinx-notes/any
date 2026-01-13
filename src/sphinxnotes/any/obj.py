@@ -17,12 +17,17 @@ import pickle
 from dataclasses import dataclass
 
 from sphinxnotes.data import (
-    BoolFlag, OperFlag, Registry,
-    Data, Value, ValueWrapper, Template, Phase, Schema
+    Registry,
+    Data,
+    Value,
+    ValueWrapper,
+    Template,
+    Phase,
+    Schema,
 )
 
 if TYPE_CHECKING:
-    from typing import Self, Literal,Iterable, Callable
+    from typing import Self, Literal, Iterable, Callable
 
 # ====================
 # Object related types
@@ -30,6 +35,7 @@ if TYPE_CHECKING:
 
 # A better name in this context.
 type Object = Data
+
 
 @dataclass
 class RefType(object):
@@ -79,6 +85,7 @@ class RefType(object):
             s += '+' + 'by-' + self.indexer
         return s
 
+
 class Templates:
     """A set of templates that used for rendering object and object
     cross-references."""
@@ -96,12 +103,12 @@ class Templates:
 
     # TODO: more...?
 
-    def __init__(self, obj: str, ref: str, ref_by: dict[str, str] = {},
-                 debug: bool = False):
+    def __init__(
+        self, obj: str, ref: str, ref_by: dict[str, str] = {}, debug: bool = False
+    ):
         self.obj = Template(obj, Phase.Parsing, debug)
         self.ref = Template(ref, Phase.Resolving, debug)
         self.ref_by = {f: Template(t, Phase.Resolving, debug) for f, t in ref_by}
-
 
     def get_ref_template(self, reftype: RefType) -> Template:
         if reftype.field is not None:
@@ -113,6 +120,7 @@ class Templates:
 # ============================
 # Basic types for object index
 # ============================
+
 
 @dataclass
 class Category:
@@ -203,33 +211,28 @@ IndexerRegistry: dict[str, Indexer] = {}
 # Support for extra field flags
 # =============================
 
+
 def _register_field_flags() -> None:
-    # NOTE: These stmts add a "uniq" field for data.Field.
-    # u can acccess them by ``data.Field.uniq``.
+    # NOTE: Add a "uniq" flag to data.Field.
+    # user can acccess flag by accessing ``data.Field.uniq``.
     # The same applies below.
-    _uniq_flag = BoolFlag('uniq')
-    Registry.flags['uniq'] = _uniq_flag
-    Registry.flags['unique'] = _uniq_flag
+    Registry.add_flag('uniq', aliases=['unique'])
 
-    _ref_flag = BoolFlag('ref')
-    Registry.flags['ref'] = _ref_flag
-    Registry.flags['refer'] = _ref_flag
-    Registry.flags['referable'] = _ref_flag
-    Registry.flags['referenceable'] = _ref_flag
+    Registry.add_flag('ref', aliases=['refer', 'referable', 'referenceable'])
 
-    _index_flag = OperFlag('indexers', store='append', default=[])
-    Registry.byflags['index'] = _index_flag
-    Registry.byflags['idx'] = _index_flag
+    Registry.add_by_option('index', str, store='append', aliases=['idx'])
+
 
 def validate_schema(schema: Schema) -> None:
-   has_uniq = False
-   for _, field in schema.fields():
-       if field is None:
-           continue
-       if has_uniq and field.uniq:
-           raise ValueError('only one unique field is allowed in schema')
-       else:
-           has_uniq = field.uniq
+    has_uniq = False
+    for _, field in schema.fields():
+        if field is None:
+            continue
+        if has_uniq and field.uniq:
+            raise ValueError('only one unique field is allowed in schema')
+        else:
+            has_uniq = field.uniq
+
 
 def get_object_uniq_ids(schema: Schema, obj: Object) -> list[str]:
     """
@@ -245,6 +248,7 @@ def get_object_uniq_ids(schema: Schema, obj: Object) -> list[str]:
     sha1 = hashlib.sha1(pickle.dumps(obj)).hexdigest()[:7]
     return [sha1]
 
+
 def get_object_refs(schema: Schema, obj: Object) -> set[tuple[str, str]]:
     """Return all references (referenceable fields) of object"""
     assert obj
@@ -259,5 +263,6 @@ def get_object_refs(schema: Schema, obj: Object) -> set[tuple[str, str]]:
         else:
             refs.append((name, str(val)))
     return set(refs)
+
 
 _register_field_flags()

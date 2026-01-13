@@ -3,6 +3,7 @@ import re
 from docutils import nodes, core
 from docutils.parsers.rst import roles
 
+
 # TODO: remove
 def strip_rst_markups(rst: str) -> str:
     """Strip markups and newlines in rST.

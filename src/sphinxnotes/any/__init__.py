@@ -29,35 +29,46 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-IndexerRegistry.update({
-    'lit': LiteralIndexer(),
-    'literal': LiteralIndexer(),
-    'slash': PathIndexer('/', 2),
-    'year': YearIndexer(),
-    'month': MonthIndexer(),
-})
+IndexerRegistry.update(
+    {
+        'lit': LiteralIndexer(),
+        'literal': LiteralIndexer(),
+        'slash': PathIndexer('/', 2),
+        'year': YearIndexer(),
+        'month': MonthIndexer(),
+    }
+)
 
-OBJ_DEFINE_DICT_SCHEMA = DictSchema({
-    'schema': {
-        Optional('name', default=None): str,
-        'attrs': { str: str },
-        Optional('content', default=None): str,
-    },
-    'templates': {
-        'obj': str,
-        'ref': str, Optional('ref_by', default={}): { str: str }
-    },
-})
+OBJ_DEFINE_DICT_SCHEMA = DictSchema(
+    {
+        'schema': {
+            Optional('name', default=None): str,
+            'attrs': {str: str},
+            Optional('content', default=None): str,
+        },
+        'templates': {
+            'obj': str,
+            'ref': str,
+            Optional('ref_by', default={}): {str: str},
+        },
+    }
+)
+
 
 def _parse_obj_define_dict(d: dict) -> tuple[Schema, Templates]:
     objdef = OBJ_DEFINE_DICT_SCHEMA.validate(d)
     schemadef = objdef['schema']
-    schema = Schema.from_dsl(schemadef['name'], schemadef['attrs'], schemadef['content'])
+    schema = Schema.from_dsl(
+        schemadef['name'], schemadef['attrs'], schemadef['content']
+    )
 
     tmplsdef = objdef['templates']
-    tmpls = Templates(tmplsdef['obj'], tmplsdef['ref'],
-                      ref_by=tmplsdef['ref_by'],
-                      debug=DataConfig.template_debug)
+    tmpls = Templates(
+        tmplsdef['obj'],
+        tmplsdef['ref'],
+        ref_by=tmplsdef['ref_by'],
+        debug=DataConfig.template_debug,
+    )
 
     return schema, tmpls
 
@@ -90,6 +101,7 @@ def setup(app: Sphinx):
     app.connect('config-inited', _config_inited)
 
     from . import dump, datetime
+
     dump.setup(app)
     datetime.setup(app)
 

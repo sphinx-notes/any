@@ -16,6 +16,7 @@ import dataclasses
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
+
 def _dump_domain_data(app: Sphinx, _):
     """Dump any domain data to a JSON file."""
 

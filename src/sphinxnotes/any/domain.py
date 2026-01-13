@@ -9,7 +9,7 @@ Domain implementions.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, override, overload, cast, TypeVar
+from typing import TYPE_CHECKING, override, cast, TypeVar
 
 from docutils import nodes
 from sphinx.addnodes import pending_xref
@@ -20,15 +20,22 @@ from sphinx.util.nodes import make_id, make_refnode
 from sphinx.errors import ExtensionError
 
 from sphinxnotes.data import (
-    ValueWrapper, Schema,
-    pending_node, RenderedNode,
+    ValueWrapper,
+    Schema,
+    pending_node,
+    RenderedNode,
     StrictDataDefineDirective,
 )
 
 from .obj import (
-    Object, RefType, Templates,
-    Category, Indexer, IndexerRegistry,
-    get_object_uniq_ids, get_object_refs,
+    Object,
+    RefType,
+    Templates,
+    Category,
+    Indexer,
+    IndexerRegistry,
+    get_object_uniq_ids,
+    get_object_refs,
 )
 
 from .utils import strip_rst_markups
@@ -44,6 +51,7 @@ logger = logging.getLogger(__name__)
 # Domain implemention
 # ===================
 
+
 class ObjDomain(Domain):
     """
     The Obj domain for describing anything.
@@ -55,11 +63,11 @@ class ObjDomain(Domain):
     label = 'Object'
     object_types = {}
     directives = {}
-    roles  = {}
+    roles = {}
     indices = []
     initial_data = {
-        'objects': {}, # see property object
-        'references': {}, # see property references
+        'objects': {},  # see property object
+        'references': {},  # see property references
     }
 
     """Custom class members."""
@@ -178,7 +186,7 @@ class ObjDomain(Domain):
         def mkindex(reftype: RefType):
             """Create and register object index."""
             assert reftype.indexer
-            if not(indexer := IndexerRegistry.get(reftype.indexer)):
+            if not (indexer := IndexerRegistry.get(reftype.indexer)):
                 raise ExtensionError(f'no such indexer "{reftype.indexer}"')
             index = ObjIndex.derive(reftype, indexer)
             cls.indices.append(index)
@@ -196,16 +204,14 @@ class ObjDomain(Domain):
                 reftypes.append(reftype)
                 mkrole(reftype)  # create a role to reference object(s)
 
-            for idxname in field.indexers:
+            for idxname in field.index:
                 reftype = RefType(objtype, field=name, indexer=idxname)
                 reftypes.append(reftype)
                 # Create role and index for reference objects by index.
                 mkrole(reftype)
                 mkindex(reftype)
 
-        cls.object_types[objtype] = ObjType(
-            objtype, *[str(x) for x in reftypes]
-        )
+        cls.object_types[objtype] = ObjType(objtype, *[str(x) for x in reftypes])
 
     @property
     def objects(self) -> dict[tuple[str, str], tuple[str, str, Object]]:
@@ -237,7 +243,6 @@ class ObjDomain(Domain):
         for objfield, objref in objrefs:
             self.references.setdefault((objtype, objfield, objref), set()).add(objid)
 
-
     """Methods for inernal use"""
 
     def _get_index_anchor(self, reftype: str, refval: str) -> tuple[str, str]:
@@ -254,6 +259,7 @@ class ObjDomain(Domain):
 # =============================
 # Directive/Roles implementions
 # =============================
+
 
 class ObjDefineDirective(StrictDataDefineDirective):
     schema: Schema
@@ -273,7 +279,9 @@ class ObjDefineDirective(StrictDataDefineDirective):
         # FIXME: get anchor node
         if n.external_name is not None:
             objids = get_object_uniq_ids(self.schema, n.data)
-            ahrid = make_id(self.env, self.state.document, prefix=objtype, term=objids[0])
+            ahrid = make_id(
+                self.env, self.state.document, prefix=objtype, term=objids[0]
+            )
 
             n['ids'].append(ahrid)
             # Add object name to node's names attribute.
@@ -284,6 +292,7 @@ class ObjDefineDirective(StrictDataDefineDirective):
             self.state.document.note_explicit_target(n)
             domain.note_object(self.env.docname, ahrid, self.schema, n.data)
 
+
 # =================
 # Index implemention
 # ==================
@@ -291,8 +300,10 @@ class ObjDefineDirective(StrictDataDefineDirective):
 # NOTE: There are cross-references between ObjIndex and ObjDomain,
 # so they can only be implemented in the same Python file.
 
+
 class ObjIndex(Index):
     """Index subclass to provide the object reference index."""
+
     reftype: RefType
     indexer: Indexer
 
