@@ -9,7 +9,7 @@ Datetime value support. Mostly for indexer.{Year,Month}Indexer.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from datetime import date, datetime
 
 from sphinxnotes.data import Registry
@@ -29,33 +29,43 @@ class PartialDate(date):
     no_day: bool
 
     @classmethod
-    def from_ymd(
-        cls, year: int, month: int | None = None, day: int | None = None
-    ) -> Self:
-        self = cls(year, month or 1, day or 1)
-        self.no_month = month is None
-        self.no_day = day is None
-        return self
-
-    @classmethod
     def from_date(cls, d: date, fmt: str) -> Self:
-        month = d.month if all(x not in fmt for x in ['%m', '%b', '%B']) else None
-        day = d.day if all(x not in fmt for x in ['%d', '%j']) else None
-        return cls.from_ymd(d.year, month, day)
+        month = d.month if any(x in fmt for x in ['%m', '%b', '%B']) else None
+        day = d.day if any(x in fmt for x in ['%d', '%j']) else None
+        return cls(d.year, month, day)
 
     @classmethod
     def from_str(cls, rawval: str, fmt: str | None = None) -> Self:
         lasterr = None
         fmts = [fmt] if fmt else DATE_FMTS
-        for fmt in fmts:
+        for f in fmts:
             try:
-                dt = datetime.strptime(rawval, fmt)
+                dt = datetime.strptime(rawval, f)
             except ValueError as e:
                 lasterr = e
                 continue  # try next
-            return cls.from_date(dt, fmt)
+            return cls.from_date(dt, f)
 
         raise ValueError(f'parse date from formats: {fmts}, last error: {lasterr}')
+
+    """Methods to make pickle work correctly."""
+
+    @override
+    def __new__(cls, year: int, month: int | None = None, day: int | None = None):
+        instance = super().__new__(cls, year, month or 1, day or 1)
+        instance.no_month = month is None
+        instance.no_day = day is None
+        return instance
+
+    @override
+    def __reduce__(self):
+        return (
+            self.__class__, (
+                self.year,
+                None if self.no_month else self.month,
+                None if self.no_day else self.day,
+            )
+        )
 
 
 def _config_inited(app: Sphinx, config: Config) -> None:
