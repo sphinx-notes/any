@@ -18,7 +18,6 @@ from sphinx.roles import XRefRole
 from sphinx.util import logging
 from sphinx.util.nodes import make_id, make_refnode
 from sphinx.errors import ExtensionError
-
 from sphinxnotes.data import (
     PlainValue,
     ValueWrapper,
@@ -34,11 +33,10 @@ from .obj import (
     Templates,
     Category,
     Indexer,
-    IndexerRegistry,
+    get_object_title,
     get_object_uniq_ids,
     get_object_refs,
 )
-
 from .utils import strip_rst_markups
 
 if TYPE_CHECKING:
@@ -54,12 +52,8 @@ logger = logging.getLogger(__name__)
 
 
 class ObjDomain(Domain):
-    """
-    The Obj domain for describing anything.
-    """
 
     """Parent's class members."""
-
     name = 'obj'
     label = 'Object'
     object_types = {}
@@ -146,7 +140,7 @@ class ObjDomain(Domain):
             pending = pending_node()
             pending.inline = True
             pending.schema = self._schemas[objtype]
-            pending.template = self._templates[objtype].ref
+            pending.template = self._templates[objtype].get_ref_template(reftype)
             contnode = pending
         else:
             # The pending_xref node may be resolved by intersphinx,
@@ -279,9 +273,7 @@ class ObjDefineDirective(StrictDataDefineDirective):
 
         # FIXME: get anchor node
         objids = get_object_uniq_ids(self.schema, n.data)
-        ahrid = make_id(
-            self.env, self.state.document, prefix=objtype, term=objids[0]
-        )
+        ahrid = make_id(self.env, self.state.document, prefix=objtype, term=objids[0])
 
         n['ids'].append(ahrid)
         # Add object name to node's names attribute.
@@ -292,6 +284,9 @@ class ObjDefineDirective(StrictDataDefineDirective):
         self.state.document.note_explicit_target(n)
         domain.note_object(self.env.docname, ahrid, self.schema, n.data)
 
+
+class ObjdescDefineDirective(ObjDefineDirective):
+    ...
 
 # =================
 # Index implemention
@@ -343,10 +338,10 @@ class ObjIndex(Index):
     ) -> tuple[list[tuple[str, list[IndexEntry]]], bool]:
         # Single index for generating normal entries (subtype=0).
         # Main Category →  Extra (for ordering objids) →  objids
-        singleidx: dict[Category, dict[Category, set[str]]] = {}
+        singleidx: dict[Category, dict[Category, set[PlainValue]]] = {}
         # Dual index for generating entrie (subtype=1) and its sub-entries (subtype=2).
         # Main category  →  Sub-Category →  Extra (for ordering objids) →  objids
-        dualidx: dict[Category, dict[Category, dict[Category, set[str]]]] = {}
+        dualidx: dict[Category, dict[Category, dict[Category, set[PlainValue]]]] = {}
 
         objrefs = sorted(self.domain.references.items())
         for (objtype, objfield, objref), objids in objrefs:
@@ -355,7 +350,6 @@ class ObjIndex(Index):
             if self.reftype.field and objfield != self.reftype.field:
                 continue
 
-            # TODO: pass a real Value
             for category in self.indexer.classify(objref):
                 main = category.as_main()
                 sub = category.as_sub()
@@ -398,12 +392,15 @@ class ObjIndex(Index):
         return sorted_content, False
 
     def _generate_index_entry(
-        self, objid: str, ignore_docnames: Iterable[str] | None, category: Category
+        self,
+        objid: PlainValue,
+        ignore_docnames: Iterable[str] | None,
+        category: Category,
     ) -> IndexEntry | None:
         docname, anchor, obj = self.domain.objects[self.reftype.objtype, objid]
         if ignore_docnames and docname not in ignore_docnames:
             return None
-        name = obj.title() or objid
+        name = get_object_title(obj) or ValueWrapper._strify(objid)  # FIXME:
         subtype = category.index_entry_subtype()
         extra = category.extra or ''
         desc = '.\n'.join(ValueWrapper(obj.content).as_str_list())
@@ -431,3 +428,6 @@ class ObjIndex(Index):
     def _sort_by_category(self, d: dict[Category, _T]) -> list[tuple[Category, _T]]:
         """Helper for sorting dict items by classif."""
         return self.indexer.sort(d.items(), lambda x: x[0])
+
+
+IndexerRegistry: dict[str, Indexer] = {}

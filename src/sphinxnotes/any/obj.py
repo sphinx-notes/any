@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, TypeVar
 from abc import ABC, abstractmethod
 import hashlib
 import pickle
-
 from dataclasses import dataclass
 
 from sphinxnotes.data import (
@@ -206,8 +205,6 @@ class Indexer(ABC):
         return sorted(data, key=lambda x: key(x)._sort_key)
 
 
-IndexerRegistry: dict[str, Indexer] = {}
-
 # =============================
 # Support for extra field flags
 # =============================
@@ -218,7 +215,6 @@ def _register_field_flags() -> None:
     # user can acccess flag by accessing ``data.Field.uniq``.
     # The same applies below.
     Registry.add_flag('uniq', aliases=['unique'])
-
     Registry.add_flag('ref', aliases=['refer', 'referable', 'referenceable'])
 
     Registry.add_by_option('index', str, store='append', aliases=['idx'])
@@ -259,6 +255,9 @@ def get_object_refs(schema: Schema, obj: Object) -> set[tuple[str, PlainValue]]:
             continue
         refs += [(name, x) for x in ValueWrapper(val).as_list()]
     return set(refs)
+
+def get_object_title(obj: Object) -> str | None:
+    return ValueWrapper(obj.name).as_str()
 
 
 _register_field_flags()

@@ -13,14 +13,13 @@ from typing import TYPE_CHECKING
 
 from sphinx.errors import ConfigError
 from sphinx.util import logging
-
 from sphinxnotes.data import Schema, Config as DataConfig
 
 from schema import Schema as DictSchema, SchemaError as DictSchemaError, Optional
 
 from . import meta
-from .obj import Templates, IndexerRegistry
-from .domain import ObjDomain
+from .obj import Templates
+from .domain import ObjDomain, IndexerRegistry
 from .indexers import LiteralIndexer, PathIndexer, YearIndexer, MonthIndexer
 
 if TYPE_CHECKING:
@@ -31,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 IndexerRegistry.update(
     {
-        'lit': LiteralIndexer(),
         'literal': LiteralIndexer(),
         'slash': PathIndexer('/', 2),
         'year': YearIndexer(),
@@ -57,6 +55,7 @@ OBJ_DEFINE_DICT_SCHEMA = DictSchema(
 
 def _parse_obj_define_dict(d: dict) -> tuple[Schema, Templates]:
     objdef = OBJ_DEFINE_DICT_SCHEMA.validate(d)
+
     schemadef = objdef['schema']
     schema = Schema.from_dsl(
         schemadef['name'], schemadef['attrs'], schemadef['content']
@@ -78,12 +77,10 @@ def _config_inited(app: Sphinx, config: Config) -> None:
 
     for objtype, objdef in app.config.obj_defines.items():
         # TODO: check ":" in objtype to support multiple domain
-
         try:
             schema, tmpls = _parse_obj_define_dict(objdef)
         except (DictSchemaError, ValueError) as e:
             raise ConfigError(f'{e}') from e
-
         ObjDomain.add_objtype(objtype, schema, tmpls)
 
     app.add_domain(ObjDomain)

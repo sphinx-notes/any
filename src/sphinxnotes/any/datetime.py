@@ -2,8 +2,7 @@
 sphinxnotes.data.datetime
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Datetime value support.
-Mostly required by indexer.{Year,Month}Indexer.
+Datetime value support. Mostly for indexer.{Year,Month}Indexer.
 
 :copyright: Copyright 2025~2026 by the Shengyu Zhang.
 :license: BSD, see LICENSE for details.
@@ -40,13 +39,8 @@ class PartialDate(date):
 
     @classmethod
     def from_date(cls, d: date, fmt: str) -> Self:
-        month, day = d.month, d.day
-
-        if all(x not in fmt for x in ['%m', '%b', '%B']):
-            month = None
-        if all(x not in fmt for x in ['%d', '%j']):
-            day = None
-
+        month = d.month if all(x not in fmt for x in ['%m', '%b', '%B']) else None
+        day = d.day if all(x not in fmt for x in ['%d', '%j']) else None
         return cls.from_ymd(d.year, month, day)
 
     @classmethod
@@ -57,19 +51,15 @@ class PartialDate(date):
             try:
                 dt = datetime.strptime(rawval, fmt)
             except ValueError as e:
-                lasterr, errfmt = e, fmt
+                lasterr = e
                 continue  # try next
             return cls.from_date(dt, fmt)
 
-        raise ValueError(
-            f'parse date from formats: {fmts}, '
-            f'last error: {lasterr}'
-        )
+        raise ValueError(f'parse date from formats: {fmts}, last error: {lasterr}')
 
 
 def _config_inited(app: Sphinx, config: Config) -> None:
-    global DATE_FMTS
-    DATE_FMTS = config.obj_date_fmts
+    DATE_FMTS.extend(config.obj_date_fmts)
 
 
 def setup(app: Sphinx) -> None:
