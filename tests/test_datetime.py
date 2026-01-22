@@ -18,17 +18,17 @@ class TestDatetime(unittest.TestCase):
     def test_datetime(self):
         val = Field.from_dsl('date').parse('2023-10-01')
         self.assertIsInstance(val, PartialDate)
-        self.assertEqual(val, PartialDate.from_ymd(2023, 10, 1))
+        self.assertEqual(val, PartialDate(2023, 10, 1))
 
         # Missing day
         val = Field.from_dsl('date').parse('2023-10')
         self.assertIsInstance(val, PartialDate)
-        self.assertEqual(val, PartialDate.from_ymd(2023, 10))
+        self.assertEqual(val, PartialDate(2023, 10))
 
         # Missing month
         val = Field.from_dsl('date').parse('2023')
         self.assertIsInstance(val, PartialDate)
-        self.assertEqual(val, PartialDate.from_ymd(2023))
+        self.assertEqual(val, PartialDate(2023))
 
     # ==========================
     # Errors

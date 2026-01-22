@@ -8,7 +8,8 @@ sphinxnotes.any.indexers
 :license: BSD, see LICENSE for details.
 """
 
-from typing import TYPE_CHECKING
+from __future__ import annotations
+from typing import TYPE_CHECKING, override
 
 from sphinxnotes.data import Value, ValueWrapper
 
@@ -16,7 +17,7 @@ from .obj import Category, Indexer
 from .datetime import PartialDate
 
 if TYPE_CHECKING:
-    from typing import Literal, Iterable, Callable, override
+    from typing import Literal, Iterable, Callable
 
 
 class LiteralIndexer(Indexer):

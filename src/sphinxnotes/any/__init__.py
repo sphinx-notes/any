@@ -11,9 +11,8 @@ Sphinx extension entrypoint.
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from sphinx.errors import ConfigError
 from sphinx.util import logging
-from sphinxnotes.data import Schema, Config as DataConfig
+from sphinxnotes.data import Schema
 
 from schema import Schema as DictSchema, SchemaError as DictSchemaError, Optional
 
@@ -41,12 +40,13 @@ OBJ_DEFINE_DICT_SCHEMA = DictSchema(
     {
         'schema': {
             Optional('name', default=None): str,
-            'attrs': {str: str},
+            Optional('attrs', default={}): {str: str},
             Optional('content', default=None): str,
         },
         'templates': {
-            'obj': str,
-            'ref': str,
+            Optional('content', default='{{ content }}'): str,
+            Optional('header', default='{{ name }}'): str | None,
+            Optional('ref', default='{{ name }}'): str,
             Optional('ref_by', default={}): {str: str},
         },
     }
@@ -63,10 +63,10 @@ def _parse_obj_define_dict(d: dict) -> tuple[Schema, Templates]:
 
     tmplsdef = objdef['templates']
     tmpls = Templates(
-        tmplsdef['obj'],
+        tmplsdef['content'],
+        tmplsdef['header'],
         tmplsdef['ref'],
-        ref_by=tmplsdef['ref_by'],
-        debug=DataConfig.template_debug,
+        tmplsdef['ref_by'],
     )
 
     return schema, tmpls
@@ -80,7 +80,8 @@ def _config_inited(app: Sphinx, config: Config) -> None:
         try:
             schema, tmpls = _parse_obj_define_dict(objdef)
         except (DictSchemaError, ValueError) as e:
-            raise ConfigError(f'{e}') from e
+            # raise ConfigError(f'{e}') from e
+            raise e
         ObjDomain.add_objtype(objtype, schema, tmpls)
 
     app.add_domain(ObjDomain)

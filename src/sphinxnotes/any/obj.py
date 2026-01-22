@@ -16,8 +16,8 @@ import pickle
 from dataclasses import dataclass
 
 from sphinxnotes.data import (
-    Registry,
-    Data,
+    REGISTRY,
+    ParsedData,
     PlainValue,
     Value,
     ValueWrapper,
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 # ====================
 
 # A better name in this context.
-type Object = Data
+type Object = ParsedData
 
 
 @dataclass
@@ -87,11 +87,13 @@ class RefType(object):
 
 
 class Templates:
-    """A set of templates that used for rendering object and object
-    cross-references."""
+    """A set of templates that used for rendering object itself,
+    cross-references, and etc."""
 
     """Templates for rendering object"""
-    obj: Template
+    content: Template
+    header: Template | None
+
     # embed: Templates
 
     """Templates for rendering corss references."""
@@ -104,13 +106,21 @@ class Templates:
     # TODO: more...?
 
     def __init__(
-        self, obj: str, ref: str, ref_by: dict[str, str] = {}, debug: bool = False
+        self,
+        content: str,
+        header: str,
+        ref: str,
+        ref_by: dict[str, str] = {},
+        debug: bool = False,
     ):
-        self.obj = Template(obj, Phase.Parsing, debug)
-        self.ref = Template(ref, Phase.Resolving, debug)
-        self.ref_by = {f: Template(t, Phase.Resolving, debug) for f, t in ref_by}
+        self.content = Template(content, Phase.Parsing, debug)
+        self.header = Template(header, Phase.Parsing, debug)
+        self.ref = Template(ref, Phase.PostTranform, debug)
+        self.ref_by = {
+            f: Template(t, Phase.PostTranform, debug) for f, t in ref_by.items()
+        }
 
-    def get_ref_template(self, reftype: RefType) -> Template:
+    def get_ref_by(self, reftype: RefType) -> Template:
         if reftype.field is not None:
             if t := self.ref_by.get(reftype.field):
                 return t
@@ -214,10 +224,10 @@ def _register_field_flags() -> None:
     # NOTE: Add a "uniq" flag to data.Field.
     # user can acccess flag by accessing ``data.Field.uniq``.
     # The same applies below.
-    Registry.add_flag('uniq', aliases=['unique'])
-    Registry.add_flag('ref', aliases=['refer', 'referable', 'referenceable'])
+    REGISTRY.data.add_flag('uniq', aliases=['unique'])
+    REGISTRY.data.add_flag('ref', aliases=['refer', 'referable', 'referenceable'])
 
-    Registry.add_by_option('index', str, store='append', aliases=['idx'])
+    REGISTRY.data.add_by_option('index', str, store='append', aliases=['idx'])
 
 
 def validate_schema(schema: Schema) -> None:
@@ -255,6 +265,7 @@ def get_object_refs(schema: Schema, obj: Object) -> set[tuple[str, PlainValue]]:
             continue
         refs += [(name, x) for x in ValueWrapper(val).as_list()]
     return set(refs)
+
 
 def get_object_title(obj: Object) -> str | None:
     return ValueWrapper(obj.name).as_str()

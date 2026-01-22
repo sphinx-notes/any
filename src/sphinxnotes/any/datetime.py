@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, override
 from datetime import date, datetime
 
-from sphinxnotes.data import Registry
+from sphinxnotes.data import REGISTRY
 
 if TYPE_CHECKING:
     from typing import Self
@@ -60,11 +60,12 @@ class PartialDate(date):
     @override
     def __reduce__(self):
         return (
-            self.__class__, (
+            self.__class__,
+            (
                 self.year,
                 None if self.no_month else self.month,
                 None if self.no_day else self.day,
-            )
+            ),
         )
 
 
@@ -77,4 +78,4 @@ def setup(app: Sphinx) -> None:
     app.connect('config-inited', _config_inited)
 
 
-Registry.add_type('date', PartialDate, PartialDate.from_str, str)
+REGISTRY.data.add_type('date', PartialDate, PartialDate.from_str, str)

@@ -10,9 +10,10 @@ Domain implementions.
 
 from __future__ import annotations
 from typing import TYPE_CHECKING, override, cast, TypeVar
+from pprint import pformat
 
 from docutils import nodes
-from sphinx.addnodes import pending_xref
+from sphinx import addnodes
 from sphinx.domains import Domain, ObjType, Index, IndexEntry
 from sphinx.roles import XRefRole
 from sphinx.util import logging
@@ -21,11 +22,13 @@ from sphinx.errors import ExtensionError
 from sphinxnotes.data import (
     PlainValue,
     ValueWrapper,
+    ParsedData,
     Schema,
     pending_node,
-    RenderedNode,
+    rendered_node,
     StrictDataDefineDirective,
 )
+from sphinxnotes.data.utils import Report, find_nearest_block_element, find_parent
 
 from .obj import (
     Object,
@@ -40,7 +43,7 @@ from .obj import (
 from .utils import strip_rst_markups
 
 if TYPE_CHECKING:
-    from typing import Iterator, Iterable, override
+    from typing import Iterator, Iterable
     from sphinx.builders import Builder
     from sphinx.environment import BuildEnvironment
 
@@ -52,8 +55,8 @@ logger = logging.getLogger(__name__)
 
 
 class ObjDomain(Domain):
-
     """Parent's class members."""
+
     name = 'obj'
     label = 'Object'
     object_types = {}
@@ -78,17 +81,25 @@ class ObjDomain(Domain):
 
     @override
     def clear_doc(self, docname: str) -> None:
-        objids = set()
+        objkeys = []
         for (objtype, objid), (doc, _, _) in self.objects.items():
             if doc == docname:
-                del self.objects[objtype, objid]
-                objids.add(objid)
+                objkeys.append((objtype, objid))
+
+        objids = set()
+        for objtype, objid in objkeys:
+            del self.objects[objtype, objid]
+            objids.add(objid)
+
+        refkeys = []
         for (objtype, objfield, objref), ids in self.references.items():
-            ids = ids - objids
-            if ids:
+            if ids := ids - objids:
                 self.references[objtype, objfield, objref] = ids
             else:
-                del self.references[objtype, objfield, objref]
+                refkeys.append((objtype, objfield, objref))
+
+        for objtype, objfield, objref in refkeys:
+            del self.references[objtype, objfield, objref]
 
     @override
     def resolve_xref(
@@ -98,7 +109,7 @@ class ObjDomain(Domain):
         builder: Builder,
         typ: str,
         target: str,
-        node: pending_xref,
+        node: addnodes.pending_xref,
         contnode: nodes.Element,
     ) -> nodes.reference | None:
         logger.debug('[any] resolveing xref of %s', (typ, target))
@@ -109,23 +120,13 @@ class ObjDomain(Domain):
         if objidx:
             pass  # no need to lookup objds
         elif objfield:
-            # NOTE: To prevent change domain data, dont use ``objids = xxx``
+            # NOTE: Do not change domain data
             if ids := self.references.get((objtype, objfield, target)):
                 objids.update(ids)
         else:
             for (t, _, r), ids in self.references.items():
                 if t == objtype and r == target:
                     objids.update(ids)
-
-        extra_ctxs = {
-            '_ref': {
-                'title': contnode[0].astext(),
-                'has_explicit_title': node['refexplicit'],
-                'type': typ,
-                'target': target,
-            },
-            '_objs': [],
-        }
 
         if len(objids) > 1 or objidx is not None:
             # Mulitple objects found or reference index explicitly,
@@ -137,11 +138,9 @@ class ObjDomain(Domain):
             )
         elif len(objids) == 1:
             todocname, anchor, obj = self.objects[objtype, objids.pop()]
-            pending = pending_node()
-            pending.inline = True
-            pending.schema = self._schemas[objtype]
-            pending.template = self._templates[objtype].get_ref_template(reftype)
-            contnode = pending
+            contnode = pending_node(
+                obj, self._templates[objtype].get_ref_by(reftype), inline=True
+            )
         else:
             # The pending_xref node may be resolved by intersphinx,
             # so do not emit warning here, see also warn_missing_reference.
@@ -167,7 +166,9 @@ class ObjDomain(Domain):
         cls._templates[objtype] = tmpls
 
         # Create a directive for defining object.
-        cls.directives[objtype] = ObjDefineDirective.derive(objtype, schema, tmpls.obj)
+        cls.directives[objtype] = ObjDefineDirective.derive(
+            objtype, schema, tmpls.content
+        )
 
         def mkrole(reftype: RefType):
             """Create and register role for referencing object."""
@@ -219,24 +220,24 @@ class ObjDomain(Domain):
         return self.data.setdefault('references', {})
 
     def note_object(
-        self, docname: str, anchor: str, schema: Schema, obj: Object
-    ) -> None:
-        objtype = next((k for k, v in self._schemas.items() if v == schema))
+        self, docname: str, anchor: str, objtype: str, obj: Object
+    ) -> tuple[str, str, Object] | None:
+        schema = self._schemas[objtype]
 
         objid = get_object_uniq_ids(schema, obj)[0]
         objrefs = get_object_refs(schema, obj)
-        if (objtype, objid) in self.objects:
-            other_docname, other_anchor, other_obj = self.objects[objtype, objid]
-            logger.warning(
-                f'duplicate identifier of {obj} at {docname}#{anchor}'
-                + f'other object is {other_obj} at {other_docname}#{other_anchor}'
-            )
+
         logger.debug(
             f'[any] note object {objtype} {objid} at {docname}#{anchor}, references: {objrefs}'
         )
+
+        otherobj = self.objects.get((objtype, objid))
         self.objects[objtype, objid] = (docname, anchor, obj)
+
         for objfield, objref in objrefs:
             self.references.setdefault((objtype, objfield, objref), set()).add(objid)
+
+        return otherobj
 
     """Methods for inernal use"""
 
@@ -257,36 +258,110 @@ class ObjDomain(Domain):
 
 
 class ObjDefineDirective(StrictDataDefineDirective):
-    schema: Schema
-
     @override
-    def process_rendered_node(self, n: RenderedNode) -> None:
-        domainname, objtype = self.name.split(':', 1)
-        _domain = self.env.get_domain(domainname)
-        domain = cast(ObjDomain, _domain)
+    def process_pending_node(self, n: pending_node) -> bool:
+        if n.template == self.template:
+            n.hook_rendered_node(self._setup_objdesc)
 
-        # Attach domain related info to section node
-        n['domain'] = domain.name
-        # 'desctype' is a backwards compatible attribute
-        n['objtype'] = n['desctype'] = objtype
-        n['classes'].append(domain.name)
+        return super().process_pending_node(n)
 
-        # FIXME: get anchor node
-        objids = get_object_uniq_ids(self.schema, n.data)
-        ahrid = make_id(self.env, self.state.document, prefix=objtype, term=objids[0])
+    def _setup_objdesc(self, pending: pending_node, rendered: rendered_node) -> None:
+        """Wrap rendered.children into ObjectDescription.
 
-        n['ids'].append(ahrid)
+        TODO: considier inherit from ObjectDescription directive?
+
+        Before::
+
+            <rendered_node>
+                <...> # children
+
+        After::
+
+            <rendered_node>
+                <desc>
+                  <desc_signature>
+                      <desc_name>
+                          <pending_node> # header, wait for rendering
+                  <desc_content>
+                      <...> # the original children
+        """
+
+        domain, objtype = self._get_obj_domain_and_type()
+
+        def update_domaon_atts(node: nodes.Element):
+            """Attach domain related info to node."""
+            node['domain'] = domain.name
+            # 'desctype' is a backwards compatible attribute
+            node['objtype'] = node['desctype'] = objtype
+            node['classes'].extend([domain.name, objtype])
+
+        if (hdrtmpl := domain._templates[objtype].header) is None:
+            # No header template available, no need to generate objdesc.
+            update_domaon_atts(rendered)
+            return
+
+        # Queue a rendering for header, and setup anchor when rendering done.
+        hdrnode = pending_node(pending.data, hdrtmpl, inline=True)
+        hdrnode.hook_rendered_node(self._setup_objdesc_anchor)
+        self.queue_pending_node(hdrnode)
+
+        # Construct ObjectDescription.
+        signode = addnodes.desc_signature('', '', addnodes.desc_name('', '', hdrnode))
+        contnode = addnodes.desc_content('', *rendered.children)
+        descnode = addnodes.desc('', signode, contnode)
+        update_domaon_atts(descnode)
+
+        # Add descnode as child of rendered.
+        rendered.clear()
+        rendered += descnode
+
+    def _setup_objdesc_anchor(
+        self, pending: pending_node, rendered: rendered_node
+    ) -> None:
+        domain, objtype = self._get_obj_domain_and_type()
+
+        ahrnode = find_parent(pending, addnodes.desc_signature)
+        assert ahrnode
+        obj = rendered.data
+        assert isinstance(obj, ParsedData)
+
+        objids = get_object_uniq_ids(self.schema, obj)
+        ahrterm = ValueWrapper(objids[0]).as_str() if objids else None
+        ahrid = make_id(self.env, self.state.document, prefix=objtype, term=ahrterm)
+
+        ahrnode['ids'].append(ahrid)
         # Add object name to node's names attribute.
         # 'names' is space-separated list containing normalized reference
         # names of an element.
-        n['names'].extend([nodes.fully_normalize_name(x) for x in objids])
+        ahrnode['names'].extend(
+            [nodes.fully_normalize_name(x) for x in ValueWrapper(objids).as_str_list()]
+        )
 
-        self.state.document.note_explicit_target(n)
-        domain.note_object(self.env.docname, ahrid, self.schema, n.data)
+        self.state.document.note_explicit_target(ahrnode)
+        otherobj = domain.note_object(self.env.docname, ahrid, objtype, obj)
 
+        if otherobj:
+            report = Report(
+                'Duplicate identifier',
+                'INFO',
+                source=pending.source,
+                line=pending.line,
+            )
+            report.text(
+                f'Duplicate object identifier at {self.env.docname}#{ahrid}, '
+                f'other object at {otherobj[0]}#{otherobj[1]}'
+            )
+            report.code(pformat(otherobj[2]), lang='python')
 
-class ObjdescDefineDirective(ObjDefineDirective):
-    ...
+            ahrnode += report.problematic((self.state.document, ahrnode.parent))
+            blkparent = find_nearest_block_element(ahrnode) or self.state.document
+            blkparent += report
+
+    def _get_obj_domain_and_type(self) -> tuple[ObjDomain, str]:
+        domainname, objtype = self.name.split(':', 1)
+        _domain = self.env.get_domain(domainname)
+        return cast(ObjDomain, _domain), objtype
+
 
 # =================
 # Index implemention

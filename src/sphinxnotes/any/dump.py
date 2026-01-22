@@ -45,7 +45,7 @@ def _dump_domain_data(app: Sphinx, _):
         objs[f'{objtype}-{objid}'] = {
             'docname': docname,
             'anchor': anchor,
-            'obj': obj.ascontext(),
+            'obj': obj.asdict(),
         }
 
     with open(app.doctreedir.joinpath(fn), 'w') as f:
