@@ -73,11 +73,11 @@ class ObjDomain(Domain):
     """Custom class members."""
 
     #: ObjDomain specific: reftype -> index class
-    _indices_for_reftype: dict[str, type[ObjIndex]] = {}
+    indices_for_reftype: dict[str, type[ObjIndex]] = {}
     #: ObjDomain specific: objtype -> data schema
-    _schemas: dict[str, Schema] = {}
+    schemas: dict[str, Schema] = {}
     #: ObjDomain specific: objtype -> template set
-    _templates: dict[str, Templates] = {}
+    templates: dict[str, Templates] = {}
 
     """Methods that override from parent."""
 
@@ -141,7 +141,7 @@ class ObjDomain(Domain):
         elif len(objids) == 1:
             todocname, anchor, obj = self.objects[objtype, objids.pop()]
             contnode = pending_node(
-                obj, self._templates[objtype].get_ref_by(reftype), inline=True
+                obj, self.templates[objtype].get_ref_by(reftype), inline=True
             )
         else:
             # The pending_xref node may be resolved by intersphinx,
@@ -164,8 +164,8 @@ class ObjDomain(Domain):
 
     @classmethod
     def add_objtype(cls, objtype: str, schema: Schema, tmpls: Templates) -> None:
-        cls._schemas[objtype] = schema
-        cls._templates[objtype] = tmpls
+        cls.schemas[objtype] = schema
+        cls.templates[objtype] = tmpls
 
         # Create a directive for defining object.
         cls.directives[objtype] = ObjDefineDirective.derive(
@@ -185,7 +185,7 @@ class ObjDomain(Domain):
             """Create and register object index."""
             index = ObjIndex.derive(reftype, indexer)
             cls.indices.append(index)
-            cls._indices_for_reftype[str(reftype)] = index
+            cls.indices_for_reftype[str(reftype)] = index
             logger.debug(f'[any] make index {reftype} → {type(index)}')
 
         # Create all-in-one role and index (do not distinguish reference fields).
@@ -229,7 +229,7 @@ class ObjDomain(Domain):
     def note_object(
         self, docname: str, anchor: str, objtype: str, obj: Object
     ) -> tuple[str, str, Object] | None:
-        schema = self._schemas[objtype]
+        schema = self.schemas[objtype]
 
         objid = get_object_uniq_ids(schema, obj)[0]
         objrefs = get_object_refs(schema, obj)
@@ -255,7 +255,7 @@ class ObjDomain(Domain):
         .. warning:: This is no public API of sphinx and may broken in future version.
         """
         domain = self.name
-        index = self._indices_for_reftype[reftype]
+        index = self.indices_for_reftype[reftype]
         return f'{domain}-{index.name}', index.indexer.anchor(refval)
 
 
@@ -302,7 +302,7 @@ class ObjDefineDirective(StrictDataDefineDirective):
             node['objtype'] = node['desctype'] = objtype
             node['classes'].extend([domain.name, objtype])
 
-        if (hdrtmpl := domain._templates[objtype].header) is None:
+        if (hdrtmpl := domain.templates[objtype].header) is None:
             # No header template available, no need to generate objdesc.
             update_domaon_atts(rendered)
             return
