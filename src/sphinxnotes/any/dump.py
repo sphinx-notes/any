@@ -55,5 +55,13 @@ def _dump_domain_data(app: Sphinx, _):
 
 
 def setup(app: Sphinx):
-    app.add_config_value('obj_domain_dump', True, '', types=bool)
+    app.add_config_value(
+        'obj_domain_dump',
+        True,
+        '',
+        types=bool,
+        description='Whether dump domain data to :file:`$DOCTREE_DIR/{obj_domain_name}-objects.json`. '
+        + '``{obj_domain_name}`` refers value of :autoconf:`obj_domain_name`. '
+        + '(By default, the path is :file:`_build/doctrees/obj-objects.json`)',
+    )
     app.connect('build-finished', _dump_domain_data)

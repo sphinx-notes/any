@@ -1,8 +1,5 @@
 
 :Date: :version.date+by-year:`📅{{ date }} <{{ date }}>`
-:Download: :tag:`{{ title }}`
+:Download: :tag:`{{ name }}`
 
-{% for line in content %}
-{{ line }}
-{% endfor %}
-
+{{ content }}

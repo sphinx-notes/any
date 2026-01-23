@@ -1,11 +1,16 @@
+{% set opt = _sphinx.config.values[name] %}
 
-:Type: :py:class:`{{ type }}`
-:Default: ``{{ default }}``
-{% if choice %}:Choices: {% for c in choice %}``{{ c }}`` {% endfor %}{% endif %}
-{% if versionadded %}:Version added: :version:`{{ versionadded }}`{% endif %}
-{% if versionchanged %}:Version changed:{% for i in range(0, versionchanged|count -1, 2)  %}
-   :version:`{{ versionchanged[i] }}`
-      {{ versionchanged[i+1] }}{% endfor %}{% endif %}
+.. role:: py(code)
+   :language: Python
 
-{{ content }}
+{% set types = [] %}
+{% for t in opt.valid_types %}
+   {# "<class 'str'>" → "str" #}
+   {% set t = t | string %}
+   {% do types.append(t[8:-2]) %}
+{% endfor %}
 
+:Type: {{ types | roles('py') | join(',') }}
+:Default: :py:`{{ opt.default | pprint }}`
+
+{{ opt.description }}

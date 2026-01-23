@@ -122,40 +122,28 @@ extensions.append('any')
 sys.path.insert(0, os.path.abspath('.'))
 
 obj_domain_name = 'obj'
-primary_domain = 'obj'
-
-data_template_debug = True
-
-obj_defines = {
+obj_type_defines = {
     'version': {
         'schema': {
-            'name': 'lines of str, required, uniq, ref',
             'attrs': {
                 'date': 'date, required, ref, index by year',
             },
-            'content': 'lines of str',
         },
         'templates': {
-            'obj': open('_templates/version.rst', 'r').read(),
-            'ref': '🏷️{{ title }}',
+            'header': '🏷️ {{ name }}',
+            'content': open('_templates/version.rst', 'r').read(),
+            'ref': '🏷️ ``{{ name }}``',
         },
     },
 
-    'confval': {
+    'autoconf': {
         'schema': {
-            'name': 'lines of str, required, uniq, ref',
-            'attrs': {
-                'type': 'str',
-                'default': 'str',
-                'choice': 'words of str',
-                'versionadded': 'str',
-                'versionchanged': 'lines of str',
-            },
-            'content': 'str',
+            'content': None,
         },
         'templates': {
-            'obj': open('_templates/confval.rst', 'r').read(),
-            'ref': '⚙️{{ title }}',
+            'header': '⚙️ {{ name }}',
+            'content': open('_templates/confval.rst', 'r').read(),
+            'ref': '⚙️ ``{{ name }}``',
         },
     },
 
@@ -165,10 +153,9 @@ obj_defines = {
             'attrs': {
                 'style': 'str',
             },
-            'content': 'lines of str',
         },
         'templates': {
-            'obj': open('_templates/example.rst', 'r').read(),
+            'content': open('_templates/example.rst', 'r').read(),
             'ref': '📝{{ title }}',
         },
     },
@@ -178,3 +165,6 @@ obj_defines = {
     'tmplvar': __import__("_schemas.tmplvar").tmplvar.tmplvar,
 }
 
+primary_domain = obj_domain_name
+
+data_template_debug = True

@@ -8,7 +8,7 @@ dog = {
         },
     },
     'templates': {
-        'obj': dedent("""
+        'content': dedent("""
                 :Breed: {{ breed }}
                 :Colors: {{ colors }}"""),
         'ref': '🐕{{ title }}',
