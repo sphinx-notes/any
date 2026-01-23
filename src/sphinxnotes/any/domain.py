@@ -12,6 +12,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, override, cast, TypeVar
 from pprint import pformat
 
+from .indexers import LiteralIndexer, PathIndexer, YearIndexer, MonthIndexer
+
 from docutils import nodes
 from sphinx import addnodes
 from sphinx.domains import Domain, ObjType, Index, IndexEntry
@@ -179,11 +181,8 @@ class ObjDomain(Domain):
             cls.roles[str(reftype)] = role
             logger.debug(f'[any] make role {reftype} → {type(role)}')
 
-        def mkindex(reftype: RefType):
+        def mkindex(reftype: RefType, indexer: Indexer):
             """Create and register object index."""
-            assert reftype.indexer
-            if not (indexer := IndexerRegistry.get(reftype.indexer)):
-                raise ExtensionError(f'no such indexer "{reftype.indexer}"')
             index = ObjIndex.derive(reftype, indexer)
             cls.indices.append(index)
             cls._indices_for_reftype[str(reftype)] = index
@@ -191,7 +190,10 @@ class ObjDomain(Domain):
 
         # Create all-in-one role and index (do not distinguish reference fields).
         reftypes = [RefType(objtype)]
-        mkrole(reftypes[0])
+        if schema.name and schema.name.ref:
+            mkrole(reftypes[0])
+            if schema.name.uniq:
+                mkindex(reftypes[0], DEFAULT_INDEXER)
 
         # Create {field,indexer}-specificed role and index.
         for name, field in schema.fields():
@@ -199,13 +201,18 @@ class ObjDomain(Domain):
                 reftype = RefType(objtype, name)
                 reftypes.append(reftype)
                 mkrole(reftype)  # create a role to reference object(s)
+                if not field.uniq:
+                    mkindex(reftype, DEFAULT_INDEXER)
 
             for idxname in field.index:
                 reftype = RefType(objtype, field=name, indexer=idxname)
                 reftypes.append(reftype)
                 # Create role and index for reference objects by index.
                 mkrole(reftype)
-                mkindex(reftype)
+                if indexer := INDEXER_REGSITRY.get(idxname):
+                    mkindex(reftype, indexer)
+                else:
+                    raise ExtensionError(f'no such indexer "{reftype.indexer}"')
 
         cls.object_types[objtype] = ObjType(objtype, *[str(x) for x in reftypes])
 
@@ -505,4 +512,12 @@ class ObjIndex(Index):
         return self.indexer.sort(d.items(), lambda x: x[0])
 
 
-IndexerRegistry: dict[str, Indexer] = {}
+DEFAULT_INDEXER = LiteralIndexer()
+
+INDEXER_REGSITRY: dict[str, Indexer] = {
+    'lit': DEFAULT_INDEXER,
+    'literal': DEFAULT_INDEXER,
+    'slash': PathIndexer('/', 2),
+    'year': YearIndexer(),
+    'month': MonthIndexer(),
+}
