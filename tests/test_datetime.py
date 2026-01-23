@@ -35,18 +35,18 @@ class TestDatetime(unittest.TestCase):
     # ==========================
 
     def test_unsupported_modifier(self):
-        with self.assertRaisesRegex(ValueError, 'unsupported type'):
+        with self.assertRaisesRegex(ValueError, 'Unsupported type'):
             Field.from_dsl('list of unknown')
 
-        with self.assertRaisesRegex(ValueError, 'unknown modifier'):
+        with self.assertRaisesRegex(ValueError, 'Unknown modifier'):
             Field.from_dsl('int, random_mod')
 
 
     def test_invalid_formats(self):
-        with self.assertRaisesRegex(ValueError, 'failed to parse'):
+        with self.assertRaisesRegex(ValueError, 'Failed to parse'):
             Field.from_dsl('date').parse('not-a-date')
 
-        with self.assertRaisesRegex(ValueError, 'failed to parse'):
+        with self.assertRaisesRegex(ValueError, 'Failed to parse'):
             Field.from_dsl('date').parse('2023/13/45')
 
 
