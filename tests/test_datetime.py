@@ -1,7 +1,6 @@
 import os
 import sys
 import unittest
-from datetime import date
 from typing import override
 
 from sphinxnotes.data import Field
@@ -9,8 +8,8 @@ from sphinxnotes.data import Field
 sys.path.insert(0, os.path.abspath('./src/sphinxnotes'))
 from any.datetime import DATE_FMTS, PartialDate
 
-class TestDatetime(unittest.TestCase):
 
+class TestDatetime(unittest.TestCase):
     @override
     def setUp(self):
         DATE_FMTS.extend(['%Y-%m-%d', '%Y-%m', '%Y'])
@@ -40,7 +39,6 @@ class TestDatetime(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, 'Unknown modifier'):
             Field.from_dsl('int, random_mod')
-
 
     def test_invalid_formats(self):
         with self.assertRaisesRegex(ValueError, 'Failed to parse'):

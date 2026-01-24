@@ -109,7 +109,7 @@ class Templates:
         self,
         content: str,
         header: str | None,
-        ref: str, # | None
+        ref: str,  # | None
         ref_by: dict[str, str] = {},
         debug: bool = False,
     ):
