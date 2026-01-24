@@ -1,4 +1,4 @@
 .. rubric:: mimi
 
-.. any:cat:: _
+.. obj:cat:: _
    :id: 2

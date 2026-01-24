@@ -1,94 +1,108 @@
 """
-sphinxnotes.any
+sphinxnotes.obj
 ~~~~~~~~~~~~~~~
 
 Sphinx extension entrypoint.
 
-:copyright: Copyright 2020 Shengyu Zhang
+:copyright: Copyright 2020~2026 Shengyu Zhang
 :license: BSD, see LICENSE for details.
 """
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
-import json
-import dataclasses
 
+from sphinx.errors import ConfigError
 from sphinx.util import logging
+from sphinxnotes.data import Schema, Config as DataConfig
 
-from .template import Environment as TemplateEnvironment
-from .domain import AnyDomain, warn_missing_reference
-from .objects import Schema
+from schema import Schema as DictSchema, SchemaError as DictSchemaError, Optional, Or
+
 from . import meta
+from .obj import Templates
+from .domain import ObjDomain
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.config import Config
 
-
 logger = logging.getLogger(__name__)
+
+OBJTYPE_DEFINE = DictSchema(
+    {
+        'schema': {
+            Optional('name', default='str, required, uniq, ref'): Or(str, type(None)),
+            Optional('attrs', default={}): {str: str},
+            Optional('content', default='str'): Or(str, type(None)),
+        },
+        'templates': {
+            Optional('obj', default='{{ content }}'): str,
+            Optional('header', default='{{ name }}'): Or(str, type(None)),
+            Optional('ref', default='{{ name }}'): str,
+            Optional('ref_by', default={}): {str: str},
+        },
+    }
+)
+
+
+def _validate_objtype_defines_dict(d: dict) -> tuple[Schema, Templates]:
+    objdef = OBJTYPE_DEFINE.validate(d)
+
+    schemadef = objdef['schema']
+    schema = Schema.from_dsl(
+        schemadef['name'], schemadef['attrs'], schemadef['content']
+    )
+
+    tmplsdef = objdef['templates']
+    tmpls = Templates(
+        tmplsdef['obj'],
+        tmplsdef['header'],
+        tmplsdef['ref'],
+        tmplsdef['ref_by'],
+        debug=DataConfig.render_debug,
+    )
+
+    return schema, tmpls
 
 
 def _config_inited(app: Sphinx, config: Config) -> None:
-    AnyDomain.name = config.any_domain_name
-    AnyDomain.label = config.any_domain_name
+    ObjDomain.name = config.obj_domain_name
 
-    # Add schema before registering domain
-    for v in app.config.any_schemas:
-        AnyDomain.add_schema(v)
+    for objtype, objdef in app.config.obj_type_defines.items():
+        # TODO: check ":" in objtype to support multiple domain
+        try:
+            schema, tmpls = _validate_objtype_defines_dict(objdef)
+        except (DictSchemaError, ValueError) as e:
+            raise ConfigError(f'Validating obj_type_defines[{repr(objtype)}]: {e}') from e
+        ObjDomain.add_objtype(objtype, schema, tmpls)
 
-    app.add_domain(AnyDomain)
-
-
-def _on_build_finished(app: Sphinx, _):
-    _dump_domain_data(app)
-
-
-def _dump_domain_data(app: Sphinx):
-    """Dump any domain data to a JSON file."""
-
-    name = app.config.any_domain_name
-    data = app.env.domaindata[name]
-    objs = {}
-    fn = f'{name}-objects.json'
-
-    # sphinx.util.status_iterator alias has been deprecated since sphinx 6.1
-    # and has been removed in sphinx 8.0
-    try:
-        from sphinx.util.display import status_iterator
-    except ImportError:
-        from sphinx.util import status_iterator
-
-    for (objtype, objid), (docname, anchor, obj) in status_iterator(
-        data['objects'].items(),
-        f'dump {name} domain data to {fn}... ',
-        'brown',
-        len(data['objects']),
-        0,
-        stringify_func=lambda i: f'{i[0][0]}-{i[0][1]}',
-    ):
-        objs[f'{objtype}-{objid}'] = {
-            'docname': docname,
-            'anchor': anchor,
-            'obj': dataclasses.asdict(obj),
-        }
-
-    with open(app.doctreedir.joinpath(fn), 'w') as f:
-        f.write(json.dumps(objs, indent=2, ensure_ascii=False))
+    app.add_domain(ObjDomain)
 
 
 def setup(app: Sphinx):
     """Sphinx extension entrypoint."""
     meta.pre_setup(app)
 
-    # Init template environment
-    TemplateEnvironment.setup(app)
+    app.setup_extension('sphinxnotes.data')
 
-    app.add_config_value('any_domain_name', 'any', 'env', types=str)
-    app.add_config_value('any_domain_dump', True, '', types=bool)
-    app.add_config_value('any_schemas', [], 'env', types=list[Schema])
+    app.add_config_value(
+        'obj_domain_name', 'obj', 'env', types=str, description='Name of the domain'
+    )
+    app.add_config_value(
+        'obj_type_defines',
+        {},
+        'env',
+        types=dict,
+        description='A dictionary ``dict[str, objdef]`` of object type definitions. '
+        'The ``str`` key is the object type; '
+        'The ``objdef`` vaule is also a ``dict``, '
+        'please refer to :ref:`writing-objdef` for more details.',
+    )
 
     app.connect('config-inited', _config_inited)
-    app.connect('warn-missing-reference', warn_missing_reference)
-    app.connect('build-finished', _on_build_finished)
+
+    from . import dump, datetime
+
+    dump.setup(app)
+    datetime.setup(app)
 
     return meta.post_setup(app)

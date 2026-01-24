@@ -1,10 +1,10 @@
-.. any:cat:: Nyan Cat
+.. obj:cat:: Nyan Cat
              Nyan_Cat
    :id: 1
    :color: pink gray
    :picture: _images/nyan-cat.gif
 
-   :any:cat:`Nyan Cat` is the name of a YouTube video uploaded in April 2011,
+   :obj:cat:`Nyan Cat` is the name of a YouTube video uploaded in April 2011,
    which became an internet meme. The video merged a Japanese pop song with
    an animated cartoon cat with a Pop-Tart for a torso, flying through space,
    and leaving a rainbow trail behind it. The video ranked at number 5 on

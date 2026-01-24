@@ -45,6 +45,9 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # produce any output in the built files.
 show_authors = True
 
+# Keep warnings as “system message” paragraphs in the rendered documents.
+keep_warnings = True
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -87,11 +90,7 @@ autoclass_content = 'init'
 autodoc_typehints = 'description'
 
 extensions.append('sphinx.ext.intersphinx')
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'sphinx': ('https://www.sphinx-doc.org/en/master', None),
-    'jinja': ('https://jinja.palletsprojects.com/en/latest/', None),
-}
+intersphinx_mapping = {}
 
 extensions.append('sphinx_sitemap')
 sitemap_filename = "sitemap.xml"
@@ -119,52 +118,59 @@ extensions.append('any')
 
 # CUSTOM CONFIGURATION
 
-from any.api import Schema, Field as F, by_year, by_month
-
-version_schema = Schema('version',
-                        name=F(uniq=True, ref=True, required=True, form=F.Forms.LINES),
-                        attrs={
-                            'date': F(ref=True, indexers=[by_year, by_month]),
-                        },
-                        content=F(form=F.Forms.LINES),
-                        description_template=open('_templates/version.rst', 'r').read(),
-                        reference_template='🏷️{{ title }}',
-                        missing_reference_template='🏷️{{ title }}',
-                        ambiguous_reference_template='🏷️{{ title }}')
-confval_schema = Schema('confval',
-                        name=F(uniq=True, ref=True, required=True, form=F.Forms.LINES),
-                        attrs={
-                            'type': F(),
-                            'default': F(),
-                            'choice': F(form=F.Forms.WORDS),
-                            'versionadded': F(),
-                            'versionchanged': F(form=F.Forms.LINES),
-                        },
-                        content=F(),
-                        description_template=open('_templates/confval.rst', 'r').read(),
-                        reference_template='⚙️{{ title }}',
-                        missing_reference_template='⚙️{{ title }}',
-                        ambiguous_reference_template='⚙️{{ title }}')
-example_schema = Schema('example',
-                        name=F(ref=True),
-                        attrs={'style': F()},
-                        content=F(form=F.Forms.LINES),
-                        description_template=open('_templates/example.rst', 'r').read(),
-                        reference_template='📝{{ title }}',
-                        missing_reference_template='📝{{ title }}',
-                        ambiguous_reference_template='📝{{ title }}')
-
 # For locating packages under _schemas/.
 sys.path.insert(0, os.path.abspath('.'))
 
-any_schemas = [
-    version_schema,
-    confval_schema,
-    example_schema,
+obj_domain_name = 'obj'
+obj_type_defines = {
+    'version': {
+        'schema': {
+            'attrs': {
+                'date': 'date, required, ref, index by year',
+            },
+        },
+        'templates': {
+            'header': '🏷️ {{ name }}',
+            'obj': open('_templates/version.rst', 'r').read(),
+            'ref': '🏷️ ``{{ name }}``',
+        },
+    },
+    'autoconfval': {
+        'schema': {
+            'name': 'str',
+        },
+        'templates': {
+            'obj': open('_templates/autoconfval.rst', 'r').read(),
+            'header': None,
+        },
+    },
+    'autoobj': {
+        'schema': {
+            'name': 'list of str, sep by ":", ref',
+        },
+        'templates': {
+            'obj': open('_templates/autoobj.rst', 'r').read(),
+            'header': 'The ``{{ name[1] }}`` object in "{{ name[0] }}" domain'
+        },
+    },
+    'example': {
+        'schema': {
+            'name': 'str, ref',
+            'attrs': {
+                'style': 'str',
+            },
+            'content': 'str',
+        },
+        'templates': {
+            'obj': open('_templates/example.rst', 'r').read(),
+            'header': None,
+        },
+    },
 
-    __import__("_schemas.cat").cat.cat,
-    __import__("_schemas.dog2").dog2.dog,
-    __import__("_schemas.tmplvar").tmplvar.tmplvar,
-]
+    'cat': __import__("_schemas.cat").cat.cat,
+    'dog': __import__("_schemas.dog2").dog2.dog,
+}
 
-primary_domain = 'any'
+primary_domain = obj_domain_name
+
+data_template_debug = True

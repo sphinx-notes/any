@@ -1,23 +1,15 @@
-from textwrap import dedent
-from any.api import Schema, Field
-
-cat = Schema(
-    'cat',
-    name=Field(ref=True, form=Field.Forms.LINES),
-    attrs={
-        'id': Field(uniq=True, ref=True, required=True),
-        'color': Field(ref=True),
-        'picture': Field(),
+cat = {
+    'schema': {
+        'name': 'str, ref, uniq',
+        'attrs': {
+            'color': 'str, ref',
+        },
+        'content': 'str'
     },
-    description_template=dedent("""
-        .. image:: {{ picture }}
-           :align: left
+    'templates': {
+        'obj':"Hi there, human! I've got **{{ color }}** fur.",
+        'header': '🐈 {{ name }}',
+        'ref': '``🐈 {{ name }}``',
+    }
+}
 
-        :Cat ID: {{ id }}
-        :Color: {{ color }}
-
-        {{ content }}"""),
-    reference_template='🐈{{ title }}',
-    missing_reference_template='😿{{ title }}',
-    ambiguous_reference_template='😼{{ title }}',
-)

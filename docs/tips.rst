@@ -5,7 +5,7 @@ Tips
 Omit Domain Name
 ================
 
-You can omit the prefixed domain name in directives and roles by setting the ``primary_domain`` to your :any:confval:`any_domain_name` in :file:`conf.py`. For example, you can use ``.. cat::`` rather than ``.. any:cat::``.
+You can omit the prefixed domain name in directives and roles by setting the ``primary_domain`` to your :confval:`obj_domain_name` in :file:`conf.py`. For example, you can use ``.. cat::`` rather than ``.. obj:cat::``.
 
 Documenting Section and Documentation
 =====================================
@@ -52,16 +52,16 @@ When we see the breed of Indiana is "Husky", we may want to see what other huski
 .. literalinclude:: /_schemas/dog2.py
    :language: python
 
-For field breed, its value is a string, so we simpily wrap value in to a ``any:dog.breed`` role, In this case it create a reference to all Husky dog.
+For field breed, its value is a string, so we simpily wrap value in to a ``obj:dog.breed`` role, In this case it create a reference to all Husky dog.
 
-For field color, its value is a string list, we have to iterate it and wrap element to to a ``any:dog.color`` role, In this case it create a reference to all Black dog and White dog.
+For field color, its value is a string list, we have to iterate it and wrap element to to a ``obj:dog.color`` role, In this case it create a reference to all Black dog and White dog.
 
 The rendered reStructuredText looks like this:
 
 .. code-block:: rst
 
-   :Breed: :any:dog.breed:`Husky`
-   :Colors: :any:dog.color:`Black` any:dog.color:`White`
+   :Breed: :obj:dog.breed:`Husky`
+   :Colors: :obj:dog.color:`Blac.. obj:dog.color:`White`
 
 The rendered object description:
 
