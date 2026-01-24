@@ -108,13 +108,13 @@ class Templates:
     def __init__(
         self,
         content: str,
-        header: str,
-        ref: str,
+        header: str | None,
+        ref: str, # | None
         ref_by: dict[str, str] = {},
         debug: bool = False,
     ):
         self.content = Template(content, Phase.Parsing, debug)
-        self.header = Template(header, Phase.Parsing, debug)
+        self.header = Template(header, Phase.Parsing, debug) if header else None
         self.ref = Template(ref, Phase.PostTranform, debug)
         self.ref_by = {
             f: Template(t, Phase.PostTranform, debug) for f, t in ref_by.items()
