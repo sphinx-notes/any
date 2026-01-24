@@ -10,7 +10,10 @@
    {% do types.append(t[8:-2]) %}
 {% endfor %}
 
-:Type: {{ types | roles('py') | join(',') }}
-:Default: :py:`{{ opt.default | pprint }}`
+.. confval:: {{ name }}
+   :type: {{ types | roles('py') | join(',') }}
+   :default: :py:`{{ opt.default | pprint }}`
 
-{{ opt.description }}
+   {% for line in opt.description.split('\n') -%}
+   {{ line }}
+   {% endfor %}

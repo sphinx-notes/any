@@ -53,7 +53,7 @@ keep_warnings = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = ''
+html_theme = 'furo'
 
 html_theme_options = {}
 
@@ -131,38 +131,44 @@ obj_type_defines = {
         },
         'templates': {
             'header': '🏷️ {{ name }}',
-            'content': open('_templates/version.rst', 'r').read(),
+            'obj': open('_templates/version.rst', 'r').read(),
             'ref': '🏷️ ``{{ name }}``',
         },
     },
-
-    'autoconf': {
+    'autoconfval': {
         'schema': {
-            'content': None,
+            'name': 'str',
         },
         'templates': {
-            'header': '⚙️ {{ name }}',
-            'content': open('_templates/confval.rst', 'r').read(),
-            'ref': '⚙️ ``{{ name }}``',
+            'obj': open('_templates/autoconfval.rst', 'r').read(),
+            'header': None,
         },
     },
-
+    'autoobj': {
+        'schema': {
+            'name': 'list of str, sep by ":", ref',
+        },
+        'templates': {
+            'obj': open('_templates/autoobj.rst', 'r').read(),
+            'header': 'The ``{{ name[1] }}`` object in "{{ name[0] }}" domain'
+        },
+    },
     'example': {
         'schema': {
             'name': 'str, ref',
             'attrs': {
                 'style': 'str',
             },
+            'content': 'str',
         },
         'templates': {
-            'content': open('_templates/example.rst', 'r').read(),
-            'ref': '📝{{ title }}',
+            'obj': open('_templates/example.rst', 'r').read(),
+            'header': None,
         },
     },
 
     'cat': __import__("_schemas.cat").cat.cat,
     'dog': __import__("_schemas.dog2").dog2.dog,
-    'tmplvar': __import__("_schemas.tmplvar").tmplvar.tmplvar,
 }
 
 primary_domain = obj_domain_name

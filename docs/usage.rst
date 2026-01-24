@@ -2,39 +2,21 @@
 Usage
 =====
 
-.. _writing-schema:
+.. warning:: Still WIP.
 
-Defining Schema
-===============
+.. _writing-objdef:
 
-.. _schema:
+Object Type Definiton
+=====================
 
-.. topic:: What is Schema?
+Before descibing any object, we need to tell extension "what data consist of the object and how to display it".
 
-    Before descibing any object, we need a "schema" to tell extension "how to descibe the object". For extension user, "schema" is a :py:class:`python object <any.Schema>` that can specific in configuration value :obj:confval:`any_schemas`.
+The object type definiton does this. A definition is a python dict, consists of two main parts: Schema (Data) and Templates (Presentation):
 
-The necessary python classes for writing schema are listed here:
+.. literalinclude:: /_schemas/cat.py
 
-.. autoclass:: any.api.Schema
-
-   Class-wide shared special keys used in template rendering context:
-
-   .. autoattribute:: any.Schema.TYPE_KEY
-   .. autoattribute:: any.Schema.NAME_KEY
-   .. autoattribute:: any.Schema.CONTENT_KEY
-   .. autoattribute:: any.Schema.TITLE_KEY
-
-   |
-
-.. autoclass:: any.api.Field
-
-   |
-
-.. autoclass:: any.api.Field.Forms
-
-   .. autoattribute:: any.api.Field.Forms.PLAIN
-   .. autoattribute:: any.api.Field.Forms.WORDS
-   .. autoattribute:: any.api.Field.Forms.LINES
+The Field Definiton DSL
+-----------------------
 
 Documenting Object
 ==================
@@ -42,10 +24,6 @@ Documenting Object
 Once a schema created, the corresponding :ref:`directives`, :ref:`roles` and :ref:`indices` will be generated. You can use them to descibe, reference and index object in your documentation.
 
 For the convenience, we use default domain name "any", and we assume that we have the following schema with in :obj:confval:`any_schemas`:
-
-.. literalinclude:: /_schemas/cat.py
-   :language: python
-
 
 .. _directives:
 
@@ -119,11 +97,11 @@ General Reference
 The aboved schema created a role named with "``domain``-\ ``objtype``" (In this case, it is ``obj:cat``) for creating a reference to :ref:`object-description`. The interpreted text can be value of *any referenceable field*.
 
 =================== =================================== ========================
-Reference by name   ``:obj:cat:`Nyan Cat```             :any:cat:`Nyan Cat`
-By another name     ``:obj:cat:`Nyan_Cat```             :any:cat:`Nyan_Cat`
-By ID               ``:obj:cat:`1```                    :any:cat:`1`
-Explicit title      ``:obj:cat:`This cat <Nyan Cat>```  :any:cat:`This cat <Nyan Cat>`
-A nonexistent cat   ``:obj:cat:`mimi```                 :any:cat:`mimi`
+Reference by name   ``:obj:cat:`Nyan Cat```             :obj:cat:`Nyan Cat`
+By another name     ``:obj:cat:`Nyan_Cat```             :obj:cat:`Nyan_Cat`
+By ID               ``:obj:cat:`1```                    :obj:cat:`1`
+Explicit title      ``:obj:cat:`This cat <Nyan Cat>```  :obj:cat:`This cat <Nyan Cat>`
+A nonexistent cat   ``:obj:cat:`mimi```                 :obj:cat:`mimi`
 =================== =================================== ========================
 
 Field-Specific Reference
@@ -134,8 +112,8 @@ Role "``domain``-\ ``objtype``.\ ``field``" will be created for all referenceabl
 These roles also create reference to :ref:`object-description`. But the interpreted text must be value of field in role's name.
 
 =================== =============================== ============================
-Reference by name   ``:obj:cat.name:`Nyan Cat```    :any:cat.name:`Nyan Cat`
-By ID               ``:obj:cat.id:`1```             :any:cat.id:`1`
+Reference by name   ``:obj:cat.name:`Nyan Cat```    :obj:cat.name:`Nyan Cat`
+By ID               ``:obj:cat.id:`1```             :obj:cat.id:`1`
 =================== =============================== ============================
 
 .. _indices:
@@ -196,12 +174,12 @@ Reference Template has two various variants:
 Missing Reference Template
    Applied when the reference is missing.
 
-   .. hint:: In this template, only variables :obj:tmplvar:`objtype` and :any:tmplvar:`title`  are available.
+   .. hint:: In this template, only variables :obj:tmplvar:`objtype` and :obj:tmplvar:`title`  are available.
 
 Ambiguous Reference Template
    Applied when the reference is ambiguous.
 
-   .. hint:: In this template, only variables :obj:tmplvar:`objtype` and :any:tmplvar:`title`  are available.
+   .. hint:: In this template, only variables :obj:tmplvar:`objtype` and :obj:tmplvar:`title`  are available.
 
 Variables
 ---------
@@ -239,40 +217,3 @@ Beside, there are some special variable:
    Title of object.
 
    In :ref:`reference-template`, its value might be overwritten by explicit title.
-
-Filters
--------
-
-For the usage of Jinja's filter, please refer to `Jinja's Filters`_.
-
-All `Jinja's Builtin Filters`_ are available.
-In additional, we provide the following custom filters to enhance the template:
-
-``install(fn)``
-    Copy a file in Sphinx srcdir to outdir, return the URI of file which relative
-    to current documentation.
-
-    The relative path to srcdir will be preserved, for example,
-    ``{{ fn | install }}`` while ``fn`` is :file:`_images/foo.jpg`,
-    the file will copied to :file:`<OUTDIR>/_any/_images/foo.jpg`, and returns
-    a POSIX path of ``fn`` which relative to current documentation.
-
-   .. versionadded:: 1.0
-   .. versionchanged:: 2.3
-
-      Renamed from ``copyfile`` to ``install``
-
-``thumbnail(imgfn)``
-    Changes the size of an image to the given dimensions and removes any
-    associated profiles, returns a a POSIX path of thumbnail which relative to
-    current documentation.
-
-    This filter always keep the origin aspect ratio of image.
-
-   .. versionadded:: 1.0
-   .. versionchanged:: 2.3
-
-      Width and height arguments are not accepted for now.
-
-.. _Jinja's Filters: https://jinja.palletsprojects.com/en/2.11.x/templates/#filters>
-.. _Jinja's Builtin Filters: https://jinja.palletsprojects.com/en/2.11.x/templates/#builtin-filters

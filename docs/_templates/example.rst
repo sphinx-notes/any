@@ -1,4 +1,3 @@
-
 {% if style is not defined or style == 'tab' %}
 .. tab-set::
 
@@ -15,17 +14,21 @@
          {% endfor %}
 {% elif style == 'grid'  %}
 .. grid:: 2
+   :gutter: 1
 
-   .. grid-item-card::  reStructuredText
+   .. grid-item::
 
       .. code:: rst
 
-         {% for line in content %}{{ line }}
+         {% for line in content.split('\n') -%}
+         {{ line }}
          {% endfor %}
 
-   .. grid-item-card:: Result
+   .. grid-item::
 
-      {% for line in content %}{{ line }}
+      {% for line in content.split('\n') -%}
+      {{ line }}
       {% endfor %}
+
 {% endif %}
 

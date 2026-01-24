@@ -67,7 +67,34 @@ Then, add the extension name to ``extensions`` configuration item in your
 
 .. ADDITIONAL CONTENT START
 
-See :doc:`usage` and :doc:`conf` for more details.
+Add the such a "cat" dict in your ``conf.py``:
+
+.. literalinclude:: /_schemas/cat.py
+   
+And add it to the :confval:`obj_type_defines` confval:
+
+.. code:: python
+
+   obj_type_defines = {
+      'cat': cat,
+   }
+
+Then you can document a cat using the :rst:dir:`obj:cat` directive:
+
+.. example::
+   :style: grid
+
+   .. obj:cat:: mimi
+      :color: black
+
+And reference a the cat with :rst:role:`obj:cat`:
+
+.. example::
+   :style: grid
+
+   Hi :obj:cat:`mimi`! I am here!
+
+Please refer to :doc:`usage` for more details.
 
 .. ADDITIONAL CONTENT END
 

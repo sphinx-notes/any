@@ -5,7 +5,7 @@ Tips
 Omit Domain Name
 ================
 
-You can omit the prefixed domain name in directives and roles by setting the ``primary_domain`` to your :obj:confval:`any_domain_name` in :file:`conf.py`. For example, you can use ``.. cat::`` rather than ``.. obj:cat::``.
+You can omit the prefixed domain name in directives and roles by setting the ``primary_domain`` to your :confval:`obj_domain_name` in :file:`conf.py`. For example, you can use ``.. cat::`` rather than ``.. obj:cat::``.
 
 Documenting Section and Documentation
 =====================================

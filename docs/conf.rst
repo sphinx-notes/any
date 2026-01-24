@@ -4,8 +4,8 @@ Configuration
 
 The extension provides the following configuration:
 
-.. autoconf:: obj_domain_name
+.. autoconfval:: obj_domain_name
 
-.. autoconf:: obj_type_defines
+.. autoconfval:: obj_type_defines
 
-.. autoconf:: obj_domain_dump
+.. autoconfval:: obj_domain_dump

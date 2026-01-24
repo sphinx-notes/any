@@ -60,8 +60,10 @@ def setup(app: Sphinx):
         True,
         '',
         types=bool,
-        description='Whether dump domain data to :file:`$DOCTREE_DIR/{obj_domain_name}-objects.json`. '
-        + '``{obj_domain_name}`` refers value of :autoconf:`obj_domain_name`. '
-        + '(By default, the path is :file:`_build/doctrees/obj-objects.json`)',
+        description='Whether dump domain data to :file:`$DOCTREE_DIR/$OBJ_DOMAIN_NAME-objects.json`. '
+        '\n\n'
+        'The ``$DOCTREE_DIR`` is usually :file:`_build/doctrees/`. '
+        'The ``$OBJ_DOMAIN_NAME`` refers value of :confval:`obj_domain_name`. '
+        '(By default, the path is :file:`_build/doctrees/obj-objects.json`)',
     )
     app.connect('build-finished', _dump_domain_data)

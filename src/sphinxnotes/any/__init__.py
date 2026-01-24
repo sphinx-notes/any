@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 
 from sphinx.errors import ConfigError
 from sphinx.util import logging
-from sphinxnotes.data import Schema
+from sphinxnotes.data import Schema, Config as DataConfig
 
 from schema import Schema as DictSchema, SchemaError as DictSchemaError, Optional, Or
 
@@ -35,7 +35,7 @@ OBJTYPE_DEFINE = DictSchema(
             Optional('content', default='str'): Or(str, type(None)),
         },
         'templates': {
-            Optional('content', default='{{ content }}'): str,
+            Optional('obj', default='{{ content }}'): str,
             Optional('header', default='{{ name }}'): Or(str, type(None)),
             Optional('ref', default='{{ name }}'): str,
             Optional('ref_by', default={}): {str: str},
@@ -54,10 +54,11 @@ def _validate_objtype_defines_dict(d: dict) -> tuple[Schema, Templates]:
 
     tmplsdef = objdef['templates']
     tmpls = Templates(
-        tmplsdef['content'],
+        tmplsdef['obj'],
         tmplsdef['header'],
         tmplsdef['ref'],
         tmplsdef['ref_by'],
+        debug=DataConfig.render_debug,
     )
 
     return schema, tmpls
@@ -71,7 +72,7 @@ def _config_inited(app: Sphinx, config: Config) -> None:
         try:
             schema, tmpls = _validate_objtype_defines_dict(objdef)
         except (DictSchemaError, ValueError) as e:
-            raise ConfigError(f'Validating obj_type_defines: {e}') from e
+            raise ConfigError(f'Validating obj_type_defines[{repr(objtype)}]: {e}') from e
         ObjDomain.add_objtype(objtype, schema, tmpls)
 
     app.add_domain(ObjDomain)

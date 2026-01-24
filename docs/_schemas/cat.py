@@ -1,13 +1,15 @@
 cat = {
     'schema': {
+        'name': 'str, ref, uniq',
         'attrs': {
             'color': 'str, ref',
         },
+        'content': 'str'
     },
     'templates': {
-        'header': '🐈 ``{{ name }}``',
-        'content':"Hi there, human! I am {{ name }}. I've got {{ color }} fur.",
-        'ref': '🐈 ``{{ name }}``',
+        'obj':"Hi there, human! I've got **{{ color }}** fur.",
+        'header': '🐈 {{ name }}',
+        'ref': '``🐈 {{ name }}``',
     }
 }
 
