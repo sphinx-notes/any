@@ -91,7 +91,7 @@ class Templates:
     cross-references, and etc."""
 
     """Templates for rendering object"""
-    content: Template
+    obj: Template
     header: Template | None
 
     # embed: Templates
@@ -113,7 +113,7 @@ class Templates:
         ref_by: dict[str, str] = {},
         debug: bool = False,
     ):
-        self.content = Template(content, Phase.Parsing, debug)
+        self.obj = Template(content, Phase.Parsing, debug)
         self.header = Template(header, Phase.Parsing, debug) if header else None
         self.ref = Template(ref, Phase.PostTranform, debug)
         self.ref_by = {
@@ -125,6 +125,16 @@ class Templates:
             if t := self.ref_by.get(reftype.field):
                 return t
         return self.ref
+
+
+@dataclass
+class ObjTypeDef:
+    schema: Schema
+    templates: Templates
+
+    #: When enabled, resolving external nodes for supplement the missing
+    # RawData.name and RawData.content.
+    auto: bool
 
 
 # ============================
