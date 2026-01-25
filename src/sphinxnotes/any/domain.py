@@ -416,16 +416,33 @@ class AutoObjDefineDirective(ObjDefineDirective):
         if (
             n.template == self.template
             and isinstance(n.data, PendingData)
-            and n.data.raw.name in (None, '_')
+            and self._require_external_header(n.data.schema, n.data.raw)
         ):
-            n.hook_raw_data(self._resolve_external_title)
+            n.hook_raw_data(self._resolve_external_header)
             return super(StrictDataDefineDirective, self).process_pending_node(n)
 
         return super().process_pending_node(n)
 
     """Methods used internal."""
 
-    def _resolve_external_title(self, pending: pending_node, raw: RawData) -> None:
+    def _require_external_header(self, schema: Schema, data: RawData) -> bool:
+        # If the data.name is not given (None) or a underscore('_'), we think
+        # the object requires an external name.
+        #
+        # The special underscore is for compatible with sphinxnotes-any<3.
+        # See also https://sphinx.silverrainz.me/any/tips.html#documenting-section-and-documentation
+        if not schema.name:
+            return False
+        if schema.name.ctype is None:
+            return data.name in (None, '_')
+        # HACK: We have to parse the data.name here.
+        try:
+            val = schema.name.parse(data.name)
+        except ValueError:
+            return False
+        return ValueWrapper(val).as_str() == '_'
+
+    def _resolve_external_header(self, pending: pending_node, raw: RawData) -> None:
         domain, objtype = self.get_obj_domain_and_type()
 
         if (hdrtmpl := domain.templates[objtype].header) is None:
@@ -434,7 +451,13 @@ class AutoObjDefineDirective(ObjDefineDirective):
         if not (title := find_titular_node_upward(self.state.parent)):
             return
 
-        raw.name = title.astext()
+        if raw.name is None:
+            raw.name = title.astext()
+        else:
+            # HACK: See also _require_external_header.
+            # TODO: Introduce a new extra context?
+            raw.name = raw.name.replace('_', title.astext(), count=1)
+
         pending_title = pending_node(pending.data, hdrtmpl, inline=True)
         pending_title.hook_rendered_nodes(self._setup_external_anchor)
         self.queue_pending_node(pending_title)
