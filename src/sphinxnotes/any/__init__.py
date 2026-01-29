@@ -13,12 +13,12 @@ from typing import TYPE_CHECKING
 
 from sphinx.errors import ConfigError
 from sphinx.util import logging
-from sphinxnotes.data import Schema, Config as DataConfig
+from sphinxnotes.data import Schema
 
 from schema import Schema as DictSchema, SchemaError as DictSchemaError, Optional, Or
 
 from . import meta
-from .obj import Templates
+from .obj import Templates, ObjTypeDef
 from .domain import ObjDomain
 
 if TYPE_CHECKING:
@@ -40,11 +40,13 @@ OBJTYPE_DEFINE = DictSchema(
             Optional('ref', default='{{ name }}'): str,
             Optional('ref_by', default={}): {str: str},
         },
+        Optional('auto', default=False): bool,
+        Optional('debug', default=False): bool,
     }
 )
 
 
-def _validate_objtype_defines_dict(d: dict) -> tuple[Schema, Templates]:
+def _validate_objtype_defines_dict(d: dict, config: Config) -> ObjTypeDef:
     objdef = OBJTYPE_DEFINE.validate(d)
 
     schemadef = objdef['schema']
@@ -58,10 +60,12 @@ def _validate_objtype_defines_dict(d: dict) -> tuple[Schema, Templates]:
         tmplsdef['header'],
         tmplsdef['ref'],
         tmplsdef['ref_by'],
-        debug=DataConfig.render_debug,
+        debug=objdef['debug'],
     )
 
-    return schema, tmpls
+    auto = objdef['auto'] or config.obj_auto_obj
+
+    return ObjTypeDef(schema=schema, templates=tmpls, auto=auto)
 
 
 def _config_inited(app: Sphinx, config: Config) -> None:
@@ -70,10 +74,12 @@ def _config_inited(app: Sphinx, config: Config) -> None:
     for objtype, objdef in app.config.obj_type_defines.items():
         # TODO: check ":" in objtype to support multiple domain
         try:
-            schema, tmpls = _validate_objtype_defines_dict(objdef)
+            objtypedef = _validate_objtype_defines_dict(objdef, config)
         except (DictSchemaError, ValueError) as e:
-            raise ConfigError(f'Validating obj_type_defines[{repr(objtype)}]: {e}') from e
-        ObjDomain.add_objtype(objtype, schema, tmpls)
+            raise ConfigError(
+                f'Validating obj_type_defines[{repr(objtype)}]: {e}'
+            ) from e
+        ObjDomain.add_objtype(objtype, objtypedef)
 
     app.add_domain(ObjDomain)
 
@@ -97,6 +103,7 @@ def setup(app: Sphinx):
         'The ``objdef`` vaule is also a ``dict``, '
         'please refer to :ref:`writing-objdef` for more details.',
     )
+    app.add_config_value('obj_auto_obj', True, 'env', types=bool)
 
     app.connect('config-inited', _config_inited)
 

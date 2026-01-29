@@ -12,6 +12,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, override, cast, TypeVar
 from pprint import pformat
 
+from sphinxnotes.data.data import PendingData
+
 from .indexers import LiteralIndexer, PathIndexer, YearIndexer, MonthIndexer
 
 from docutils import nodes
@@ -23,18 +25,25 @@ from sphinx.util.nodes import make_id, make_refnode
 from sphinx.errors import ExtensionError
 from sphinxnotes.data import (
     PlainValue,
+    RawData,
+    Template,
     ValueWrapper,
     ParsedData,
     Schema,
     pending_node,
-    rendered_node,
     StrictDataDefineDirective,
 )
-from sphinxnotes.data.utils import Report, find_nearest_block_element, find_parent
+from sphinxnotes.data.utils import (
+    Report,
+    find_nearest_block_element,
+    find_parent,
+    find_titular_node_upward,
+)
 
 from .obj import (
     Object,
     RefType,
+    ObjTypeDef,
     Templates,
     Category,
     Indexer,
@@ -163,14 +172,26 @@ class ObjDomain(Domain):
     """Publish methods."""
 
     @classmethod
-    def add_objtype(cls, objtype: str, schema: Schema, tmpls: Templates) -> None:
+    def add_objtype(cls, objtype: str, typedef: ObjTypeDef) -> None:
+        schema = typedef.schema
+        tmpls = typedef.templates
+
         cls.schemas[objtype] = schema
         cls.templates[objtype] = tmpls
 
-        # Create a directive for defining object.
-        cls.directives[objtype] = ObjDefineDirective.derive(
-            objtype, schema, tmpls.content
-        )
+        # Create a directive for documenting object.
+        if typedef.auto:
+            cls.directives[objtype] = AutoObjDefineDirective.derive(
+                objtype,
+                schema,
+                tmpls.obj,
+            )
+        else:
+            cls.directives[objtype] = ObjDefineDirective.derive(
+                objtype,
+                schema,
+                tmpls.obj,
+            )
 
         def mkrole(reftype: RefType):
             """Create and register role for referencing object."""
@@ -265,72 +286,82 @@ class ObjDomain(Domain):
 
 
 class ObjDefineDirective(StrictDataDefineDirective):
+    """Methods that override from parent."""
+
     @override
     def process_pending_node(self, n: pending_node) -> bool:
         if n.template == self.template:
-            n.hook_rendered_node(self._setup_objdesc)
-
+            n.hook_rendered_nodes(self._build_objdesc)
         return super().process_pending_node(n)
 
-    def _setup_objdesc(self, pending: pending_node, rendered: rendered_node) -> None:
+    """Methods used internal."""
+
+    def _build_objdesc(self, pending: pending_node, rendered: list[nodes.Node]) -> None:
         """Wrap rendered.children into ObjectDescription.
 
         TODO: considier inherit from ObjectDescription directive?
 
         Before::
 
-            <rendered_node>
-                <...> # children
+            <nodes...> # the pass-in argument: ``ns``
 
         After::
 
-            <rendered_node>
-                <desc>
-                  <desc_signature>
-                      <desc_name>
-                          <pending_node> # header, wait for rendering
-                  <desc_content>
-                      <...> # the original children
+            <desc>
+              <desc_signature>
+                  <desc_name>
+                      <pending_node> # header, wait for rendering
+              <desc_content>
+                  <nodes...> # the original ``ns``
         """
-
-        domain, objtype = self._get_obj_domain_and_type()
-
-        def update_domaon_atts(node: nodes.Element):
-            """Attach domain related info to node."""
-            node['domain'] = domain.name
-            # 'desctype' is a backwards compatible attribute
-            node['objtype'] = node['desctype'] = objtype
-            node['classes'].extend([domain.name, objtype])
+        domain, objtype = self.get_obj_domain_and_type()
 
         if (hdrtmpl := domain.templates[objtype].header) is None:
             # No header template available, no need to generate objdesc.
-            update_domaon_atts(rendered)
             return
 
         # Queue a rendering for header, and setup anchor when rendering done.
         hdrnode = pending_node(pending.data, hdrtmpl, inline=True)
-        hdrnode.hook_rendered_node(self._setup_objdesc_anchor)
+        hdrnode.hook_rendered_nodes(self._setup_signode_anchor)
         self.queue_pending_node(hdrnode)
 
         # Construct ObjectDescription.
         signode = addnodes.desc_signature('', '', addnodes.desc_name('', '', hdrnode))
-        contnode = addnodes.desc_content('', *rendered.children)
+        contnode = addnodes.desc_content('', *rendered)
         descnode = addnodes.desc('', signode, contnode)
-        update_domaon_atts(descnode)
+        self.update_domain_atts(descnode)
 
-        # Add descnode as child of rendered.
+        # Replace the pass-in node list.
         rendered.clear()
-        rendered += descnode
+        rendered.append(descnode)
 
-    def _setup_objdesc_anchor(
-        self, pending: pending_node, rendered: rendered_node
+    def _setup_signode_anchor(
+        self, pending: pending_node, rendered: list[nodes.Node]
     ) -> None:
-        domain, objtype = self._get_obj_domain_and_type()
-
         ahrnode = find_parent(pending, addnodes.desc_signature)
         assert ahrnode
-        obj = rendered.data
+        obj = pending.data
         assert isinstance(obj, ParsedData)
+
+        self.setup_anchor(ahrnode, obj)
+
+    """Helpers methods for self and subclasses."""
+
+    def get_obj_domain_and_type(self) -> tuple[ObjDomain, str]:
+        domainname, _, objtype = self.name.partition(':')
+        _domain = self.env.get_domain(domainname)
+        return cast(ObjDomain, _domain), objtype
+
+    def update_domain_atts(self, node: nodes.Element):
+        """Attach domain related info to node."""
+        domain, objtype = self.get_obj_domain_and_type()
+        node['domain'] = domain.name
+        # 'desctype' is a backwards compatible attribute
+        node['objtype'] = node['desctype'] = objtype
+        node['classes'].extend([domain.name, objtype])
+
+    def setup_anchor(self, ahrnode: nodes.Element, obj: Object) -> None:
+        domain, objtype = self.get_obj_domain_and_type()
 
         objids = get_object_uniq_ids(self.schema, obj)
         ahrterm = ValueWrapper(objids[0]).as_str() if objids else None
@@ -351,8 +382,8 @@ class ObjDefineDirective(StrictDataDefineDirective):
             report = Report(
                 'Duplicate identifier',
                 'INFO',
-                source=pending.source,
-                line=pending.line,
+                source=ahrnode.source,
+                line=ahrnode.line,
             )
             report.text(
                 f'Duplicate object identifier at {self.env.docname}#{ahrid}, '
@@ -364,10 +395,82 @@ class ObjDefineDirective(StrictDataDefineDirective):
             blkparent = find_nearest_block_element(ahrnode) or self.state.document
             blkparent += report
 
-    def _get_obj_domain_and_type(self) -> tuple[ObjDomain, str]:
-        domainname, objtype = self.name.split(':', 1)
-        _domain = self.env.get_domain(domainname)
-        return cast(ObjDomain, _domain), objtype
+
+class AutoObjDefineDirective(ObjDefineDirective):
+    """Methods that override from parent."""
+
+    @override
+    @classmethod
+    def derive(
+        cls, name: str, schema: Schema, tmpl: Template
+    ) -> type[StrictDataDefineDirective]:
+        subcls = super().derive(name, schema, tmpl)
+        if schema.name and schema.name.required:
+            # data.name is resolved from external.
+            subcls.required_arguments = 0
+            subcls.optional_arguments = 1
+        return subcls
+
+    @override
+    def process_pending_node(self, n: pending_node) -> bool:
+        if (
+            n.template == self.template
+            and isinstance(n.data, PendingData)
+            and self._require_external_header(n.data.schema, n.data.raw)
+        ):
+            n.hook_raw_data(self._resolve_external_header)
+            return super(StrictDataDefineDirective, self).process_pending_node(n)
+
+        return super().process_pending_node(n)
+
+    """Methods used internal."""
+
+    def _require_external_header(self, schema: Schema, data: RawData) -> bool:
+        # If the data.name is not given (None) or a underscore('_'), we think
+        # the object requires an external name.
+        #
+        # The special underscore is for compatible with sphinxnotes-any<3.
+        # See also https://sphinx.silverrainz.me/any/tips.html#documenting-section-and-documentation
+        if not schema.name:
+            return False
+        if schema.name.ctype is None:
+            return data.name in (None, '_')
+        # HACK: We have to parse the data.name here.
+        try:
+            val = schema.name.parse(data.name)
+        except ValueError:
+            return False
+        return ValueWrapper(val).as_str() == '_'
+
+    def _resolve_external_header(self, pending: pending_node, raw: RawData) -> None:
+        domain, objtype = self.get_obj_domain_and_type()
+
+        if (hdrtmpl := domain.templates[objtype].header) is None:
+            # No header template available, no need to generate objdesc.
+            return
+        if not (title := find_titular_node_upward(self.state.parent)):
+            return
+
+        if raw.name is None:
+            raw.name = title.astext()
+        else:
+            # HACK: See also _require_external_header.
+            # TODO: Introduce a new extra context?
+            raw.name = raw.name.replace('_', title.astext(), count=1)
+
+        pending_title = pending_node(pending.data, hdrtmpl, inline=True)
+        pending_title.hook_rendered_nodes(self._setup_external_anchor)
+        self.queue_pending_node(pending_title)
+
+        # Replace title's children with pending node.
+        title.clear()
+        title += pending_title
+
+    def _setup_external_anchor(
+        self, pending: pending_node, rendered: list[nodes.Node]
+    ) -> None:
+        assert isinstance(pending.data, ParsedData)
+        self.setup_anchor(pending.parent, pending.data)
 
 
 # =================
