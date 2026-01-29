@@ -63,21 +63,21 @@ def _validate_objtype_defines_dict(d: dict, config: Config) -> ObjTypeDef:
         debug=objdef['debug'],
     )
 
-    auto = objdef['auto'] or config.obj_auto_obj
+    auto = objdef['auto'] or config.git_object_auto
 
     return ObjTypeDef(schema=schema, templates=tmpls, auto=auto)
 
 
 def _config_inited(app: Sphinx, config: Config) -> None:
-    ObjDomain.name = config.obj_domain_name
+    ObjDomain.name = config.any_domain_name
 
-    for objtype, objdef in app.config.obj_type_defines.items():
+    for objtype, objdef in app.config.any_object_types.items():
         # TODO: check ":" in objtype to support multiple domain
         try:
             objtypedef = _validate_objtype_defines_dict(objdef, config)
         except (DictSchemaError, ValueError) as e:
             raise ConfigError(
-                f'Validating obj_type_defines[{repr(objtype)}]: {e}'
+                f'Validating any_object_types[{repr(objtype)}]: {e}'
             ) from e
         ObjDomain.add_objtype(objtype, objtypedef)
 
@@ -90,20 +90,9 @@ def setup(app: Sphinx):
 
     app.setup_extension('sphinxnotes.data')
 
-    app.add_config_value(
-        'obj_domain_name', 'obj', 'env', types=str, description='Name of the domain'
-    )
-    app.add_config_value(
-        'obj_type_defines',
-        {},
-        'env',
-        types=dict,
-        description='A dictionary ``dict[str, objdef]`` of object type definitions. '
-        'The ``str`` key is the object type; '
-        'The ``objdef`` vaule is also a ``dict``, '
-        'please refer to :ref:`writing-objdef` for more details.',
-    )
-    app.add_config_value('obj_auto_obj', True, 'env', types=bool)
+    app.add_config_value('any_domain_name', 'obj', 'env', types=str)
+    app.add_config_value('any_object_types', {}, 'env', types=dict)
+    app.add_config_value('git_object_auto', True, 'env', types=bool)
 
     app.connect('config-inited', _config_inited)
 

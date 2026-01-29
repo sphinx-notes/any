@@ -71,28 +71,28 @@ Add the such a "cat" dict in your ``conf.py``:
 
 .. literalinclude:: /_schemas/cat.py
    
-And add it to the :confval:`obj_type_defines` confval:
+And add it to the :confval:`any_object_types` confval:
 
 .. code:: python
 
-   obj_type_defines = {
+   any_object_types = {
       'cat': cat,
    }
 
-Then you can document a cat using the :rst:dir:`obj:cat` directive:
+Then you can document a cat using the :rst:dir:`any:cat` directive:
 
 .. example::
    :style: grid
 
-   .. obj:cat:: mimi
+   .. any:cat:: mimi
       :color: black
 
-And reference a the cat with :rst:role:`obj:cat`:
+And reference a the cat with :rst:role:`any:cat`:
 
 .. example::
    :style: grid
 
-   Hi :obj:cat:`mimi`! I am here!
+   Hi :any:cat:`mimi`! I am here!
 
 Please refer to :doc:`usage` for more details.
 

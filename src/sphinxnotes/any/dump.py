@@ -1,5 +1,5 @@
 """
-sphinxnotes.obj.dump
+sphinxnotes.any.dump
 ~~~~~~~~~~~~~~~~~~~~
 
 Dump any domain data.
@@ -19,10 +19,10 @@ if TYPE_CHECKING:
 def _dump_domain_data(app: Sphinx, _):
     """Dump any domain data to a JSON file."""
 
-    if not app.config.obj_domain_dump:
+    if not app.config.any_domain_dump:
         return
 
-    name = app.config.obj_domain_name
+    name = app.config.any_domain_name
     data = app.env.domaindata[name]
     objs = {}
     fn = f'{name}-objects.json'
@@ -55,15 +55,5 @@ def _dump_domain_data(app: Sphinx, _):
 
 
 def setup(app: Sphinx):
-    app.add_config_value(
-        'obj_domain_dump',
-        True,
-        '',
-        types=bool,
-        description='Whether dump domain data to :file:`$DOCTREE_DIR/$OBJ_DOMAIN_NAME-objects.json`. '
-        '\n\n'
-        'The ``$DOCTREE_DIR`` is usually :file:`_build/doctrees/`. '
-        'The ``$OBJ_DOMAIN_NAME`` refers value of :confval:`obj_domain_name`. '
-        '(By default, the path is :file:`_build/doctrees/obj-objects.json`)',
-    )
+    app.add_config_value('any_domain_dump', True, '', types=bool)
     app.connect('build-finished', _dump_domain_data)

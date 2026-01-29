@@ -1,5 +1,5 @@
 """
-sphinxnotes.obj.domain
+sphinxnotes.any.domain
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Domain implementions.
@@ -314,7 +314,7 @@ class ObjDefineDirective(StrictDataDefineDirective):
               <desc_content>
                   <nodes...> # the original ``ns``
         """
-        domain, objtype = self.get_obj_domain_and_type()
+        domain, objtype = self.get_any_domain_and_type()
 
         if (hdrtmpl := domain.templates[objtype].header) is None:
             # No header template available, no need to generate objdesc.
@@ -347,21 +347,21 @@ class ObjDefineDirective(StrictDataDefineDirective):
 
     """Helpers methods for self and subclasses."""
 
-    def get_obj_domain_and_type(self) -> tuple[ObjDomain, str]:
+    def get_any_domain_and_type(self) -> tuple[ObjDomain, str]:
         domainname, _, objtype = self.name.partition(':')
         _domain = self.env.get_domain(domainname)
         return cast(ObjDomain, _domain), objtype
 
     def update_domain_atts(self, node: nodes.Element):
         """Attach domain related info to node."""
-        domain, objtype = self.get_obj_domain_and_type()
+        domain, objtype = self.get_any_domain_and_type()
         node['domain'] = domain.name
         # 'desctype' is a backwards compatible attribute
         node['objtype'] = node['desctype'] = objtype
         node['classes'].extend([domain.name, objtype])
 
     def setup_anchor(self, ahrnode: nodes.Element, obj: Object) -> None:
-        domain, objtype = self.get_obj_domain_and_type()
+        domain, objtype = self.get_any_domain_and_type()
 
         objids = get_object_uniq_ids(self.schema, obj)
         ahrterm = ValueWrapper(objids[0]).as_str() if objids else None
@@ -443,7 +443,7 @@ class AutoObjDefineDirective(ObjDefineDirective):
         return ValueWrapper(val).as_str() == '_'
 
     def _resolve_external_header(self, pending: pending_node, raw: RawData) -> None:
-        domain, objtype = self.get_obj_domain_and_type()
+        domain, objtype = self.get_any_domain_and_type()
 
         if (hdrtmpl := domain.templates[objtype].header) is None:
             # No header template available, no need to generate objdesc.

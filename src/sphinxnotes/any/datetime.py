@@ -70,11 +70,11 @@ class PartialDate(date):
 
 
 def _config_inited(app: Sphinx, config: Config) -> None:
-    DATE_FMTS.extend(config.obj_date_fmts)
+    DATE_FMTS.extend(config.any_date_fmts)
 
 
 def setup(app: Sphinx) -> None:
-    app.add_config_value('obj_date_fmts', ['%Y-%m-%d', '%Y-%m', '%Y'], '', types=list)
+    app.add_config_value('any_date_fmts', ['%Y-%m-%d', '%Y-%m', '%Y'], '', types=list)
     app.connect('config-inited', _config_inited)
 
 

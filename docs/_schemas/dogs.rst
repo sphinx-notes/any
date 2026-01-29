@@ -6,23 +6,23 @@ Dogs
 
 This pages describe some Town Dogs [#]_ in Terraria [#]_:
 
-.. obj:dog:: Arthur
+.. any:dog:: Arthur
    :breed: Labrador
    :color: Golden
 
-.. obj:dog:: Bitsy
+.. any:dog:: Bitsy
    :breed: Labrador
    :color: Golden
 
-.. obj:dog:: Doug
+.. any:dog:: Doug
    :breed: Pit Bull
    :color: Brown White
 
-.. obj:dog:: Ginger
+.. any:dog:: Ginger
    :breed: Pit Bull
    :color: Brown White
 
-.. obj:dog:: Hachiko
+.. any:dog:: Hachiko
    :breed: Husky
    :color: Black White
 

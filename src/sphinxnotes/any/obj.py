@@ -1,5 +1,5 @@
 """
-sphinxnotes.obj.obj
+sphinxnotes.any.obj
 ~~~~~~~~~~~~~~~~~~~
 
 Basic object and related types definitons.

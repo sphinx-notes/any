@@ -122,8 +122,8 @@ extensions.append('any')
 # For locating packages under _schemas/.
 sys.path.insert(0, os.path.abspath('.'))
 
-obj_domain_name = 'obj'
-obj_type_defines = {
+any_domain_name = 'obj'
+any_object_types = {
     'version': {
         'schema': {
             'attrs': {
@@ -172,4 +172,4 @@ obj_type_defines = {
     'dog': __import__("_schemas.dog2").dog2.dog,
 }
 
-primary_domain = obj_domain_name
+primary_domain = any_domain_name
