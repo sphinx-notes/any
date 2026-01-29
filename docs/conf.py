@@ -173,5 +173,3 @@ obj_type_defines = {
 }
 
 primary_domain = obj_domain_name
-
-data_template_debug = True
