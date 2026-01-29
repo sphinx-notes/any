@@ -432,7 +432,7 @@ class AutoObjDefineDirective(ObjDefineDirective):
         #
         # The special underscore is for compatible with sphinxnotes-any<3.
         # See also https://sphinx.silverrainz.me/any/tips.html#documenting-section-and-documentation
-        if not schema.name:
+        if not schema.name or not schema.name.required:
             return False
         if schema.name.ctype is None:
             return data.name in (None, '_')
