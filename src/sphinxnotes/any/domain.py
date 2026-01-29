@@ -319,6 +319,13 @@ class ObjDefineDirective(StrictDataDefineDirective):
         if (hdrtmpl := domain.templates[objtype].header) is None:
             # No header template available, no need to generate objdesc.
             return
+        if (
+            isinstance(pending.data, ParsedData)
+            and pending.data.name is None
+            and '{{ name }}' in hdrtmpl.text
+        ):
+            # HACK: do not generate signode when name is not given.
+            return
 
         # Queue a rendering for header, and setup anchor when rendering done.
         hdrnode = pending_node(pending.data, hdrtmpl, inline=True)
@@ -454,7 +461,9 @@ class AutoObjDefineDirective(ObjDefineDirective):
         if 'any-header' in title['classes']:
             # Already header of other object.
             return
-        title['classes'].extend(set(['any', domain.name, 'any-header', objtype + '-header']))
+        title['classes'].extend(
+            set(['any', domain.name, 'any-header', objtype + '-header'])
+        )
 
         if raw.name is None:
             raw.name = title.astext()
