@@ -364,6 +364,7 @@ class ObjDefineDirective(StrictDataDefineDirective):
         domain, objtype = self.get_any_domain_and_type()
 
         objids = get_object_uniq_ids(self.schema, obj)
+        logger.warning('ojb: %s, ids: %s', obj, objids)
         ahrterm = ValueWrapper(objids[0]).as_str() if objids else None
         ahrid = make_id(self.env, self.state.document, prefix=objtype, term=ahrterm)
 
@@ -450,6 +451,10 @@ class AutoObjDefineDirective(ObjDefineDirective):
             return
         if not (title := find_titular_node_upward(self.state.parent)):
             return
+        if 'any-header' in title['classes']:
+            # Already header of other object.
+            return
+        title['classes'].extend(set(['any', domain.name, 'any-header', objtype + '-header']))
 
         if raw.name is None:
             raw.name = title.astext()
