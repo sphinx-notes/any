@@ -119,57 +119,16 @@ extensions.append('any')
 
 # CUSTOM CONFIGURATION
 
+any_domain_name = 'any'
+primary_domain = any_domain_name
+
 # For locating packages under _schemas/.
 sys.path.insert(0, os.path.abspath('.'))
-
-any_domain_name = 'obj'
 any_object_types = {
-    'version': {
-        'schema': {
-            'attrs': {
-                'date': 'date, required, ref, index by year',
-            },
-        },
-        'templates': {
-            'header': '🏷️ {{ name }}',
-            'obj': open('_templates/version.rst', 'r').read(),
-            'ref': '🏷️ ``{{ name }}``',
-        },
-    },
-    'autoconfval': {
-        'schema': {
-            'name': 'str',
-        },
-        'templates': {
-            'obj': open('_templates/autoconfval.rst', 'r').read(),
-            'header': None,
-        },
-    },
-    'autoobj': {
-        'schema': {
-            'name': 'list of str, sep by ":", ref',
-        },
-        'templates': {
-            'obj': open('_templates/autoobj.rst', 'r').read(),
-            'header': 'The ``{{ name[1] }}`` object in "{{ name[0] }}" domain'
-        },
-    },
-    'example': {
-        'schema': {
-            'name': 'str, ref',
-            'attrs': {
-                'style': 'str',
-            },
-            'content': 'str',
-        },
-        'templates': {
-            'obj': open('_templates/example.rst', 'r').read(),
-            'header': None,
-        },
-    },
-
     'cat': __import__("_schemas.cat").cat.cat,
     'dog': __import__("_schemas.dog2").dog2.dog,
 }
 
-primary_domain = any_domain_name
+from sphinxnotes.project.anyobjtypes import ANY_OBJECT_TYPES
+
+any_object_types.update(ANY_OBJECT_TYPES)
