@@ -142,7 +142,7 @@ class ObjDomain(Domain):
         if len(objids) > 1 or objidx is not None:
             # Mulitple objects found or reference index explicitly,
             # create link to indices page.
-            todocname, anchor = self._get_index_anchor(typ, target)
+            todocname, anchor = self._get_index_anchor(typ, target, location=node)
             logger.debug(
                 f'ambiguous {objtype} {target} in {self}, '
                 + f'ids: {objids} index: {todocname}#{anchor}'
@@ -267,7 +267,7 @@ class ObjDomain(Domain):
 
     """Methods for inernal use"""
 
-    def _get_index_anchor(self, reftype: str, refval: str) -> tuple[str, str]:
+    def _get_index_anchor(self, reftype: str, refval: str, location = None) -> tuple[str, str]:
         """
         Return the docname and anchor name of index page. Can be used for ``make_refnode()``.
 
@@ -275,7 +275,13 @@ class ObjDomain(Domain):
         """
         domain = self.name
         index = self.indices_for_reftype[reftype]
-        return f'{domain}-{index.name}', index.indexer.anchor(refval)
+        try: 
+            anchor = index.indexer.anchor(refval)
+        except Exception as e:
+            anchor = ''
+            logger.warning(f'failed to convert {repr(refval)} (xref target) to anchor: {e}', location=location)
+
+        return f'{domain}-{index.name}', anchor
 
 
 # =============================
