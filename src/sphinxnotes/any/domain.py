@@ -213,8 +213,7 @@ class ObjDomain(Domain):
         reftypes = [RefType(objtype)]
         if schema.name and schema.name.ref:
             mkrole(reftypes[0])
-            if schema.name.uniq:
-                mkindex(reftypes[0], DEFAULT_INDEXER)
+            mkindex(reftypes[0], DEFAULT_INDEXER)
 
         # Create {field,indexer}-specificed role and index.
         for name, field in schema.fields():
@@ -222,8 +221,7 @@ class ObjDomain(Domain):
                 reftype = RefType(objtype, name)
                 reftypes.append(reftype)
                 mkrole(reftype)  # create a role to reference object(s)
-                if not field.uniq:
-                    mkindex(reftype, DEFAULT_INDEXER)
+                mkindex(reftype, DEFAULT_INDEXER)
 
             for idxname in field.index:
                 reftype = RefType(objtype, field=name, indexer=idxname)
@@ -371,7 +369,6 @@ class ObjDefineDirective(StrictDataDefineDirective):
         domain, objtype = self.get_any_domain_and_type()
 
         objids = get_object_uniq_ids(self.schema, obj)
-        logger.warning('ojb: %s, ids: %s', obj, objids)
         ahrterm = ValueWrapper(objids[0]).as_str() if objids else None
         ahrid = make_id(self.env, self.state.document, prefix=objtype, term=ahrterm)
 
