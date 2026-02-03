@@ -103,6 +103,9 @@ class Templates:
     """Templates for rendering index entry."""
     # ...
 
+    """Templates for rendering embedded object."""
+    embed: Template | None
+
     # TODO: more...?
 
     def __init__(
@@ -111,14 +114,16 @@ class Templates:
         header: str | None,
         ref: str,  # | None
         ref_by: dict[str, str] = {},
+        embed: str | None = None,
         debug: bool = False,
     ):
         self.obj = Template(content, Phase.Parsing, debug)
         self.header = Template(header, Phase.Parsing, debug) if header else None
-        self.ref = Template(ref, Phase.PostTranform, debug)
+        self.ref = Template(ref, Phase.Resolving, debug)
         self.ref_by = {
-            f: Template(t, Phase.PostTranform, debug) for f, t in ref_by.items()
+            f: Template(t, Phase.Resolving, debug) for f, t in ref_by.items()
         }
+        self.embed = Template(embed, Phase.Resolving, debug) if embed else None
 
     def get_ref_by(self, reftype: RefType) -> Template:
         if reftype.field is not None:
