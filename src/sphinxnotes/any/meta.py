@@ -34,8 +34,8 @@ def pre_setup(app: Sphinx) -> None:
 def post_setup(app: Sphinx) -> ExtensionMetadata:
     return {
         'version': __version__,
-        'parallel_read_safe': True,
-        'parallel_write_safe': True,
+        'parallel_read_safe': False,
+        'parallel_write_safe': False,
     }
 
 

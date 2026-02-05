@@ -9,14 +9,12 @@ Domain implementions.
 """
 
 from __future__ import annotations
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, override, cast, TypeVar
 from pprint import pformat
 
-from sphinxnotes.data.data import PendingData
-
-from .indexers import LiteralIndexer, PathIndexer, YearIndexer, MonthIndexer
-
 from docutils import nodes
+from docutils.parsers.rst import directives
 from sphinx import addnodes
 from sphinx.domains import Domain, ObjType, Index, IndexEntry
 from sphinx.roles import XRefRole
@@ -24,13 +22,18 @@ from sphinx.util import logging
 from sphinx.util.nodes import make_id, make_refnode
 from sphinx.errors import ExtensionError
 from sphinxnotes.data import (
+    Phase,
     PlainValue,
     RawData,
     Template,
     ValueWrapper,
     ParsedData,
     Schema,
+    PendingContext,
+    ResolvedContext,
     pending_node,
+    BaseContextDirective,
+    UnparsedData,
     StrictDataDefineDirective,
 )
 from sphinxnotes.data.utils import (
@@ -52,6 +55,7 @@ from .obj import (
     get_object_refs,
 )
 from .utils import strip_rst_markups
+from .indexers import LiteralIndexer, PathIndexer, YearIndexer, MonthIndexer
 
 if TYPE_CHECKING:
     from typing import Iterator, Iterable
@@ -169,7 +173,7 @@ class ObjDomain(Domain):
         for (objtype, objid), (docname, anchor, _) in self.data['objects'].items():
             yield objid, objid, objtype, docname, anchor, 1
 
-    """Publish methods."""
+    """Public methods."""
 
     @classmethod
     def add_objtype(cls, objtype: str, typedef: ObjTypeDef) -> None:
@@ -179,7 +183,7 @@ class ObjDomain(Domain):
         cls.schemas[objtype] = schema
         cls.templates[objtype] = tmpls
 
-        # Create a directive for documenting object.
+        # Create directive ``.. objtype::`` for documenting object.
         if typedef.auto:
             cls.directives[objtype] = AutoObjDefineDirective.derive(
                 objtype,
@@ -192,6 +196,9 @@ class ObjDomain(Domain):
                 schema,
                 tmpls.obj,
             )
+
+        # Create directive ``.. objtype+embed::`` for embedding object.
+        cls.directives[objtype + '+embed'] = ObjEmbedDirective
 
         def mkrole(reftype: RefType):
             """Create and register role for referencing object."""
@@ -265,9 +272,19 @@ class ObjDomain(Domain):
 
         return otherobj
 
+    def get_rendered_object(self, objtype: str, objid: PlainValue) -> list[nodes.Node]:
+        docname, anchor, _ = self.objects[objtype, objid]
+        doctree = self.env.get_doctree(docname)
+        ahrnode = doctree.ids[anchor]
+        if isinstance(ahrnode, addnodes.desc_signature):
+            return [ahrnode.parent]
+        assert False  # TODO: mark obj start and objend
+
     """Methods for inernal use"""
 
-    def _get_index_anchor(self, reftype: str, refval: str, location = None) -> tuple[str, str]:
+    def _get_index_anchor(
+        self, reftype: str, refval: str, location=None
+    ) -> tuple[str, str]:
         """
         Return the docname and anchor name of index page. Can be used for ``make_refnode()``.
 
@@ -275,11 +292,14 @@ class ObjDomain(Domain):
         """
         domain = self.name
         index = self.indices_for_reftype[reftype]
-        try: 
+        try:
             anchor = index.indexer.anchor(refval)
         except Exception as e:
             anchor = ''
-            logger.warning(f'failed to convert {repr(refval)} (xref target) to anchor: {e}', location=location)
+            logger.warning(
+                f'failed to convert {repr(refval)} (xref target) to anchor: {e}',
+                location=location,
+            )
 
         return f'{domain}-{index.name}', anchor
 
@@ -318,21 +338,21 @@ class ObjDefineDirective(StrictDataDefineDirective):
               <desc_content>
                   <nodes...> # the original ``ns``
         """
-        domain, objtype = self.get_any_domain_and_type()
+        domain, objtype = self.get_domain_and_type()
 
         if (hdrtmpl := domain.templates[objtype].header) is None:
             # No header template available, no need to generate objdesc.
             return
         if (
-            isinstance(pending.data, ParsedData)
-            and pending.data.name is None
+            isinstance(pending.ctx, ParsedData)
+            and pending.ctx.name is None
             and '{{ name }}' in hdrtmpl.text
         ):
             # HACK: do not generate signode when name is not given.
             return
 
         # Queue a rendering for header, and setup anchor when rendering done.
-        hdrnode = pending_node(pending.data, hdrtmpl, inline=True)
+        hdrnode = pending_node(pending.ctx, hdrtmpl, inline=True)
         hdrnode.hook_rendered_nodes(self._setup_signode_anchor)
         self.queue_pending_node(hdrnode)
 
@@ -351,28 +371,28 @@ class ObjDefineDirective(StrictDataDefineDirective):
     ) -> None:
         ahrnode = find_parent(pending, addnodes.desc_signature)
         assert ahrnode
-        obj = pending.data
+        obj = pending.ctx
         assert isinstance(obj, ParsedData)
 
         self.setup_anchor(ahrnode, obj)
 
     """Helpers methods for self and subclasses."""
 
-    def get_any_domain_and_type(self) -> tuple[ObjDomain, str]:
+    def get_domain_and_type(self) -> tuple[ObjDomain, str]:
         domainname, _, objtype = self.name.partition(':')
         _domain = self.env.get_domain(domainname)
         return cast(ObjDomain, _domain), objtype
 
     def update_domain_atts(self, node: nodes.Element):
         """Attach domain related info to node."""
-        domain, objtype = self.get_any_domain_and_type()
+        domain, objtype = self.get_domain_and_type()
         node['domain'] = domain.name
         # 'desctype' is a backwards compatible attribute
         node['objtype'] = node['desctype'] = objtype
         node['classes'].extend([domain.name, objtype])
 
     def setup_anchor(self, ahrnode: nodes.Element, obj: Object) -> None:
-        domain, objtype = self.get_any_domain_and_type()
+        domain, objtype = self.get_domain_and_type()
 
         objids = get_object_uniq_ids(self.schema, obj)
         ahrterm = ValueWrapper(objids[0]).as_str() if objids else None
@@ -426,10 +446,10 @@ class AutoObjDefineDirective(ObjDefineDirective):
     def process_pending_node(self, n: pending_node) -> bool:
         if (
             n.template == self.template
-            and isinstance(n.data, PendingData)
-            and self._require_external_header(n.data.schema, n.data.raw)
+            and isinstance(n.ctx, UnparsedData)
+            and self._require_external_header(n.ctx.schema, n.ctx.raw)
         ):
-            n.hook_raw_data(self._resolve_external_header)
+            n.hook_pending_context(self._resolve_external_header)
             return super(StrictDataDefineDirective, self).process_pending_node(n)
 
         return super().process_pending_node(n)
@@ -453,8 +473,10 @@ class AutoObjDefineDirective(ObjDefineDirective):
             return False
         return ValueWrapper(val).as_str() == '_'
 
-    def _resolve_external_header(self, pending: pending_node, raw: RawData) -> None:
-        domain, objtype = self.get_any_domain_and_type()
+    def _resolve_external_header(
+        self, pending: pending_node, ctx: PendingContext
+    ) -> None:
+        domain, objtype = self.get_domain_and_type()
 
         if (hdrtmpl := domain.templates[objtype].header) is None:
             # No header template available, no need to generate objdesc.
@@ -468,6 +490,8 @@ class AutoObjDefineDirective(ObjDefineDirective):
             set(['any', domain.name, 'any-header', objtype + '-header'])
         )
 
+        raw = cast(UnparsedData, ctx).raw
+
         if raw.name is None:
             raw.name = title.astext()
         else:
@@ -475,7 +499,7 @@ class AutoObjDefineDirective(ObjDefineDirective):
             # TODO: Introduce a new extra context?
             raw.name = raw.name.replace('_', title.astext(), count=1)
 
-        pending_title = pending_node(pending.data, hdrtmpl, inline=True)
+        pending_title = pending_node(pending.ctx, hdrtmpl, inline=True)
         pending_title.hook_rendered_nodes(self._setup_external_anchor)
         self.queue_pending_node(pending_title)
 
@@ -486,11 +510,69 @@ class AutoObjDefineDirective(ObjDefineDirective):
     def _setup_external_anchor(
         self, pending: pending_node, rendered: list[nodes.Node]
     ) -> None:
-        assert isinstance(pending.data, ParsedData)
-        self.setup_anchor(pending.parent, pending.data)
+        assert isinstance(pending.ctx, ParsedData)
+        self.setup_anchor(pending.parent, pending.ctx)
 
 
-# =================
+@dataclass
+class PendingObject(PendingContext):
+    domain: ObjDomain
+    objtype: str
+    objid: str
+
+    @override
+    def resolve(self) -> ResolvedContext:
+        _, _, obj = self.domain.objects[self.objtype, self.objid]
+        return obj
+
+    def __hash__(self) -> int:
+        return hash((self.domain.name, self.objtype, self.objid))
+
+
+class ObjEmbedDirective(BaseContextDirective):
+    required_arguments = 1
+    optional_arguments = 0
+    option_spec = {
+        'debug': directives.flag,
+    }
+    has_content = True
+
+    def get_domain_and_type(self) -> tuple[ObjDomain, str]:
+        domainname, _, dirname = self.name.partition(':')
+        objtype, _, _ = dirname.partition('+')
+        _domain = self.env.get_domain(domainname)
+        return cast(ObjDomain, _domain), objtype
+
+    def get_rendered_objects(self) -> list[nodes.Node]:
+        domain, objtype = self.get_domain_and_type()
+        objid = self.arguments[0]
+        return domain.get_rendered_object(objtype, objid)
+
+    """Methods that override from parent."""
+
+    @override
+    def current_context(self) -> PendingContext | ResolvedContext:
+        domain, objtype = self.get_domain_and_type()
+        objid = self.arguments[0]
+        return PendingObject(domain, objtype, objid)
+
+    @override
+    def current_template(self) -> Template:
+        if self.content:
+            return Template(
+                '\n'.join(self.content), Phase.Resolving, 'debug' in self.options
+            )
+
+        domain, objtype = self.get_domain_and_type()
+        tmpl = domain.templates[objtype].embed
+        if tmpl:
+            return tmpl
+
+        self.assert_has_content()
+        assert False
+
+
+# ==================
 # Index implemention
 # ==================
 #
