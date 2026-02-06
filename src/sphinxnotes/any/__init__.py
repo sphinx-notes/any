@@ -39,6 +39,7 @@ OBJTYPE_DEFINE = DictSchema(
             Optional('header', default='{{ name }}'): Or(str, type(None)),
             Optional('ref', default='{{ name }}'): str,
             Optional('ref_by', default={}): {str: str},
+            Optional('embed', default=None): Or(str, type(None)),
         },
         Optional('auto', default=False): bool,
         Optional('debug', default=False): bool,
@@ -60,6 +61,7 @@ def _validate_objtype_defines_dict(d: dict, config: Config) -> ObjTypeDef:
         tmplsdef['header'],
         tmplsdef['ref'],
         tmplsdef['ref_by'],
+        tmplsdef['embed'],
         debug=objdef['debug'],
     )
 

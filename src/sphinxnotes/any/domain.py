@@ -595,8 +595,7 @@ class ObjEmbedDirective(BaseContextDirective):
             )
 
         domain, objtype = self.get_domain_and_type()
-        tmpl = domain.templates[objtype].embed
-        if tmpl:
+        if tmpl := domain.templates[objtype].embed:
             return tmpl
 
         self.assert_has_content()
