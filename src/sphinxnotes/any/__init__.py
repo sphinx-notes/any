@@ -90,7 +90,7 @@ def setup(app: Sphinx):
     """Sphinx extension entrypoint."""
     meta.pre_setup(app)
 
-    app.setup_extension('sphinxnotes.data')
+    app.setup_extension('sphinxnotes.data.render')
 
     app.add_config_value('any_domain_name', 'obj', 'env', types=str)
     app.add_config_value('any_object_types', {}, 'env', types=dict)
