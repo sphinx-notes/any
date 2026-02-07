@@ -94,8 +94,6 @@ class Templates:
     obj: Template
     header: Template | None
 
-    # embed: Templates
-
     """Templates for rendering corss references."""
     ref: Template
     ref_by: dict[str, Template]

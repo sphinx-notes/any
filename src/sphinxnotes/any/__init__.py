@@ -39,8 +39,8 @@ OBJTYPE_DEFINE = DictSchema(
             Optional('header', default='{{ name }}'): Or(str, type(None)),
             Optional('ref', default='{{ name }}'): str,
             Optional('ref_by', default={}): {str: str},
+            Optional('embed', default=None): Or(str, type(None)),
         },
-        Optional('auto', default=False): bool,
         Optional('debug', default=False): bool,
     }
 )
@@ -60,10 +60,11 @@ def _validate_objtype_defines_dict(d: dict, config: Config) -> ObjTypeDef:
         tmplsdef['header'],
         tmplsdef['ref'],
         tmplsdef['ref_by'],
+        tmplsdef['embed'],
         debug=objdef['debug'],
     )
 
-    auto = objdef['auto'] or config.git_object_auto
+    auto = True  # hardcode for now
 
     return ObjTypeDef(schema=schema, templates=tmpls, auto=auto)
 
@@ -88,11 +89,12 @@ def setup(app: Sphinx):
     """Sphinx extension entrypoint."""
     meta.pre_setup(app)
 
-    app.setup_extension('sphinxnotes.data')
+    # The underlying components that provide rendering functionality.
+    # See also https://sphinx.silverrainz.me/data
+    app.setup_extension('sphinxnotes.data.render')
 
-    app.add_config_value('any_domain_name', 'obj', 'env', types=str)
+    app.add_config_value('any_domain_name', 'any', 'env', types=str)
     app.add_config_value('any_object_types', {}, 'env', types=dict)
-    app.add_config_value('git_object_auto', True, 'env', types=bool)
 
     app.connect('config-inited', _config_inited)
 
