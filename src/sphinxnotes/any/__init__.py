@@ -64,7 +64,7 @@ def _validate_objtype_defines_dict(d: dict, config: Config) -> ObjTypeDef:
         debug=objdef['debug'],
     )
 
-    auto = True # hardcode for now
+    auto = True  # hardcode for now
 
     return ObjTypeDef(schema=schema, templates=tmpls, auto=auto)
 
@@ -89,6 +89,8 @@ def setup(app: Sphinx):
     """Sphinx extension entrypoint."""
     meta.pre_setup(app)
 
+    # The underlying components that provide rendering functionality.
+    # See also https://sphinx.silverrainz.me/data
     app.setup_extension('sphinxnotes.data.render')
 
     app.add_config_value('any_domain_name', 'any', 'env', types=str)

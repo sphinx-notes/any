@@ -57,7 +57,7 @@ from .utils import strip_rst_markups
 from .indexers import LiteralIndexer, PathIndexer, YearIndexer, MonthIndexer
 
 if TYPE_CHECKING:
-    from typing import Iterator, Iterable, Callable
+    from typing import Iterator, Iterable, Callable, Literal
     from sphinx.builders import Builder
     from sphinx.environment import BuildEnvironment
 
@@ -309,24 +309,33 @@ class ObjDomain(Domain):
 
 
 class ObjDefineDirective(StrictDataDefineDirective):
+    """
+    Directive for registering new objects in the domain.
+    Handles ``.. any:objtype::``-like directives and creates object descriptions
+    (descnode) with anchors.
+    """
+
     """Methods that override from parent."""
 
     @override
     def process_pending_node(self, n: pending_node) -> bool:
         if n.template == self.template:
-            n.hook_rendered_nodes(self._build_objdesc)
+            n.hook_rendered_nodes(self.setup_objdesc)
         return super().process_pending_node(n)
 
-    """Methods used internal."""
+    """Helpers methods for self and subclasses."""
 
-    def _build_objdesc(self, pending: pending_node, rendered: list[nodes.Node]) -> None:
-        """Wrap rendered.children into ObjectDescription.
+    def get_domain_and_type(self) -> tuple[ObjDomain, str]:
+        domainname, _, objtype = self.name.partition(':')
+        _domain = self.env.get_domain(domainname)
+        return cast(ObjDomain, _domain), objtype
 
-        TODO: considier inherit from ObjectDescription directive?
+    def setup_objdesc(self, pending: pending_node, rendered: list[nodes.Node]) -> None:
+        """Wrap rendered nodes into ObjectDescription.
 
         Before::
 
-            <nodes...> # the pass-in argument: ``ns``
+            <nodes...> # the pass-in argument: ``rendered: list[nodes.Node]``
 
         After::
 
@@ -335,7 +344,7 @@ class ObjDefineDirective(StrictDataDefineDirective):
                   <desc_name>
                       <pending_node> # header, wait for rendering
               <desc_content>
-                  <nodes...> # the original ``ns``
+                  <nodes...> # the original ``rendered``
         """
         domain, objtype = self.get_domain_and_type()
 
@@ -352,7 +361,7 @@ class ObjDefineDirective(StrictDataDefineDirective):
 
         # Queue a rendering for header, and setup anchor when rendering done.
         hdrnode = pending_node(pending.ctx, hdrtmpl, inline=True)
-        hdrnode.hook_rendered_nodes(self._setup_signode_anchor)
+        hdrnode.hook_rendered_nodes(self.setup_signode_anchor)
         self.queue_pending_node(hdrnode)
 
         # Construct ObjectDescription.
@@ -364,23 +373,6 @@ class ObjDefineDirective(StrictDataDefineDirective):
         # Replace the pass-in node list.
         rendered.clear()
         rendered.append(descnode)
-
-    def _setup_signode_anchor(
-        self, pending: pending_node, rendered: list[nodes.Node]
-    ) -> None:
-        ahrnode = find_parent(pending, addnodes.desc_signature)
-        assert ahrnode
-        obj = pending.ctx
-        assert isinstance(obj, ParsedData)
-
-        self.setup_anchor(ahrnode, obj)
-
-    """Helpers methods for self and subclasses."""
-
-    def get_domain_and_type(self) -> tuple[ObjDomain, str]:
-        domainname, _, objtype = self.name.partition(':')
-        _domain = self.env.get_domain(domainname)
-        return cast(ObjDomain, _domain), objtype
 
     def update_domain_atts(self, node: nodes.Element):
         """Attach domain related info to node."""
@@ -425,8 +417,50 @@ class ObjDefineDirective(StrictDataDefineDirective):
             blkparent = find_nearest_block_element(ahrnode) or self.state.document
             blkparent += report
 
+    def setup_signode_anchor(
+        self, pending: pending_node, rendered: list[nodes.Node]
+    ) -> None:
+        ahrnode = find_parent(pending, addnodes.desc_signature)
+        assert ahrnode
+        obj = pending.ctx
+        assert isinstance(obj, ParsedData)
+
+        self.setup_anchor(ahrnode, obj)
+
 
 class AutoObjDefineDirective(ObjDefineDirective):
+    """
+    Directive that extends ObjDefineDirective that allows object to have
+    header outside of object's nodes rather than a :cls:`addnodse.desc_signature`
+    in :cls:`addnodes.desc`. For example, if we have the follow templates::
+
+    .. code:: python
+
+        # ...
+        'obj': "Hi there, human! I am {{ name }}.",
+        'header': 'This is {{ name }}',
+        # ...
+
+    Define a cat:
+
+    .. code:: rst
+
+        Mimi
+        ====
+
+        .. cat:: _
+
+    The title "Mimi" will be used as cat's name, and the nodes.title will be
+    rendered by cat's header template, the result will look like:
+
+    .. code:: rst
+
+        This is Mimi
+        ============
+
+        Hi there, human! I am mimi.
+    """
+
     """Methods that override from parent."""
 
     @override
@@ -444,23 +478,61 @@ class AutoObjDefineDirective(ObjDefineDirective):
     @override
     def process_pending_node(self, n: pending_node) -> bool:
         if n.template == self.template:
-            n.hook_pending_context(self._resolve_external_name)
+            n.hook_pending_context(self.setup_external_header)
             # Skip ObjDefineDirective.process_pending_node.
             return super(StrictDataDefineDirective, self).process_pending_node(n)
 
         return super().process_pending_node(n)
 
-    """Methods used internal."""
+    """Helpers methods for self and subclasses."""
 
-    def _require_external_name(
+    def setup_external_header(
+        self, pending: pending_node, ctx: PendingContext | ResolvedContext
+    ) -> None:
+        def fallback():
+            # If we can not setup external header, fallback to setup objdesc.
+            pending.hook_rendered_nodes(self.setup_objdesc)
+
+        required, update_ctx_name = self.require_external_header(ctx)
+        if required is not True:
+            if required == 'Retry':
+                pending.hook_resolved_context(self.setup_external_header)
+            else:
+                fallback()
+            return
+        assert update_ctx_name
+
+        domain, objtype = self.get_domain_and_type()
+        if (hdrtmpl := domain.templates[objtype].header) is None:
+            fallback()
+            return
+
+        if not (header := self.resolve_external_header()):
+            fallback()
+            return
+
+        # Update the name field in ctx.
+        update_ctx_name(header.astext())
+
+        hdrnode = pending_node(ctx, hdrtmpl, inline=True)
+        hdrnode.hook_rendered_nodes(self.setup_external_header_anchor)
+        self.queue_pending_node(hdrnode)
+
+        # Replace header's children with pending node.
+        header.clear()
+        header += hdrnode
+
+    def require_external_header(
         self, ctx: PendingContext | ResolvedContext
-    ) -> Callable[[str], None] | bool:
+    ) -> tuple[Literal[True, False, 'Retry'], Callable[[str]] | None]:
         """
         Check whether the context require a external name.
 
         Returns:
-            :False: Don't required
-            :True: Don't know yet, retry for ResolvedContext plz.
+            :Literal:
+                :True:  Required
+                :False: Don't required
+                :Retry: Don't know yet, retry on ``hook_resolved_context`` plz.
             :Callable: A function for updating name, used by :meth:`_resolve_external_name`.
         """
 
@@ -472,16 +544,18 @@ class AutoObjDefineDirective(ObjDefineDirective):
             # The special underscore is for compatible with sphinxnotes-any<3.
             # See also https://sphinx.silverrainz.me/any/tips.html#documenting-section-and-documentation
             if not ctx.schema.name or not ctx.schema.name.required:
-                return False
+                return False, None
+            if ctx.schema.name.ctype is list and ctx.schema.name.etype is str:
+                return 'Retry', None
             if ctx.schema.name.ctype is not None:
-                return ctx.schema.name.ctype == list
+                return False, None
             if ctx.raw.name not in (None, '_'):
-                return False
+                return False, None
 
             def update_raw_name(name: str) -> None:
                 ctx.raw.name = name
 
-            return update_raw_name
+            return True, update_raw_name
 
         elif isinstance(ctx, ParsedData):
             # Most of the judgment is already done in the UnparseData branch.
@@ -492,55 +566,30 @@ class AutoObjDefineDirective(ObjDefineDirective):
                 or len(ctx.name) == 0
                 or ctx.name[0] != '_'
             ):
-                return False
+                return False, None
 
             def update_parsed_name(name: str) -> None:
                 assert isinstance(ctx.name, list)
                 ctx.name[0] = name
 
-            return update_parsed_name
+            return True, update_parsed_name
 
-        return False
+        return False, None
 
-    def _resolve_external_name(
-        self, pending: pending_node, ctx: PendingContext | ResolvedContext
-    ) -> None:
-        bool_or_updater = self._require_external_name(ctx)
-        if isinstance(bool_or_updater, bool):
-            if bool_or_updater:
-                pending.hook_resolved_context(self._resolve_external_name)
-            else:
-                pending.hook_rendered_nodes(self._build_objdesc)
-            return
-        else:
-            update_ctx_name = bool_or_updater
-
+    def resolve_external_header(self) -> nodes.Element | None:
         domain, objtype = self.get_domain_and_type()
 
-        if (hdrtmpl := domain.templates[objtype].header) is None:
-            # No header template available, no need to generate objdesc.
-            return
         if not (title := find_titular_node_upward(self.state.parent)):
-            return
+            return None
         if 'any-header' in title['classes']:
             # Already header of other object.
-            return
+            return None
         title['classes'].extend(
             set(['any', domain.name, 'any-header', objtype + '-header'])
         )
+        return title
 
-        # Update the name field in ctx.
-        update_ctx_name(title.astext())
-
-        pending_title = pending_node(ctx, hdrtmpl, inline=True)
-        pending_title.hook_rendered_nodes(self._setup_external_anchor)
-        self.queue_pending_node(pending_title)
-
-        # Replace title's children with pending node.
-        title.clear()
-        title += pending_title
-
-    def _setup_external_anchor(
+    def setup_external_header_anchor(
         self, pending: pending_node, rendered: list[nodes.Node]
     ) -> None:
         assert isinstance(pending.ctx, ParsedData)
