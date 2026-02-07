@@ -509,6 +509,8 @@ class AutoObjDefineDirective(ObjDefineDirective):
         if isinstance(bool_or_updater, bool):
             if bool_or_updater:
                 pending.hook_resolved_context(self._resolve_external_name)
+            else:
+                pending.hook_rendered_nodes(self._build_objdesc)
             return
         else:
             update_ctx_name = bool_or_updater
