@@ -9,8 +9,7 @@
 name = "sphinxnotes-any"
 description = "Sphinx domain for documenting anything"
 readme = "README.rst"
-license = "BSD-3-Clause"
-license-files = ["LICENSE"]
+license = { file = "LICENSE" }
 authors = [ { name = "Shengyu Zhang" } ]
 maintainers = [ { name = "Shengyu Zhang" } ]
 keywords = [
