@@ -36,8 +36,8 @@ test:
 # Build distribution package, for "install" or "upload".
 .PHONY: dist
 dist: pyproject.toml clean
-	# Use ``--no-isolation`` to prevent network accessing.
-	$(PY) -m build --no-isolation
+	# Use ``--no-isolation`` to prevent network accessing when in local env.
+	$(PY) -m build $(if $(CI),,--no-isolation)
 
 # Install distribution package to user directory.
 #
