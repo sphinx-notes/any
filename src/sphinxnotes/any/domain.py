@@ -21,7 +21,7 @@ from sphinx.roles import XRefRole
 from sphinx.util import logging
 from sphinx.util.nodes import make_id, make_refnode
 from sphinx.errors import ExtensionError
-from sphinxnotes.data import (
+from sphinxnotes.render import (
     Phase,
     PlainValue,
     Template,
@@ -35,7 +35,7 @@ from sphinxnotes.data import (
     UnparsedData,
     StrictDataDefineDirective,
 )
-from sphinxnotes.data.utils import (
+from sphinxnotes.render.utils import (
     Report,
     find_nearest_block_element,
     find_parent,

@@ -44,7 +44,7 @@ dependencies = [
     "Sphinx >= 7.0",
 
     # CUSTOM DEPENDENCIES START
-    "sphinxnotes-data",
+    "sphinxnotes-render",
     "wand >= 0.6.11", # https://github.com/emcconville/wand/issues/587
     "schema", # python dict schema validation
     # CUSTOM DEPENDENCIES END

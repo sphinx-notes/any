@@ -1,5 +1,5 @@
 """
-sphinxnotes.data.datetime
+sphinxnotes.render.datetime
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Datetime value support. Mostly for indexer.{Year,Month}Indexer.
@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, override
 from datetime import date, datetime
 
-from sphinxnotes.data import REGISTRY
+from sphinxnotes.render import REGISTRY
 
 if TYPE_CHECKING:
     from typing import Self

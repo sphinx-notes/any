@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 
 from sphinx.errors import ConfigError
 from sphinx.util import logging
-from sphinxnotes.data import Schema
+from sphinxnotes.render import Schema
 
 from schema import Schema as DictSchema, SchemaError as DictSchemaError, Optional, Or
 
@@ -90,8 +90,8 @@ def setup(app: Sphinx):
     meta.pre_setup(app)
 
     # The underlying components that provide rendering functionality.
-    # See also https://sphinx.silverrainz.me/data
-    app.setup_extension('sphinxnotes.data.render')
+    # See also https://sphinx.silverrainz.me/render
+    app.setup_extension('sphinxnotes.render')
 
     app.add_config_value('any_domain_name', 'any', 'env', types=str)
     app.add_config_value('any_object_types', {}, 'env', types=dict)

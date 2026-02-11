@@ -15,7 +15,7 @@ import hashlib
 import pickle
 from dataclasses import dataclass
 
-from sphinxnotes.data import (
+from sphinxnotes.render import (
     REGISTRY,
     ParsedData,
     PlainValue,

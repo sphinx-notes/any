@@ -3,7 +3,7 @@ import sys
 import unittest
 from typing import override
 
-from sphinxnotes.data import Field
+from sphinxnotes.render import Field
 
 sys.path.insert(0, os.path.abspath('./src/sphinxnotes'))
 from any.datetime import DATE_FMTS, PartialDate
