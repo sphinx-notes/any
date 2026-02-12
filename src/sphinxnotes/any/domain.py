@@ -652,14 +652,14 @@ class ObjEmbedDirective(BaseContextDirective):
 
     @override
     def current_template(self) -> Template:
+        debug = 'debug' in self.options
         if self.content:
-            return Template(
-                '\n'.join(self.content), Phase.Resolving, 'debug' in self.options
-            )
+            return Template('\n'.join(self.content), Phase.Resolving, debug)
 
         domain, objtype = self.get_domain_and_type()
         if tmpl := domain.templates[objtype].embed:
-            return tmpl
+            newtmpl = Template(tmpl.text, tmpl.phase, tmpl.debug or debug)
+            return newtmpl
 
         self.assert_has_content()
         assert False
