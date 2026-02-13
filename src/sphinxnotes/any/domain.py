@@ -604,7 +604,19 @@ class PendingObject(PendingContext):
 
     @override
     def resolve(self) -> ResolvedContext:
-        _, _, obj = self.domain.objects[self.objtype, self.objid]
+        objid = self.objid
+        if (self.objtype, objid) not in self.domain.objects:
+            objids = set()
+            for objtype, objfield, objref in self.domain.references:
+                if objtype == self.objtype and objref == objid:
+                    objids.update(self.domain.references[objtype, objfield, objref])
+
+            if len(objids) >= 1:
+                objid = objids.pop()
+            else:
+                raise KeyError(f'Object not found: {(self.objtype, objid)}')
+
+        _, _, obj = self.domain.objects[self.objtype, objid]
         return obj
 
     def __hash__(self) -> int:
@@ -640,14 +652,14 @@ class ObjEmbedDirective(BaseContextDirective):
 
     @override
     def current_template(self) -> Template:
+        debug = 'debug' in self.options
         if self.content:
-            return Template(
-                '\n'.join(self.content), Phase.Resolving, 'debug' in self.options
-            )
+            return Template('\n'.join(self.content), Phase.Resolving, debug)
 
         domain, objtype = self.get_domain_and_type()
         if tmpl := domain.templates[objtype].embed:
-            return tmpl
+            newtmpl = Template(tmpl.text, tmpl.phase, tmpl.debug or debug)
+            return newtmpl
 
         self.assert_has_content()
         assert False
