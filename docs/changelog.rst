@@ -22,6 +22,19 @@ Change Log
 Version 2.x
 ===========
 
+.. version:: 3.0
+   :date: 2024-xx-xx
+
+   - Any domain 3.0 (refactor)
+   - Add ObjEmbedDirective (:pull:`54`)
+   - Impl AutoObjDefineDirective (:pull:`53`)
+   - Integrate with sphinxnotes-data (:pull:`51`)
+   - Impl PathIndexer (:pull:`42`)
+   - Add multiple indices support (:pull:`40`)
+   - Support custom index generation by schema.Classifier (:pull:`37`)
+   - Fix fallback to references when object not found by id (:pull:`56`)
+   - Dump domain data (:pull:`50`)
+
 .. version:: 2.5
    :date: 2024-08-17
 
