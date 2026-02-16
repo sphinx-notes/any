@@ -370,6 +370,11 @@ class ObjDefineDirective(StrictDataDefineDirective):
         descnode = addnodes.desc('', signode, contnode)
         self.update_domain_atts(descnode)
 
+        domain, objtype = self.get_domain_and_type()
+        self.env.events.emit(
+            'object-description-transform', domain.name, objtype, contnode
+        )
+
         # Replace the pass-in node list.
         rendered.clear()
         rendered.append(descnode)
@@ -417,6 +422,22 @@ class ObjDefineDirective(StrictDataDefineDirective):
             blkparent = find_nearest_block_element(ahrnode) or self.state.document
             blkparent += report
 
+    def setup_toc_name(
+        self, signode: addnodes.desc_signature, rendered: list[nodes.Node]
+    ) -> None:
+        """Set TOC entry attributes for localtoc generation.
+
+        See TocTreeCollector in sphinx/environment/collectors/toctree.py.
+        """
+        if not self.config.toc_object_entries:
+            signode['_toc_parts'] = ()
+            signode['_toc_name'] = ''
+            return
+
+        toc_name = ''.join(n.astext() for n in rendered)
+        signode['_toc_parts'] = (toc_name,)
+        signode['_toc_name'] = toc_name
+
     def setup_signode_anchor(
         self, pending: pending_node, rendered: list[nodes.Node]
     ) -> None:
@@ -426,6 +447,7 @@ class ObjDefineDirective(StrictDataDefineDirective):
         assert isinstance(obj, ParsedData)
 
         self.setup_anchor(ahrnode, obj)
+        self.setup_toc_name(ahrnode, rendered)
 
 
 class AutoObjDefineDirective(ObjDefineDirective):
