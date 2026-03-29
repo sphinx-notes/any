@@ -65,8 +65,8 @@ class PathIndexer(Indexer):
 INPUTFMTS = ['%Y-%m-%d', '%Y-%m', '%Y']
 DISPFMTS_Y = '%Y 年'
 DISPFMTS_M = '%m 月'
+DISPFMTS_D = '%d 日，%a'
 DISPFMTS_YM = '%Y 年 %m 月'
-DISPFMTS_DW = '%d 日，%a'
 ZEROTIME = PartialDate.from_str('0001', '%Y')
 
 
@@ -86,14 +86,14 @@ class YearIndexer(Indexer):
         self,
         dispfmt_y: str = DISPFMTS_Y,
         dispfmt_m: str = DISPFMTS_M,
-        dispfmt_dw: str = DISPFMTS_DW,
+        dispfmt_d: str = DISPFMTS_D,
     ):
         """*xxxfmt* are date format used by time.strptime/strftime.
 
         .. seealso:: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes"""
         self.dispfmt_y = dispfmt_y
         self.dispfmt_m = dispfmt_m
-        self.dispfmt_dw = dispfmt_dw
+        self.dispfmt_d = dispfmt_d
 
     @override
     def classify(self, objref: Value) -> list[Category]:
@@ -113,7 +113,7 @@ class YearIndexer(Indexer):
                 entry = Category(
                     main=v.strftime(self.dispfmt_y),
                     sub=v.strftime(self.dispfmt_m),
-                    extra=v.strftime(self.dispfmt_dw),
+                    extra=v.strftime(self.dispfmt_d),
                 )
             entries.append(entry)
 
@@ -126,7 +126,7 @@ class YearIndexer(Indexer):
         def sort_by_time(x: Category):
             t1 = _safe_strptime(x.main, self.dispfmt_y)
             t2 = _safe_strptime(x.sub, self.dispfmt_m)
-            t3 = _safe_strptime(x.extra, self.dispfmt_dw)
+            t3 = _safe_strptime(x.extra, self.dispfmt_d)
             return (t1, t2, t3)
 
         return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
@@ -146,10 +146,10 @@ class MonthIndexer(Indexer):
     def __init__(
         self,
         dispfmt_ym: str = DISPFMTS_YM,
-        dispfmt_dw: str = DISPFMTS_DW,
+        dispfmt_d: str = DISPFMTS_D,
     ):
         self.dispfmt_ym = dispfmt_ym
-        self.dispfmt_dw = dispfmt_dw
+        self.dispfmt_d = dispfmt_d
 
     @override
     def classify(self, objref: Value) -> list[Category]:
@@ -161,7 +161,9 @@ class MonthIndexer(Indexer):
                 entry = Category(main=v.strftime(self.dispfmt_ym))
             else:
                 entry = Category(
-                    main=v.strftime(self.dispfmt_ym), extra=v.strftime(self.dispfmt_dw)
+                    main=v.strftime(self.dispfmt_ym),
+                    sub=v.strftime(self.dispfmt_d),
+                    extra='',  # left it empty, or sub-type will not take effect
                 )
             entries.append(entry)
         return entries
@@ -171,7 +173,7 @@ class MonthIndexer(Indexer):
     ) -> list[Indexer._T]:
         def sort_by_time(x: Category):
             t1 = _safe_strptime(x.main, self.dispfmt_ym)
-            t2 = _safe_strptime(x.extra, self.dispfmt_dw)
+            t2 = _safe_strptime(x.sub, self.dispfmt_d)
             return (t1, t2)
 
         return sorted(data, key=lambda x: sort_by_time(key(x)), reverse=True)
