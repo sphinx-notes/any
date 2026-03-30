@@ -11,6 +11,7 @@ Dump any domain data.
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import json
+from dataclasses import asdict
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -45,7 +46,7 @@ def _dump_domain_data(app: Sphinx, _):
         objs[f'{objtype}-{objid}'] = {
             'docname': docname,
             'anchor': anchor,
-            'obj': obj.asdict(),
+            'obj': asdict(obj),
         }
 
     with open(app.doctreedir.joinpath(fn), 'w') as f:
