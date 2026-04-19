@@ -95,7 +95,9 @@ autodoc_default_options = {
 }
 
 extensions.append('sphinx.ext.intersphinx')
-intersphinx_mapping = {}
+intersphinx_mapping = {
+    'render': ('https://sphinx.silverrainz.me/render', None),
+}
 
 extensions.append('sphinx_sitemap')
 sitemap_filename = "sitemap.xml"

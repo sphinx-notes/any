@@ -1,8 +1,5 @@
 .. any:cat:: Nyan Cat
-             Nyan_Cat
-   :id: 1
-   :color: pink gray
-   :picture: _images/nyan-cat.gif
+   :color: rainbow
 
    :any:cat:`Nyan Cat` is the name of a YouTube video uploaded in April 2011,
    which became an internet meme. The video merged a Japanese pop song with

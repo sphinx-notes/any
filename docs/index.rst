@@ -28,10 +28,18 @@ Introduction
 
 .. INTRODUCTION START
 
-The extension provides a domain which allows user creates directive and roles 
-to descibe, reference and index arbitrary object in documentation.
-It is a bit like :py:meth:`sphinx.application.Sphinx.add_object_type`,
-but more powerful.
+``sphinxnotes-any`` is a configurable Sphinx domain for documenting arbitrary
+objects.
+
+It lets you describe an object type once, then automatically provides
+directives for defining objects, roles for cross-referencing them, and indices
+for browsing them. Object data is described with the
+:external+render:doc:`sphinxnotes-render field DSL <dsl>`, and object output is
+rendered with :external+render:doc:`Jinja templates <tmpl>`.
+
+Compared with :py:meth:`sphinx.application.Sphinx.add_object_type`, it is aimed
+at richer structured data: typed fields, multiple referenceable values, custom
+rendering, generated field-specific roles, and object indices.
 
 .. INTRODUCTION END
 

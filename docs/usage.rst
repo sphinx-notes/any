@@ -2,218 +2,236 @@
 Usage
 =====
 
-.. warning:: Still WIP.
+``sphinxnotes-any`` lets you define object types in :file:`conf.py`.
+For each object type, it creates Sphinx domain objects: directives for defining
+objects, roles for cross-referencing them, and indices for browsing them.
+
+The data parsing and template rendering are provided by
+:external+render:ref:`sphinxnotes.render <framework>`. This page focuses on the
+``any`` domain behavior. For the shared field DSL and Jinja template semantics,
+refer to :external+render:doc:`dsl` and :external+render:doc:`tmpl`.
+
+.. highlight:: rst
 
 .. _writing-objdef:
 
-Object Type Definiton
+Defining Object Types
 =====================
 
-Before descibing any object, we need to tell extension "what data consist of the object and how to display it".
-
-The object type definiton does this. A definition is a python dict, consists of two main parts: Schema (Data) and Templates (Presentation):
+Object types are configured through :confval:`any_object_types`. Each entry has
+a ``schema`` section and a ``templates`` section:
 
 .. literalinclude:: /_schemas/cat.py
+   :language: python
 
-The Field Definiton DSL
------------------------
+The dictionary key, ``cat`` in this example, becomes the object type name. With
+the default :confval:`any_domain_name`, the extension registers the directive
+``.. any:cat::`` and the role ``:any:cat:``.
 
-Documenting Object
-==================
+Schema
+------
 
-Once a schema created, the corresponding :ref:`directives`, :ref:`roles` and :ref:`indices` will be generated. You can use them to descibe, reference and index object in your documentation.
+The ``schema`` section describes the data accepted by the generated directive.
+It has three parts:
 
-For the convenience, we use default domain name "any", and we assume that we have the following schema with in :any:confval:`any_schemas`:
+``name``
+   The directive argument. Use ``None`` when the object has no name argument.
+
+``attrs``
+   A mapping from directive option names to field declarations.
+
+``content``
+   The directive body. Use ``None`` when the object must not have content.
+
+Field declarations use the Field Description Language from
+``sphinxnotes-render``. See :external+render:doc:`dsl` for the built-in types,
+forms, flags, and by-options.
+
+``sphinxnotes-any`` adds these field modifiers on top of the render DSL:
+
+``ref``
+   The field value can be used as a cross-reference target. Aliases:
+   ``refer``, ``referable``, ``referenceable``.
+
+``uniq``
+   The field value is the unique identifier of the object. Only one field in a
+   schema can use this flag. Alias: ``unique``.
+
+``index by <name>``
+   Create an additional role and index using a named indexer. Alias:
+   ``idx by <name>``.
+
+Templates
+---------
+
+The ``templates`` section controls how an object is rendered:
+
+``obj``
+   Renders the object body inserted by the object directive.
+
+``header``
+   Renders the object signature or the section title used as the object name.
+   Use ``None`` to disable the header template.
+
+``ref``
+   Renders cross-reference text.
+
+``ref_by``
+   A mapping from field names to field-specific reference templates.
+
+``embed``
+   Default template for ``.. any:cat+embed::``. Use ``None`` when embedded
+   output must always be supplied inline.
+
+``debug``
+   Enables render debug output for the object type.
+
+Templates are Jinja text rendered by ``sphinxnotes-render``. In normal object
+templates, ``{{ name }}``, ``{{ attrs }}``, every attribute field lifted from
+``attrs``, and ``{{ content }}`` are available. Cross-reference templates are
+rendered during the resolving phase, so they can also use the explicit reference
+title as ``{{ title }}``. See :external+render:doc:`tmpl` for the complete
+template model and :external+render:ref:`render-phases`.
 
 .. _directives:
 
-Directives
-----------
+Documenting Objects
+===================
 
-.. _object-description:
-
-Object Description
-~~~~~~~~~~~~~~~~~~
-
-The aboved schema created a Directive_ named with "``domain``:\ ``objtype``" (In this case, it is ``any:cat``) for descibing object(INC, it is cat🐈).
-
-Arguments
-   Arguments are used to specify the :any:tmplvar:`name` of the object. The number argument is depends on the name :py:class:`any.Field` of Schema.
-
-   - A ``None`` field means no argument is required
-   - For a non-``None`` Field, see :py:attr:`any.Field` for more details
-
-   .. _underscore-argument:
-
-   Specially, If first argument is ``_`` (underscore), the directive must be located after a `Section Title`_, the text of section title is the real first argument.
-
-   In this case, the ``any:cat`` directive accepts multiple argument split by newline.
-
-Options
-   All attributes defined in schema are converted to options of directive. Further, they will available in various :ref:`Templates <writing-template>`.
-
-   - A ``None`` field is no allowed for now means no argument is required
-
-     .. hint:: May be changed in the future vesrion.
-
-   - For a non-``None`` Field, see :py:attr:`any.Field` for more details
-
-   In this case, the directive has three options: ``id``, ``color`` and ``picture``.
-
-Content
-   Content is used to specify the :any:tmplvar:`content` of the object.
-
-   - A ``None`` field means no content is required
-   - For a non-``None`` Field, see :py:attr:`any.Field` for more details
-
-   In this case, the directive accepts content.
-
-The directive will be rendered to a reStructuredText snippet, by :ref:`description-template`, then inserted to documentation.
-
-Let's documenting such a cat:
+For every configured object type, ``sphinxnotes-any`` registers a directive
+named ``<domain>:<object-type>``. With the default domain and the ``cat`` object
+type, use ``.. any:cat::``:
 
 .. literalinclude:: /_schemas/nyan-cat.txt
    :language: rst
 
-It will be rendered as:
+It is rendered as:
 
 .. include:: /_schemas/nyan-cat.txt
 
-.. _Directive: https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#directives
-.. _Section Title: https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#sections
+The generated directive follows the object schema:
+
+``name``
+   Becomes the directive argument. If the argument is ``_`` or omitted where the
+   schema requires a scalar name, ``sphinxnotes-any`` can take the nearest
+   section title as the object name. See :ref:`underscore-argument`.
+
+``attrs``
+   Become directive options.
+
+``content``
+   Becomes the directive body.
+
+.. _object-description:
+
+The rendered object is stored in the ``any`` domain. Its anchor and reference
+values are derived from the ``uniq`` and ``ref`` fields.
 
 .. _roles:
 
-Roles
------
+Referencing Objects
+===================
 
-Same to :ref:`sphinx:xref-syntax`, explicit title ``:role:`title <target>``` is supported by all the Role_\ s. If not explicit title specific, reference title will be rendered by one of :ref:`reference-template`.
+A field marked with ``ref`` creates cross-reference roles.
 
-.. _Role: https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#interpreted-text
-
-General Reference
-~~~~~~~~~~~~~~~~~
-
-The aboved schema created a role named with "``domain``-\ ``objtype``" (In this case, it is ``any:cat``) for creating a reference to :ref:`object-description`. The interpreted text can be value of *any referenceable field*.
+The all-in-one role uses the object type name, such as ``:any:cat:``. It can
+resolve a value from any referenceable field:
 
 =================== =================================== ========================
 Reference by name   ``:any:cat:`Nyan Cat```             :any:cat:`Nyan Cat`
-By another name     ``:any:cat:`Nyan_Cat```             :any:cat:`Nyan_Cat`
-By ID               ``:any:cat:`1```                    :any:cat:`1`
 Explicit title      ``:any:cat:`This cat <Nyan Cat>```  :any:cat:`This cat <Nyan Cat>`
-A nonexistent cat   ``:any:cat:`mimi```                 :any:cat:`mimi`
 =================== =================================== ========================
 
-Field-Specific Reference
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Role "``domain``-\ ``objtype``.\ ``field``" will be created for all referenceable Fields (In this case, it is ``any:cat.name``, ``any:cat.id`` and ``any:cat.color``).
-
-These roles also create reference to :ref:`object-description`. But the interpreted text must be value of field in role's name.
+Field-specific roles use ``<object-type>.<field>``. They only resolve values
+from the named field:
 
 =================== =============================== ============================
 Reference by name   ``:any:cat.name:`Nyan Cat```    :any:cat.name:`Nyan Cat`
-By ID               ``:any:cat.id:`1```             :any:cat.id:`1`
+By color            ``:any:cat.color:`rainbow```    :any:cat.color:`rainbow`
 =================== =============================== ============================
+
+If a reference value matches multiple objects, the reference points to the
+corresponding object index instead of choosing one object arbitrarily.
 
 .. _indices:
 
-Indices
--------
+Browsing Object Indices
+=======================
 
-According to sphinx documentation, we use :ref:`sphinx:ref-role` to create reference to object indices, and the index name should prefixed with domain name.
+Each referenceable field creates an object index. Use :rst:role:`ref` to link
+to an index page.
 
-General Index
-~~~~~~~~~~~~~
-
-Index "``domain``-\ ``objtype``" (In this case, it is ``any-cat``) creates reference to object index which grouped by all referenceable field values.
+General indices are named ``<domain>-<object-type>``:
 
 ================== ==============
 ``:ref:`any-cat``` :ref:`any-cat`
 ================== ==============
 
-Field Specific Index
-~~~~~~~~~~~~~~~~~~~~
+Field-specific indices are named ``<domain>-<object-type>.<field>``:
 
-Index "``domain``-\ ``objtype``.\ ``field``" will be created for all reference Fields (In this case, it is ``any-cat.name``, ``any-cat.id`` and ``any-cat.color``).
+========================== ======================
+``:ref:`any-cat.name```    :ref:`any-cat.name`
+``:ref:`any-cat.color```   :ref:`any-cat.color`
+========================== ======================
 
-These indices create reference to object index which grouped by specific field values.
+Additional indices configured with ``index by <name>`` are named
+``<domain>-<object-type>.<field>+by-<indexer>``. Built-in indexers are:
 
-======================= ===================
-``:ref:`any-cat.name``` :ref:`any-cat.name`
-``:ref:`any-cat.id```   :ref:`any-cat.id`
-======================= ===================
+``literal``
+   Group by the literal field value. This is the default indexer.
 
-.. _writing-template:
+``dot``
+   Group dotted paths into one level of hierarchy.
 
-Writing Template
-================
+``slash``
+   Group slash-separated paths into one level of hierarchy.
 
-We use Jinja_ as our templating engine.
+``year``
+   Group ``date`` values by year, month, and day.
 
-.. _Jinja: https://jinja.palletsprojects.com/
+``month``
+   Group ``date`` values by month and day.
 
-Currently we need two kinds of template to let .
+.. _embedding-objects:
 
-.. _description-template:
+Embedding Objects
+=================
 
-Description Template
---------------------
+For every object type, the extension also registers
+``.. <domain>:<object-type>+embed::``. It resolves an existing object and renders
+it with the configured ``embed`` template or with inline directive content:
 
-Used to generate object description. Can be written in reStructuredText.
+.. code-block:: rst
 
-.. _reference-template:
+   .. any:cat+embed:: Nyan Cat
 
-Reference Template
-------------------
+   .. any:cat+embed:: Nyan Cat
 
-Used to generate object reference. Only plain text is allowed for now.
+      Embedded cat: **{{ name }}**.
 
-Reference Template has two various variants:
+Use embedding when the same object needs a compact representation in another
+page or section.
 
-Missing Reference Template
-   Applied when the reference is missing.
+Debugging Templates
+===================
 
-   .. hint:: In this template, only variables :any:tmplvar:`objtype` and :any:tmplvar:`title`  are available.
+Set ``debug`` to ``True`` in an object type definition to enable render debug
+output for all of its templates:
 
-Ambiguous Reference Template
-   Applied when the reference is ambiguous.
+.. code-block:: python
 
-   .. hint:: In this template, only variables :any:tmplvar:`objtype` and :any:tmplvar:`title`  are available.
+   any_object_types = {
+       'cat': {
+           'schema': {
+               'name': 'str, ref, uniq',
+           },
+           'templates': {
+               'obj': '{{ name }}',
+               'ref': '{{ title }}',
+           },
+           'debug': True,
+       },
+   }
 
-Variables
----------
-
-For the usage of Jinja's variable, please refer to `Jinja's Variables`_.
-
-.. _Jinja's Variables: <https://jinja.palletsprojects.com/en/2.11.x/templates/#variables
-
-All attributes defined in schema are available as variables in template. Note the value of variable might be *string or string list* (depends on value of :py:class:`any.Schema.Field.Form`).
-
-Beside, there are some special variable:
-
-.. any:tmplvar:: objtype
-   :type: str
-   :conf: TYPE_KEY
-
-   Type of object.
-
-.. any:tmplvar:: name
-   :type: Union[None,str,List[str]]
-   :conf: NAME_KEY
-
-   Name of object.
-
-.. any:tmplvar:: content
-   :type: Union[None,str,List[str]]
-   :conf: CONTENT_KEY
-
-   Content of object.
-
-.. any:tmplvar:: title
-   :type: str
-   :conf: TITLE_KEY
-
-   Title of object.
-
-   In :ref:`reference-template`, its value might be overwritten by explicit title.
+For lower-level details about context construction and rendering phases, see
+:external+render:doc:`tmpl`.

@@ -4,7 +4,7 @@ dog = {
     'schema': {
         'attrs': {
             'breed': 'str, ref',
-            'color': 'words of str',
+            'color': 'words of str, ref',
         },
     },
     'templates': {
