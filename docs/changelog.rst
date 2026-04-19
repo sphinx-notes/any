@@ -19,6 +19,35 @@ Change Log
 
    Change log here.
 
+Version 3.x
+===========
+
+.. version:: 3.0
+   :break:
+
+   - Render ability improvements. The ability to render data is now provided by
+     `sphinxnotes-render`__ (:issue:`30`)
+
+     - **BREAKING**: The ``any_schemas`` confval is replcated by :confval:`any_object_types`,
+       and we use a new DSL for descibing a field (tbd: link to dsl)
+     - **BREAKING**: The ``sphinxnotes.any.api`` package is removed
+     - Add object embedding support (:issue:`28`)
+     - External header now works for definition list, field list now, (:issue:`52`)
+     - Support datetime type in field
+     - Add ToC entry for object descriptions  (:pull:`57`)
+
+   - Index improvements:
+
+     - Add multiple indices support (:pull:`40`)
+     - Support index by path (:pull:`42`)
+     - Support index by datetime (:issue:`33`, issue:`35`)
+
+   - Support dumping domain data, see also :confval:`any_domain_dump` (:pull:`50`)
+
+   .. seealso:: The 3.0 tracking issue: :issue:`15`
+
+   __ https://sphinx.silverrainz.me/render/
+
 Version 2.x
 ===========
 

@@ -23,6 +23,8 @@ version = release = '2.5'
 # ones.
 extensions = [
     'sphinx.ext.githubpages',
+    'sphinx.ext.doctest',
+    'sphinx.ext.viewcode',
     'sphinx_design',
     'sphinx_copybutton',
     'sphinx_last_updated_by_git',
@@ -114,8 +116,8 @@ comboroles_roles = {
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src/sphinxnotes'))
-extensions.append('any')
+sys.path.insert(0, os.path.abspath('../src/'))
+extensions.append('sphinxnotes.any')
 
 # CUSTOM CONFIGURATION
 
