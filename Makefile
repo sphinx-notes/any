@@ -27,7 +27,11 @@ fmt:
 
 .PHONY: test
 test:
-	$(PY) -m unittest discover -s tests -v
+	$(PY) -m pytest tests/ -v
+
+.PHONY: doctest
+doctest:
+	$(MAKE) doctest -C docs/
 
 ################################################################################
 # Distribution Package
