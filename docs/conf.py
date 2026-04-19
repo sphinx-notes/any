@@ -1,6 +1,5 @@
 # This file is generated from sphinx-notes/cookiecutter.
 # You need to consider modifying the TEMPLATE or modifying THIS FILE.
-
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -23,6 +22,8 @@ version = release = '2.5'
 # ones.
 extensions = [
     'sphinx.ext.githubpages',
+    'sphinx.ext.doctest',
+    'sphinx.ext.viewcode',
     'sphinx_design',
     'sphinx_copybutton',
     'sphinx_last_updated_by_git',
@@ -89,6 +90,9 @@ gtagjs_ids = ['G-E4SNX0WZYV']
 extensions.append('sphinx.ext.autodoc')
 autoclass_content = 'init'
 autodoc_typehints = 'description'
+autodoc_default_options = {
+    'member-order': 'bysource',
+}
 
 extensions.append('sphinx.ext.intersphinx')
 intersphinx_mapping = {}
@@ -107,6 +111,10 @@ comboroles_roles = {
     'parsed_literal': (['literal'], True),
 }
 
+
+extensions.append('sphinxnotes.project')
+primary_domain = 'any'
+
 # -- Eat your own dog food --------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -114,13 +122,10 @@ comboroles_roles = {
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src/sphinxnotes'))
-extensions.append('any')
+sys.path.insert(0, os.path.abspath('../src/'))
+extensions.append('sphinxnotes.any')
 
 # CUSTOM CONFIGURATION
-
-any_domain_name = 'any'
-primary_domain = any_domain_name
 
 # For locating packages under _schemas/.
 sys.path.insert(0, os.path.abspath('.'))
@@ -128,7 +133,3 @@ any_object_types = {
     'cat': __import__("_schemas.cat").cat.cat,
     'dog': __import__("_schemas.dog2").dog2.dog,
 }
-
-from sphinxnotes.project.anyobjtypes import ANY_OBJECT_TYPES
-
-any_object_types.update(ANY_OBJECT_TYPES)

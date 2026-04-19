@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/sphinx-notes/cookiecutter",
-  "commit": "634c4022e575bd086ea47f3b42feafe24e14a939",
+  "commit": "987dccc7d6145ec1fd0d26222cd2a2318f66329d",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -20,7 +20,7 @@
       "sphinx_version": "7.0",
       "development_status": "3 - Alpha",
       "_template": "https://github.com/sphinx-notes/cookiecutter",
-      "_commit": "634c4022e575bd086ea47f3b42feafe24e14a939"
+      "_commit": "987dccc7d6145ec1fd0d26222cd2a2318f66329d"
     }
   },
   "directory": null
