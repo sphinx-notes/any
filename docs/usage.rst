@@ -140,10 +140,10 @@ resolve a value from any referenceable field:
 .. example::
    :style: grid
 
-   ================== ====================================
-   Reference by name  :any:cat:`Nyan Cat`
-   Explicit title     :any:cat:`This cat <Nyan Cat>`
-   ================== ====================================
+   Reference by name
+      :any:cat:`Nyan Cat`
+   Explicit title
+      :any:cat:`This cat <Nyan Cat>`
 
 Field-specific roles use ``<object-type>.<field>``. They only resolve values
 from the named field:
@@ -151,10 +151,10 @@ from the named field:
 .. example::
    :style: grid
 
-   ================== ============================
-   Reference by name  :any:cat.name:`Nyan Cat`
-   Reference by color :any:cat.color:`rainbow`
-   ================== ============================
+   Reference by name
+      :any:cat.name:`Nyan Cat`
+   Reference by color
+      :any:cat.color:`rainbow`
 
 If a reference value matches multiple objects, the reference points to the
 corresponding object index instead of choosing one object arbitrarily.
@@ -172,19 +172,18 @@ General indices are named ``<domain>-<object-type>``:
 .. example::
    :style: grid
 
-   =============== ===============
-   Browse all cats :ref:`any-cat`
-   =============== ===============
+   Browse all cats
+      :ref:`any-cat`
 
 Field-specific indices are named ``<domain>-<object-type>.<field>``:
 
 .. example::
    :style: grid
 
-   ==================== ======================
-   Browse cats by name  :ref:`any-cat.name`
-   Browse cats by color :ref:`any-cat.color`
-   ==================== ======================
+   Browse cats by name
+      :ref:`any-cat.name`
+   Browse cats by color
+      :ref:`any-cat.color`
 
 Additional indices configured with ``index by <name>`` are named
 ``<domain>-<object-type>.<field>+by-<indexer>``. Built-in indexers are:
@@ -211,13 +210,13 @@ Embedding Objects
 
 For every object type, the extension also registers
 ``.. <domain>:<object-type>+embed::``. It resolves an existing object and renders
-it with the configured ``embed`` template or with inline directive content:
+it with the configured ``embed`` template or with inline directive content.
+When no ``embed`` template is configured, provide the template inline:
 
-.. code-block:: rst
+.. example::
+   :style: grid
 
-   .. any:cat+embed:: Nyan Cat
-
-   .. any:cat+embed:: Nyan Cat
+   .. any:cat+embed:: mimi
 
       Embedded cat: **{{ name }}**.
 
