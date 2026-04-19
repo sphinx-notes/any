@@ -137,18 +137,24 @@ A field marked with ``ref`` creates cross-reference roles.
 The all-in-one role uses the object type name, such as ``:any:cat:``. It can
 resolve a value from any referenceable field:
 
-=================== =================================== ========================
-Reference by name   ``:any:cat:`Nyan Cat```             :any:cat:`Nyan Cat`
-Explicit title      ``:any:cat:`This cat <Nyan Cat>```  :any:cat:`This cat <Nyan Cat>`
-=================== =================================== ========================
+.. example::
+   :style: grid
+
+   ================== ====================================
+   Reference by name  :any:cat:`Nyan Cat`
+   Explicit title     :any:cat:`This cat <Nyan Cat>`
+   ================== ====================================
 
 Field-specific roles use ``<object-type>.<field>``. They only resolve values
 from the named field:
 
-=================== =============================== ============================
-Reference by name   ``:any:cat.name:`Nyan Cat```    :any:cat.name:`Nyan Cat`
-By color            ``:any:cat.color:`rainbow```    :any:cat.color:`rainbow`
-=================== =============================== ============================
+.. example::
+   :style: grid
+
+   ================== ============================
+   Reference by name  :any:cat.name:`Nyan Cat`
+   Reference by color :any:cat.color:`rainbow`
+   ================== ============================
 
 If a reference value matches multiple objects, the reference points to the
 corresponding object index instead of choosing one object arbitrarily.
@@ -163,16 +169,22 @@ to an index page.
 
 General indices are named ``<domain>-<object-type>``:
 
-================== ==============
-``:ref:`any-cat``` :ref:`any-cat`
-================== ==============
+.. example::
+   :style: grid
+
+   =============== ===============
+   Browse all cats :ref:`any-cat`
+   =============== ===============
 
 Field-specific indices are named ``<domain>-<object-type>.<field>``:
 
-========================== ======================
-``:ref:`any-cat.name```    :ref:`any-cat.name`
-``:ref:`any-cat.color```   :ref:`any-cat.color`
-========================== ======================
+.. example::
+   :style: grid
+
+   ==================== ======================
+   Browse cats by name  :ref:`any-cat.name`
+   Browse cats by color :ref:`any-cat.color`
+   ==================== ======================
 
 Additional indices configured with ``index by <name>`` are named
 ``<domain>-<object-type>.<field>+by-<indexer>``. Built-in indexers are:
