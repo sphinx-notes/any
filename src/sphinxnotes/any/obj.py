@@ -41,9 +41,9 @@ type Object = ParsedData
 class RefType(object):
     """Reference type, object can be referenced:
 
-    - by type *objtype*
-    - by field *objtype*.*field*
-    - by field index *objtype*.*field*+by-*index*
+    - by type ``OBJTYPE``
+    - by field ``OBJTYPE.FIELD``
+    - by field index ``OBJTYPE.FIELD+by-INDEX``
     """
 
     #: Object type, one of :member:`ObjDomain.object_types`.

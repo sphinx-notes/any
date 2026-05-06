@@ -28,7 +28,7 @@ from sphinxnotes.render import (
     ValueWrapper,
     ParsedData,
     Schema,
-    PendingContext,
+    UnresolvedContext,
     ResolvedContext,
     pending_node,
     BaseContextDirective,
@@ -500,7 +500,7 @@ class AutoObjDefineDirective(ObjDefineDirective):
     @override
     def process_pending_node(self, n: pending_node) -> bool:
         if n.template == self.template:
-            n.hook_pending_context(self.setup_external_header)
+            n.hook_unresolved_context(self.setup_external_header)
             # Skip ObjDefineDirective.process_pending_node.
             return super(StrictDataDefineDirective, self).process_pending_node(n)
 
@@ -509,7 +509,7 @@ class AutoObjDefineDirective(ObjDefineDirective):
     """Helpers methods for self and subclasses."""
 
     def setup_external_header(
-        self, pending: pending_node, ctx: PendingContext | ResolvedContext
+        self, pending: pending_node, ctx: UnresolvedContext | ResolvedContext
     ) -> None:
         def fallback():
             # If we can not setup external header, fallback to setup objdesc.
@@ -545,7 +545,7 @@ class AutoObjDefineDirective(ObjDefineDirective):
         header += hdrnode
 
     def require_external_header(
-        self, ctx: PendingContext | ResolvedContext
+        self, ctx: UnresolvedContext | ResolvedContext
     ) -> tuple[Literal[True, False, 'Retry'], Callable[[str]] | None]:
         """
         Check whether the context require a external name.
@@ -619,7 +619,7 @@ class AutoObjDefineDirective(ObjDefineDirective):
 
 
 @dataclass
-class PendingObject(PendingContext):
+class PendingObject(UnresolvedContext):
     domain: ObjDomain
     objtype: str
     objid: str
@@ -648,6 +648,7 @@ class PendingObject(PendingContext):
 class ObjEmbedDirective(BaseContextDirective):
     required_arguments = 1
     optional_arguments = 0
+    final_argument_whitespace = True
     option_spec = {
         'debug': directives.flag,
     }
@@ -667,7 +668,7 @@ class ObjEmbedDirective(BaseContextDirective):
     """Methods that override from parent."""
 
     @override
-    def current_context(self) -> PendingContext | ResolvedContext:
+    def current_context(self) -> UnresolvedContext | ResolvedContext:
         domain, objtype = self.get_domain_and_type()
         objid = self.arguments[0]
         return PendingObject(domain, objtype, objid)
