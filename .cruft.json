@@ -1,7 +1,7 @@
 {
   "template": "https://github.com/sphinx-notes/cookiecutter",
-  "commit": "987dccc7d6145ec1fd0d26222cd2a2318f66329d",
-  "checkout": null,
+  "commit": "3e19cae0e2529a903e6401b282648553fcae0a6d",
+  "checkout": "chore/docs-deps-template",
   "context": {
     "cookiecutter": {
       "namespace": "sphinxnotes",
@@ -12,6 +12,8 @@
       "version": "3.0b6",
       "github_owner": "sphinx-notes",
       "github_repo": "any",
+      "generated_file_header": "This file is generated from sphinx-notes/cookiecutter.",
+      "dont_edit_header": "DO NOT EDIT.",
       "pypi_name": "sphinxnotes-any",
       "pypi_owner": "SilverRainZ",
       "is_python_project": true,
@@ -20,7 +22,7 @@
       "sphinx_version": "7.0",
       "development_status": "3 - Alpha",
       "_template": "https://github.com/sphinx-notes/cookiecutter",
-      "_commit": "987dccc7d6145ec1fd0d26222cd2a2318f66329d"
+      "_commit": "3e19cae0e2529a903e6401b282648553fcae0a6d"
     }
   },
   "directory": null

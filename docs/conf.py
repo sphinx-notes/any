@@ -1,5 +1,4 @@
 # This file is generated from sphinx-notes/cookiecutter.
-# You need to consider modifying the TEMPLATE or modifying THIS FILE.
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full

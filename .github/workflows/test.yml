@@ -1,3 +1,5 @@
+# This file is generated from sphinx-notes/cookiecutter.
+
 name: Test
 on:
   push:
@@ -21,5 +23,6 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version-file: 'pyproject.toml'
-    - run: python3 -m pip install .[docs]
+    - run: python3 -m pip install .
+    - run: python3 -m pip install -r docs/requirements.txt
     - run: make doctest
