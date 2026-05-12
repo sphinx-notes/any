@@ -9,16 +9,19 @@ from any.domain import ObjDomain, PendingObject
 
 class TestPendingObjectResolve(unittest.TestCase):
     def setUp(self):
+        self.env = MagicMock()
         self.domain = ObjDomain(MagicMock())
+        self.domain.name = 'obj'
         self.domain.data['objects'] = {}
         self.domain.data['references'] = {}
+        self.env.get_domain.return_value = self.domain
 
     def test_resolve_by_id(self):
         obj = MagicMock()
         self.domain.objects['foo', 'id1'] = ('doc1', 'anchor1', obj)
 
-        pending = PendingObject(domain=self.domain, objtype='foo', objid='id1')
-        result = pending.resolve()
+        pending = PendingObject(domain='obj', objtype='foo', objid='id1')
+        result = pending.resolve(self.env)
 
         self.assertIs(result, obj)
 
@@ -27,8 +30,8 @@ class TestPendingObjectResolve(unittest.TestCase):
         self.domain.objects['foo', 'id1'] = ('doc1', 'anchor1', obj)
         self.domain.references['foo', 'field1', 'ref1'] = {'id1'}
 
-        pending = PendingObject(domain=self.domain, objtype='foo', objid='ref1')
-        result = pending.resolve()
+        pending = PendingObject(domain='obj', objtype='foo', objid='ref1')
+        result = pending.resolve(self.env)
 
         self.assertIs(result, obj)
 
@@ -36,10 +39,10 @@ class TestPendingObjectResolve(unittest.TestCase):
         self.domain.objects['foo', 'id1'] = ('doc1', 'anchor1', MagicMock())
         self.domain.references['foo', 'field1', 'ref1'] = {'id1'}
 
-        pending = PendingObject(domain=self.domain, objtype='foo', objid='nonexistent')
+        pending = PendingObject(domain='obj', objtype='foo', objid='nonexistent')
 
         with self.assertRaises(KeyError):
-            pending.resolve()
+            pending.resolve(self.env)
 
     def test_resolve_multiple_references(self):
         obj1 = MagicMock()
@@ -48,8 +51,8 @@ class TestPendingObjectResolve(unittest.TestCase):
         self.domain.objects['foo', 'id2'] = ('doc2', 'anchor2', obj2)
         self.domain.references['foo', 'field1', 'ref1'] = {'id1', 'id2'}
 
-        pending = PendingObject(domain=self.domain, objtype='foo', objid='ref1')
-        result = pending.resolve()
+        pending = PendingObject(domain='obj', objtype='foo', objid='ref1')
+        result = pending.resolve(self.env)
 
         self.assertIn(result, [obj1, obj2])
 
