@@ -620,29 +620,30 @@ class AutoObjDefineDirective(ObjDefineDirective):
 
 @dataclass
 class PendingObject(UnresolvedContext):
-    domain: ObjDomain
+    domain_name: str
     objtype: str
     objid: str
 
     @override
-    def resolve(self) -> ResolvedContext:
+    def resolve(self, env: BuildEnvironment) -> ResolvedContext:
+        domain: ObjDomain = cast(ObjDomain, env.get_domain(self.domain_name))
         objid = self.objid
-        if (self.objtype, objid) not in self.domain.objects:
+        if (self.objtype, objid) not in domain.objects:
             objids = set()
-            for objtype, objfield, objref in self.domain.references:
+            for objtype, objfield, objref in domain.references:
                 if objtype == self.objtype and objref == objid:
-                    objids.update(self.domain.references[objtype, objfield, objref])
+                    objids.update(domain.references[objtype, objfield, objref])
 
             if len(objids) >= 1:
                 objid = objids.pop()
             else:
                 raise KeyError(f'Object not found: {(self.objtype, objid)}')
 
-        _, _, obj = self.domain.objects[self.objtype, objid]
+        _, _, obj = domain.objects[self.objtype, objid]
         return obj
 
     def __hash__(self) -> int:
-        return hash((self.domain.name, self.objtype, self.objid))
+        return hash((self.domain_name, self.objtype, self.objid))
 
 
 class ObjEmbedDirective(BaseContextDirective):
@@ -671,7 +672,7 @@ class ObjEmbedDirective(BaseContextDirective):
     def current_context(self) -> UnresolvedContext | ResolvedContext:
         domain, objtype = self.get_domain_and_type()
         objid = self.arguments[0]
-        return PendingObject(domain, objtype, objid)
+        return PendingObject(domain.name, objtype, objid)
 
     @override
     def current_template(self) -> Template:
