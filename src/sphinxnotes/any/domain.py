@@ -620,13 +620,13 @@ class AutoObjDefineDirective(ObjDefineDirective):
 
 @dataclass
 class PendingObject(UnresolvedContext):
-    domain_name: str
+    domain: str
     objtype: str
     objid: str
 
     @override
     def resolve(self, env: BuildEnvironment) -> ResolvedContext:
-        domain: ObjDomain = cast(ObjDomain, env.get_domain(self.domain_name))
+        domain: ObjDomain = cast(ObjDomain, env.get_domain(self.domain))
         objid = self.objid
         if (self.objtype, objid) not in domain.objects:
             objids = set()
@@ -643,7 +643,7 @@ class PendingObject(UnresolvedContext):
         return obj
 
     def __hash__(self) -> int:
-        return hash((self.domain_name, self.objtype, self.objid))
+        return hash((self.domain, self.objtype, self.objid))
 
 
 class ObjEmbedDirective(BaseContextDirective):

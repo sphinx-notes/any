@@ -20,7 +20,7 @@ class TestPendingObjectResolve(unittest.TestCase):
         obj = MagicMock()
         self.domain.objects['foo', 'id1'] = ('doc1', 'anchor1', obj)
 
-        pending = PendingObject(domain_name='obj', objtype='foo', objid='id1')
+        pending = PendingObject(domain='obj', objtype='foo', objid='id1')
         result = pending.resolve(self.env)
 
         self.assertIs(result, obj)
@@ -30,7 +30,7 @@ class TestPendingObjectResolve(unittest.TestCase):
         self.domain.objects['foo', 'id1'] = ('doc1', 'anchor1', obj)
         self.domain.references['foo', 'field1', 'ref1'] = {'id1'}
 
-        pending = PendingObject(domain_name='obj', objtype='foo', objid='ref1')
+        pending = PendingObject(domain='obj', objtype='foo', objid='ref1')
         result = pending.resolve(self.env)
 
         self.assertIs(result, obj)
@@ -39,7 +39,7 @@ class TestPendingObjectResolve(unittest.TestCase):
         self.domain.objects['foo', 'id1'] = ('doc1', 'anchor1', MagicMock())
         self.domain.references['foo', 'field1', 'ref1'] = {'id1'}
 
-        pending = PendingObject(domain_name='obj', objtype='foo', objid='nonexistent')
+        pending = PendingObject(domain='obj', objtype='foo', objid='nonexistent')
 
         with self.assertRaises(KeyError):
             pending.resolve(self.env)
@@ -51,7 +51,7 @@ class TestPendingObjectResolve(unittest.TestCase):
         self.domain.objects['foo', 'id2'] = ('doc2', 'anchor2', obj2)
         self.domain.references['foo', 'field1', 'ref1'] = {'id1', 'id2'}
 
-        pending = PendingObject(domain_name='obj', objtype='foo', objid='ref1')
+        pending = PendingObject(domain='obj', objtype='foo', objid='ref1')
         result = pending.resolve(self.env)
 
         self.assertIn(result, [obj1, obj2])
