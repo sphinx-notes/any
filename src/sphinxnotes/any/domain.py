@@ -153,7 +153,9 @@ class ObjDomain(Domain):
         elif len(objids) == 1:
             todocname, anchor, obj = self.objects[objtype, objids.pop()]
             contnode = pending_node(
-                obj, self.templates[objtype].get_ref_by(reftype), inline=True
+                obj, self.templates[objtype].get_ref_by(reftype),
+                inline=True,
+                rawsource=target,
             )
         else:
             # The pending_xref node may be resolved by intersphinx,
